@@ -33,6 +33,7 @@ const ACTIVE_STATUSES = ["pending", "accepted", "preparing", "ready", "ready_for
 const HISTORY_STATUSES = ["out_for_delivery", "delivered", "completed", "cancelled", "failed", "refunded"];
 const ACK_KEY = "melachow_vendor_acknowledged_orders_v1";
 const WARNING_CHIME_KEY = "melachow_vendor_warning_chime_v1";
+const VOICE_ALERTS_KEY = "melachow_vendor_voice_alerts_v1";
 
 function getOrderId(order) {
   return order?._id?.$oid || order?._id || "";
@@ -62,6 +63,16 @@ function getPersistedAcknowledgements() {
 function persistAcknowledgements(value) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(ACK_KEY, JSON.stringify(value));
+}
+
+function getPersistedBoolean(key, fallback = false) {
+  if (typeof window === "undefined") return fallback;
+  return window.localStorage.getItem(key) === "true";
+}
+
+function persistBoolean(key, value) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(key, value ? "true" : "false");
 }
 
 let orderDeskAudioContext;
@@ -145,6 +156,7 @@ export default function VendorOrdersPage() {
   const previousPendingIdsRef = useRef(new Set());
   const warningChimeRef = useRef({});
   const hasLoadedOnceRef = useRef(false);
+  const voicePrimedRef = useRef(false);
   const { vendorDetails } = useVendorStorage();
   const itemsPerPage = tabletMode ? 8 : 6;
 
@@ -170,20 +182,21 @@ export default function VendorOrdersPage() {
 
   useEffect(() => {
     setAcknowledgedOrders(getPersistedAcknowledgements());
+    setVoiceAlertsEnabled(getPersistedBoolean(VOICE_ALERTS_KEY));
     fetchOrders();
   }, [fetchOrders]);
 
   useEffect(() => {
-    const unlockAudio = () => {
+    const unlockStationAudio = () => {
       getOrderDeskAudioContext();
-      window.removeEventListener("pointerdown", unlockAudio);
-      window.removeEventListener("keydown", unlockAudio);
+      window.removeEventListener("pointerdown", unlockStationAudio);
+      window.removeEventListener("keydown", unlockStationAudio);
     };
-    window.addEventListener("pointerdown", unlockAudio, { once: true });
-    window.addEventListener("keydown", unlockAudio, { once: true });
+    window.addEventListener("pointerdown", unlockStationAudio, { once: true });
+    window.addEventListener("keydown", unlockStationAudio, { once: true });
     return () => {
-      window.removeEventListener("pointerdown", unlockAudio);
-      window.removeEventListener("keydown", unlockAudio);
+      window.removeEventListener("pointerdown", unlockStationAudio);
+      window.removeEventListener("keydown", unlockStationAudio);
     };
   }, []);
 
@@ -236,7 +249,7 @@ export default function VendorOrdersPage() {
   }, [orders, soundEnabled, voiceAlertsEnabled]);
 
   useEffect(() => {
-    if (!soundEnabled) return;
+    if (!soundEnabled && !voiceAlertsEnabled) return;
 
     const persisted = (() => {
       try {
@@ -265,10 +278,12 @@ export default function VendorOrdersPage() {
 
     if (overdueOrders.length > 0) {
       window.sessionStorage.setItem(WARNING_CHIME_KEY, JSON.stringify(warningChimeRef.current));
-      try {
-        playOrderDeskChime({ urgent: true });
-      } catch {
-        // Browser audio can be blocked until user interaction.
+      if (soundEnabled) {
+        try {
+          playOrderDeskChime({ urgent: true });
+        } catch {
+          // Browser audio can be blocked until user interaction.
+        }
       }
       if (voiceAlertsEnabled) {
         try {
@@ -393,6 +408,46 @@ export default function VendorOrdersPage() {
     ready: readyOrders.length,
     completed: orders.filter((order) => ["delivered", "completed"].includes(getStatus(order))).length,
   };
+
+  const speakCurrentOrderSummary = useCallback(() => {
+    const pending = incomingOrders.length;
+    const preparing = preparingOrders.length;
+    const ready = readyOrders.length;
+
+    if (pending > 0) {
+      speakOrderDeskAlert(`You have ${pending} ${pending === 1 ? "awaiting order" : "awaiting orders"}.`);
+      return;
+    }
+
+    if (preparing > 0 || ready > 0) {
+      const parts = [];
+      if (preparing > 0) parts.push(`${preparing} ${preparing === 1 ? "order is" : "orders are"} preparing`);
+      if (ready > 0) parts.push(`${ready} ${ready === 1 ? "order is" : "orders are"} ready`);
+      speakOrderDeskAlert(parts.join(", ") + ".");
+      return;
+    }
+
+    speakOrderDeskAlert("Voice alerts are on. There are no active orders waiting right now.");
+  }, [incomingOrders.length, preparingOrders.length, readyOrders.length]);
+
+  useEffect(() => {
+    if (!voiceAlertsEnabled || voicePrimedRef.current) return;
+
+    const primeVoiceAlerts = () => {
+      if (voicePrimedRef.current) return;
+      voicePrimedRef.current = true;
+      speakCurrentOrderSummary();
+      window.removeEventListener("pointerdown", primeVoiceAlerts);
+      window.removeEventListener("keydown", primeVoiceAlerts);
+    };
+
+    window.addEventListener("pointerdown", primeVoiceAlerts, { once: true });
+    window.addEventListener("keydown", primeVoiceAlerts, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", primeVoiceAlerts);
+      window.removeEventListener("keydown", primeVoiceAlerts);
+    };
+  }, [speakCurrentOrderSummary, voiceAlertsEnabled]);
 
   const deskTabs = [
     {
@@ -541,9 +596,11 @@ export default function VendorOrdersPage() {
                 onClick={() => {
                   setVoiceAlertsEnabled((value) => {
                     const next = !value;
+                    persistBoolean(VOICE_ALERTS_KEY, next);
                     if (next) {
                       try {
-                        speakOrderDeskAlert("Voice alerts enabled.");
+                        voicePrimedRef.current = true;
+                        speakCurrentOrderSummary();
                       } catch {}
                     } else if (typeof window !== "undefined" && "speechSynthesis" in window) {
                       window.speechSynthesis.cancel();
