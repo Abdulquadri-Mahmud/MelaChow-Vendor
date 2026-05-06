@@ -319,6 +319,29 @@ export default function VendorOrderDetailsPage() {
         };
     };
 
+    const receiptItems = detailedItems.map((item) => {
+        const options = item.selected_options || item.metadata?.selected_options || [];
+        const quantity = Number(item.quantity) || 1;
+        const pricing = item.metadata?.pricing || null;
+        const originalPrice = Number(item.originalPrice) || Number(item.variant?.price) || 0;
+        const optionsTotal = options.reduce((sum, opt) => sum + ((Number(opt.price_modifier_naira) || 0) * (Number(opt.quantity) || 1)), 0);
+        const unitPrice = pricing?.final_unit_naira || ((pricing?.base_naira || originalPrice) + optionsTotal);
+        return {
+            name: item.name || item.variant?.name || "Order item",
+            quantity,
+            unitPrice,
+            lineTotal: unitPrice * quantity,
+            portion: item.portion_label || item.metadata?.portion_label || "",
+            options,
+            note: item.note || "",
+        };
+    });
+    const customerDeliveryFee = Number(userOrderId?.deliveryFee || userOrderId?.financialSummary?.totalDeliveryFee || 0);
+    const customerServiceFee = Number(userOrderId?.serviceFee || userOrderId?.financialSummary?.serviceFee || 0);
+    const customerTotalPaid = Number(userOrderId?.total || (customerFoodTotal + customerDeliveryFee + customerServiceFee));
+    const receiptReference = userOrderId?.paymentReference || "Not recorded";
+    const receiptPaymentMethod = userOrderId?.paymentReference?.startsWith?.("WALLET_") ? "Wallet" : "Paystack";
+
     const isPlatformDelivery = true; // All vendors are now platform managed
     const lockedPlatformStatuses = ["out_for_delivery", "delivered", "completed"];
 
@@ -909,11 +932,105 @@ export default function VendorOrderDetailsPage() {
                             </motion.div>
                         )}
 
-                        {/* Transaction Verification */}
+                        {/* Customer Receipt */}
                         <motion.div
                             initial={{ opacity: 0, x: 10 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.3 }}
+                            className="bg-white dark:bg-zinc-900 rounded-md border border-orange-100 dark:border-orange-500/20 overflow-hidden shadow-none"
+                        >
+                            <div className="px-5 py-4 border-b border-orange-100 dark:border-orange-500/20 bg-orange-50/60 dark:bg-orange-500/5 flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-white dark:bg-zinc-900 rounded-md text-orange-600 border border-orange-100 dark:border-orange-500/20">
+                                        <Receipt size={14} strokeWidth={3} />
+                                    </div>
+                                    <div>
+                                        <h4 className="font-black text-[11px] text-zinc-900 dark:text-white uppercase tracking-widest">Customer Receipt</h4>
+                                        <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">What the customer paid for</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => window.print()}
+                                    className="inline-flex items-center gap-1.5 rounded-md border border-orange-200 bg-white px-2.5 py-1.5 text-[9px] font-black uppercase tracking-widest text-orange-600 active:scale-95 dark:border-orange-500/20 dark:bg-zinc-900"
+                                >
+                                    <Printer size={11} /> Print
+                                </button>
+                            </div>
+
+                            <div className="p-5 space-y-4">
+                                <div className="rounded-md border border-zinc-100 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-950">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div>
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Receipt ID</p>
+                                            <p className="mt-1 text-[12px] font-black text-zinc-900 dark:text-white">#{userOrderId?.orderId || order.orderId}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Payment</p>
+                                            <p className="mt-1 text-[12px] font-black uppercase text-emerald-600">{userOrderId?.paymentStatus || "pending"}</p>
+                                        </div>
+                                    </div>
+                                    <div className="mt-3 border-t border-zinc-200 pt-3 dark:border-zinc-800">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Reference</p>
+                                        <p className="mt-1 break-all text-[10px] font-bold text-zinc-600 dark:text-zinc-300">{receiptReference}</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    {receiptItems.map((item, idx) => (
+                                        <div key={`${item.name}-${idx}`} className="rounded-md border border-zinc-100 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-950/40">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div className="min-w-0">
+                                                    <p className="text-[12px] font-black text-zinc-900 dark:text-white">{item.quantity} x {item.name}</p>
+                                                    {item.portion && <p className="mt-0.5 text-[9px] font-black uppercase tracking-widest text-orange-600">{item.portion}</p>}
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-[12px] font-black text-zinc-900 dark:text-white">{formatMoney(item.lineTotal)}</p>
+                                                    <p className="text-[8px] font-bold uppercase tracking-widest text-zinc-400">{formatMoney(item.unitPrice)} each</p>
+                                                </div>
+                                            </div>
+                                            {item.options.length > 0 && (
+                                                <div className="mt-2 flex flex-wrap gap-1.5">
+                                                    {item.options.map((opt, optIdx) => (
+                                                        <span key={optIdx} className="rounded-md bg-orange-50 px-2 py-1 text-[9px] font-bold text-orange-700 dark:bg-orange-500/10 dark:text-orange-300">
+                                                            {(Number(opt.quantity) || 1)} x {opt.label}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                            {item.note && (
+                                                <p className="mt-2 rounded-md bg-amber-50 p-2 text-[10px] font-bold italic text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+                                                    Customer note: {item.note}
+                                                </p>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="space-y-2 rounded-md border border-zinc-100 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-950">
+                                    <div className="flex justify-between text-[11px] font-bold text-zinc-600 dark:text-zinc-300"><span>Food subtotal</span><span>{formatMoney(customerFoodTotal)}</span></div>
+                                    <div className="flex justify-between text-[11px] font-bold text-zinc-600 dark:text-zinc-300"><span>Delivery fee</span><span>{customerDeliveryFee === 0 ? "Free" : formatMoney(customerDeliveryFee)}</span></div>
+                                    <div className="flex justify-between text-[11px] font-bold text-zinc-600 dark:text-zinc-300"><span>Service fee</span><span>{formatMoney(customerServiceFee)}</span></div>
+                                    <div className="flex justify-between border-t border-zinc-200 pt-3 text-[14px] font-black text-zinc-900 dark:border-zinc-800 dark:text-white"><span>Total paid</span><span>{formatMoney(customerTotalPaid)}</span></div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div className="rounded-md border border-zinc-100 bg-white p-2.5 dark:border-zinc-800 dark:bg-zinc-950/40">
+                                        <p className="text-[8px] font-black uppercase tracking-widest text-zinc-400">Method</p>
+                                        <p className="mt-1 text-[11px] font-black text-zinc-800 dark:text-zinc-200">{receiptPaymentMethod}</p>
+                                    </div>
+                                    <div className="rounded-md border border-zinc-100 bg-white p-2.5 dark:border-zinc-800 dark:bg-zinc-950/40">
+                                        <p className="text-[8px] font-black uppercase tracking-widest text-zinc-400">Placed</p>
+                                        <p className="mt-1 text-[11px] font-black text-zinc-800 dark:text-zinc-200">{dateStr}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+
+                        {/* Transaction Verification */}
+                        <motion.div
+                            initial={{ opacity: 0, x: 10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.4 }}
                             className="bg-white dark:bg-zinc-900 rounded-md border border-zinc-100 dark:border-zinc-800 overflow-hidden shadow-none p-5"
                         >
                             <div className="flex items-center justify-between">
