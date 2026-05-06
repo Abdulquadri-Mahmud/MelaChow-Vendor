@@ -34,6 +34,12 @@ const HISTORY_STATUSES = ["out_for_delivery", "delivered", "completed", "cancell
 const ACK_KEY = "melachow_vendor_acknowledged_orders_v1";
 const WARNING_CHIME_KEY = "melachow_vendor_warning_chime_v1";
 const VOICE_ALERTS_KEY = "melachow_vendor_voice_alerts_v1";
+const ORDER_WARNING_STAGES = [
+  { key: "3m", seconds: 180, voice: "Order needs attention. Accept now to avoid auto cancellation." },
+  { key: "3m30s", seconds: 210, voice: "Order still waiting. Please accept it now." },
+  { key: "4m", seconds: 240, voice: "Urgent. An order is at risk of auto cancellation." },
+  { key: "4m30s", seconds: 270, voice: "Final warning. This order may auto cancel soon." },
+];
 
 function getOrderId(order) {
   return order?._id?.$oid || order?._id || "";
@@ -260,7 +266,7 @@ export default function VendorOrdersPage() {
     })();
     warningChimeRef.current = { ...persisted, ...warningChimeRef.current };
 
-    const overdueOrders = [];
+    const warningEvents = [];
     orders.forEach((order) => {
       if (getStatus(order) !== "pending") return;
       const orderId = getOrderId(order);
@@ -269,14 +275,16 @@ export default function VendorOrdersPage() {
       const ageMs = now - created;
       if (!created || Number.isNaN(created) || ageMs < 3 * 60 * 1000) return;
 
-      const lastPlayed = warningChimeRef.current[orderId] || 0;
-      if (now - lastPlayed < 60 * 1000) return;
+      const ageSeconds = Math.floor(ageMs / 1000);
+      const alreadyPlayed = warningChimeRef.current[orderId] || {};
+      const nextStage = ORDER_WARNING_STAGES.find((stage) => ageSeconds >= stage.seconds && !alreadyPlayed[stage.key]);
+      if (!nextStage) return;
 
-      warningChimeRef.current[orderId] = now;
-      overdueOrders.push(orderId);
+      warningChimeRef.current[orderId] = { ...alreadyPlayed, [nextStage.key]: now };
+      warningEvents.push({ orderId, stage: nextStage });
     });
 
-    if (overdueOrders.length > 0) {
+    if (warningEvents.length > 0) {
       window.sessionStorage.setItem(WARNING_CHIME_KEY, JSON.stringify(warningChimeRef.current));
       if (soundEnabled) {
         try {
@@ -287,7 +295,12 @@ export default function VendorOrdersPage() {
       }
       if (voiceAlertsEnabled) {
         try {
-          speakOrderDeskAlert(`${overdueOrders.length} ${overdueOrders.length === 1 ? "order needs" : "orders need"} attention.`);
+          const highestStage = warningEvents[warningEvents.length - 1]?.stage;
+          if (warningEvents.length > 1) {
+            speakOrderDeskAlert(`${warningEvents.length} orders are at risk of auto cancellation. Please review the order desk now.`);
+          } else {
+            speakOrderDeskAlert(highestStage.voice);
+          }
         } catch {
           // Browser speech can be blocked until user interaction.
         }
@@ -494,7 +507,7 @@ export default function VendorOrdersPage() {
         </div>
 
         {sectionOrders.length > 0 ? (
-          <div className={`grid gap-3 ${tabletMode ? "xl:grid-cols-3" : "lg:grid-cols-2 2xl:grid-cols-3"}`}>
+          <div className={`grid gap-3 ${tabletMode ? "xl:grid-cols-3" : "lg:grid-cols-3 grid-cols-1 md:grid-cols-2 2xl:grid-cols-3"}`}>
             {sectionOrders.map((order) => (
               <VendorOrderDeskCard
                 key={getOrderId(order)}
@@ -705,7 +718,7 @@ export default function VendorOrdersPage() {
               exit={{ opacity: 0, y: -8 }}
               className="space-y-4"
             >
-              <div className="sticky top-2 z-20 rounded-lg border border-zinc-200 bg-white/95 p-2 shadow-sm backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/95">
+              <div className="sticky top-2 max-w-3xl mx-auto z-20 rounded-lg border border-zinc-200 bg-white/95 p-2 shadow-sm backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/95">
                 <div className="grid grid-cols-3 gap-2">
                   {deskTabs.map((tab, index) => {
                     const Icon = tab.icon;
