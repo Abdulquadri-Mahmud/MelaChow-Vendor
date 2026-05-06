@@ -108,7 +108,7 @@ function getCustomerName(user) {
 
 function getElapsed(createdAt, now) {
   const created = new Date(createdAt).getTime();
-  if (!created || Number.isNaN(created)) return { label: "Now", minutes: 0 };
+  if (!created || Number.isNaN(created)) return { label: "Now", minutes: 0, totalSeconds: 0 };
 
   const totalSeconds = Math.max(0, Math.floor((now - created) / 1000));
   const minutes = Math.floor(totalSeconds / 60);
@@ -117,10 +117,10 @@ function getElapsed(createdAt, now) {
   if (minutes >= 60) {
     const hours = Math.floor(minutes / 60);
     const remaining = minutes % 60;
-    return { label: `${hours}h ${remaining}m`, minutes };
+    return { label: `${hours}h ${remaining}m`, minutes, totalSeconds };
   }
 
-  return { label: `${minutes}:${seconds.toString().padStart(2, "0")}`, minutes };
+  return { label: `${minutes}:${seconds.toString().padStart(2, "0")}`, minutes, totalSeconds };
 }
 
 function buildKitchenLine(item) {
@@ -176,6 +176,7 @@ export default function VendorOrderDeskCard({
   const isPending = status === "pending";
   const isReady = ["ready", "ready_for_pickup"].includes(status);
   const isAtRisk = isPending && elapsed.minutes >= 3;
+  const isFinalWarning = isPending && elapsed.totalSeconds >= 270;
   const isLate = isPending && elapsed.minutes >= 5;
   const isTablet = mode === "tablet";
   const toneClass = TONE_CLASSES[meta.tone] || TONE_CLASSES.amber;
@@ -219,7 +220,9 @@ export default function VendorOrderDeskCard({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       className={`relative overflow-hidden rounded-lg border bg-white dark:bg-zinc-900 ${
-        isLate
+        isFinalWarning
+          ? "border-rose-400 shadow-lg shadow-rose-100 ring-2 ring-rose-100 dark:border-rose-500/60 dark:shadow-none dark:ring-rose-500/20"
+          : isLate
           ? "border-rose-300 dark:border-rose-500/40"
           : isPending
             ? "border-orange-300 dark:border-orange-500/40"
@@ -237,9 +240,9 @@ export default function VendorOrderDeskCard({
                 {meta.label}
               </span>
               {isAtRisk && (
-                <span className="inline-flex items-center gap-1.5 rounded-md border border-rose-200 bg-rose-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
+                <span className={`inline-flex items-center gap-1.5 rounded-md border border-rose-200 bg-rose-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300 ${isFinalWarning ? "animate-pulse" : ""}`}>
                   <AlertTriangle size={12} />
-                  {isLate ? "Escalate" : "Needs Attention"}
+                  {isFinalWarning ? "Final Warning" : isLate ? "Escalate" : "Auto-Cancel Risk"}
                 </span>
               )}
             </div>
@@ -256,6 +259,24 @@ export default function VendorOrderDeskCard({
             <p className={`${isTablet ? "text-3xl" : "text-2xl"} font-black tabular-nums`}>{elapsed.label}</p>
           </div>
         </div>
+
+        {isAtRisk && (
+          <div className={`rounded-lg border p-3 ${isFinalWarning ? "border-rose-300 bg-rose-50 dark:border-rose-500/40 dark:bg-rose-500/10" : "border-amber-200 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10"}`}>
+            <div className="flex items-start gap-3">
+              <div className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg ${isFinalWarning ? "bg-rose-600 text-white" : "bg-amber-500 text-white"}`}>
+                <AlertTriangle size={16} />
+              </div>
+              <div>
+                <p className={`text-[10px] font-black uppercase tracking-widest ${isFinalWarning ? "text-rose-700 dark:text-rose-300" : "text-amber-700 dark:text-amber-300"}`}>
+                  {isFinalWarning ? "Final warning before auto-cancel" : "Vendor action required"}
+                </p>
+                <p className={`mt-1 text-xs font-bold leading-relaxed ${isFinalWarning ? "text-rose-600/90 dark:text-rose-200/90" : "text-amber-700/90 dark:text-amber-200/90"}`}>
+                  Accept this order before the 5-minute SLA ends. Visual alerts stay active even when voice alerts are turned off.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="grid gap-3 md:grid-cols-2">
           <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-950/50">
