@@ -18,7 +18,11 @@ import {
     User,
     HelpCircle,
     X,
-    ChevronRight
+    ChevronRight,
+    Clock,
+    Power,
+    Save,
+    Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -26,6 +30,9 @@ import { useRouter } from "next/navigation";
 import NotificationBell from "@/app/components/NotificationBell";
 import { useTheme } from "@/app/context/ThemeContext";
 import { useState, useMemo, useEffect } from "react";
+import toast from "react-hot-toast";
+import { updateVendorTodayHours } from "@/app/lib/vendorProfileApi";
+import { useVendorStorage } from "@/app/hooks/vendorStorage";
 
 const navigationItems = [
     { icon: LayoutDashboard, label: "Dashboard",     href: "/vendors/dashboard" },
@@ -39,6 +46,127 @@ const navigationItems = [
     { icon: User,            label: "Profile",     href: "/vendors/profile" },
     { icon: HelpCircle,      label: "Help & FAQs", href: "/vendors/faqs" },
 ];
+
+const dayKeys = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+
+function getLagosNowParts() {
+    const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: "Africa/Lagos",
+        weekday: "long",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+    }).formatToParts(new Date()).reduce((acc, part) => {
+        acc[part.type] = part.value;
+        return acc;
+    }, {});
+
+    return {
+        day: String(parts.weekday || "").toLowerCase(),
+        time: `${parts.hour || "00"}:${parts.minute || "00"}`,
+    };
+}
+
+function formatTime(value) {
+    if (!value) return "--:--";
+    const [rawHour, rawMinute = "00"] = String(value).split(":");
+    let hour = Number(rawHour);
+    const minute = Number(rawMinute);
+    if (Number.isNaN(hour) || Number.isNaN(minute)) return value;
+    const suffix = hour >= 12 ? "PM" : "AM";
+    hour %= 12;
+    return `${hour || 12}:${String(minute).padStart(2, "0")} ${suffix}`;
+}
+
+function TodayHoursControl({ vendor }) {
+    const { updateVendor: updateCachedVendor } = useVendorStorage();
+    const [clock, setClock] = useState(getLagosNowParts());
+    const today = dayKeys.includes(clock.day) ? clock.day : dayKeys[new Date().getDay()];
+    const todayHours = vendor?.openingHours?.[today] || {};
+    const [closeTime, setCloseTime] = useState(todayHours.close || "");
+    const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        const timer = window.setInterval(() => setClock(getLagosNowParts()), 30000);
+        return () => window.clearInterval(timer);
+    }, []);
+
+    useEffect(() => {
+        setCloseTime(todayHours.close || "");
+    }, [todayHours.close, today]);
+
+    const isClosedToday = !!todayHours.closed;
+    const isReady = !!vendor?._id && !!today;
+
+    const applyTodayHours = async (payload) => {
+        if (!isReady) return;
+        try {
+            setIsSaving(true);
+            const response = await updateVendorTodayHours(payload);
+            const updatedVendor = response?.data;
+            if (updatedVendor) {
+                updateCachedVendor(updatedVendor);
+            }
+            toast.success(response?.message || "Today's hours updated");
+        } catch (error) {
+            toast.error(error?.response?.data?.message || error.message || "Failed to update today's hours");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    return (
+        <div className="hidden xl:flex items-center gap-2 rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1.5 dark:border-zinc-800 dark:bg-zinc-950">
+            <div className="flex items-center gap-2 border-r border-zinc-200 pr-2 dark:border-zinc-800">
+                <div className={`h-2.5 w-2.5 rounded-full ${isClosedToday ? "bg-red-500" : "bg-emerald-500"}`} />
+                <div>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
+                        {today.slice(0, 3)} {clock.time} WAT
+                    </p>
+                    <p className="text-[10px] font-black uppercase tracking-tight text-zinc-700 dark:text-zinc-200">
+                        {isClosedToday ? "Closed today" : `${formatTime(todayHours.open)} - ${formatTime(todayHours.close)}`}
+                    </p>
+                </div>
+            </div>
+
+            <label className="flex items-center gap-1">
+                <Clock size={13} className="text-orange-500" />
+                <input
+                    type="time"
+                    value={closeTime}
+                    disabled={isSaving || isClosedToday}
+                    onChange={(event) => setCloseTime(event.target.value)}
+                    className="w-[82px] rounded-md border border-zinc-200 bg-white px-2 py-1 text-[11px] font-black text-zinc-800 outline-none focus:border-orange-500 disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                    title="Today's closing time"
+                />
+            </label>
+
+            <button
+                type="button"
+                onClick={() => applyTodayHours({ closed: false, close: closeTime || todayHours.close, open: todayHours.open })}
+                disabled={isSaving || !closeTime}
+                className="rounded-md bg-orange-600 p-2 text-white transition hover:bg-orange-700 active:scale-95 disabled:opacity-50"
+                title="Update today's closing time"
+            >
+                {isSaving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+            </button>
+
+            <button
+                type="button"
+                onClick={() => applyTodayHours({ closed: !isClosedToday, close: closeTime || todayHours.close, open: todayHours.open })}
+                disabled={isSaving}
+                className={`rounded-md p-2 transition active:scale-95 disabled:opacity-50 ${
+                    isClosedToday
+                        ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-300"
+                        : "bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-300"
+                }`}
+                title={isClosedToday ? "Reopen today" : "Close for today"}
+            >
+                <Power size={13} />
+            </button>
+        </div>
+    );
+}
 
 // ── Global Page Search Component ──────────────────────────────────────────────
 function GlobalSearch({ items, router }) {
@@ -227,6 +355,8 @@ export default function VendorDashboardHeader({ vendor, onMenuClick }) {
       </div>
 
       <div className="flex items-center gap-2">
+        <TodayHoursControl vendor={vendor} />
+
         {/* Theme Toggle */}
         <button
           onClick={toggleTheme}
