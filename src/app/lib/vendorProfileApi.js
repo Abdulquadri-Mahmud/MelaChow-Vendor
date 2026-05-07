@@ -120,6 +120,15 @@ export const updateVendor = async ({ data }) => {
   return res.data;
 };
 
+export const updateVendorTodayHours = async (data) => {
+  const res = await api.patch("/today-hours", data, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  return res.data;
+};
+
 export const deleteVendor = async () => {
   const res = await api.delete(`/delete-vendor`, {
     headers: {
