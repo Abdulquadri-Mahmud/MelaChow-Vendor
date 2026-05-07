@@ -1,11 +1,7 @@
 import { 
     Search as SearchIcon, 
     Bell, 
-    Zap, 
     Menu, 
-    Utensils, 
-    ShoppingBag, 
-    Monitor, 
     Sun, 
     Moon, 
     UtensilsCrossed,
@@ -24,7 +20,6 @@ import {
     Save,
     Loader2,
 } from "lucide-react";
-import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import NotificationBell from "@/app/components/NotificationBell";
@@ -327,7 +322,6 @@ function GlobalSearch({ items, router }) {
 }
 
 export default function VendorDashboardHeader({ vendor, onMenuClick }) {
-    const [showQuickActions, setShowQuickActions] = useState(false);
     const { theme, toggleTheme } = useTheme();
     const router = useRouter();
 
@@ -365,77 +359,6 @@ export default function VendorDashboardHeader({ vendor, onMenuClick }) {
         >
           {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
         </button>
-
-        <div className="relative">
-          <button
-            onClick={() => setShowQuickActions(!showQuickActions)}
-            className="hidden md:flex items-center gap-2 bg-zinc-900 dark:bg-white px-3 py-2 rounded-md text-[10px] font-black uppercase tracking-widest border border-transparent text-white dark:text-zinc-900 hover:opacity-90 transition-all"
-          >
-            <Zap size={12} className="text-orange-500 fill-orange-500" />
-            Quick Actions
-          </button>
-
-          <AnimatePresence>
-            {showQuickActions && (
-              <>
-                <div
-                  className="fixed inset-0 z-10"
-                  onClick={() => setShowQuickActions(false)}
-                />
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute right-0 mt-3 w-56 bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800 overflow-hidden z-20"
-                >
-                  <div className="p-1">
-                    <Link
-                      href="/vendors/my-foods"
-                      onClick={() => setShowQuickActions(false)}
-                      className="flex items-center gap-3 px-3 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-md transition-colors group"
-                    >
-                      <div className="bg-emerald-100 dark:bg-emerald-500/10 p-1.5 rounded-md text-emerald-600 group-hover:bg-emerald-500 group-hover:text-white transition-all">
-                        <UtensilsCrossed size={12} />
-                      </div>
-                      My Menu
-                    </Link>
-                    <Link
-                      href="/vendors/create-food"
-                      onClick={() => setShowQuickActions(false)}
-                      className="flex items-center gap-3 px-3 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-md transition-colors group"
-                    >
-                      <div className="bg-orange-100 dark:bg-orange-500/10 p-1.5 rounded-md text-orange-600 group-hover:bg-orange-500 group-hover:text-white transition-all">
-                        <Utensils size={12} />
-                      </div>
-                      Add New Item
-                    </Link>
-                    <Link
-                      href="/vendors/order"
-                      onClick={() => setShowQuickActions(false)}
-                      className="flex items-center gap-3 px-3 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-md transition-colors group"
-                    >
-                      <div className="bg-blue-100 dark:bg-blue-500/10 p-1.5 rounded-md text-blue-600 group-hover:bg-blue-500 group-hover:text-white transition-all">
-                        <ShoppingBag size={12} />
-                      </div>
-                      Manage Orders
-                    </Link>
-                    <Link
-                      href="/vendors/profile"
-                      onClick={() => setShowQuickActions(false)}
-                      className="flex items-center gap-3 px-3 py-2 text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-md transition-colors group"
-                    >
-                      <div className="bg-zinc-100 dark:bg-zinc-700 p-1.5 rounded-md text-zinc-600 dark:text-zinc-400 group-hover:bg-zinc-900 dark:group-hover:bg-white group-hover:text-white dark:group-hover:text-zinc-900 transition-all">
-                        <Monitor size={12} />
-                      </div>
-                      Store Settings
-                    </Link>
-                  </div>
-                </motion.div>
-              </>
-            )}
-          </AnimatePresence>
-        </div>
 
         {/* <div className="h-6 w-px bg-zinc-200 dark:bg-zinc-700 mx-1 hidden md:block"></div> */}
 
