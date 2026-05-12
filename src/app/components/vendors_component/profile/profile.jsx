@@ -27,6 +27,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { updateVendor } from "@/app/lib/vendorProfileApi";
 import { useQueryClient } from "@tanstack/react-query";
 import PermanentInstallButton from "@/app/components/PermanentInstallButton";
+import LocationSelector from "@/app/components/LocationSelector";
 import { useApi } from "@/app/context/ApiContext";
 import axios from "axios";
 import { Loader2 } from "lucide-react";
@@ -116,6 +117,8 @@ const InputGroup = ({ label, icon: Icon, ...props }) => (
 export default function VendorProfilePage({ vendor }) {
   const [basicInfo, setBasicInfo] = useState({ storeName: "", phone: "", email: "", storeDescription: "", password: "" });
   const [address, setAddress] = useState({ street: "", city: "", state: "", postalCode: "" });
+  const [selectedStateId, setSelectedStateId] = useState("");
+  const [selectedCityId, setSelectedCityId] = useState("");
   const [cuisineTypes, setCuisineTypes] = useState([]);
   const [openingHours, setOpeningHours] = useState({});
   const [deliverySettings, setDeliverySettings] = useState({
@@ -151,6 +154,8 @@ export default function VendorProfilePage({ vendor }) {
         state: vendor.address?.state || "",
         postalCode: vendor.address?.postalCode || "",
       });
+      setSelectedStateId(vendor.stateId?._id || vendor.stateId || "");
+      setSelectedCityId(vendor.cityId?._id || vendor.cityId || "");
       setCuisineTypes(vendor.cuisineTypes || []);
       setOpeningHours(vendor.openingHours || {});
       setDeliverySettings({
@@ -208,7 +213,11 @@ export default function VendorProfilePage({ vendor }) {
         };
         if (data.password) payload.password = data.password;
       } else if (section === "address") {
-        payload = { address: { ...data } };
+        payload = {
+          address: { ...data },
+          stateId: selectedStateId,
+          cityId: selectedCityId,
+        };
       } else if (section === "cuisineTypes") {
         payload = { cuisineTypes: data };
       } else if (section === "openingHours") {
@@ -298,6 +307,17 @@ export default function VendorProfilePage({ vendor }) {
 
   const handleOpeningHoursChange = (day, key, value) => {
     setOpeningHours({ ...openingHours, [day]: { ...openingHours[day], [key]: value } });
+  };
+
+  const handleStateChange = (stateId, stateName) => {
+    setSelectedStateId(stateId);
+    setSelectedCityId("");
+    setAddress(prev => ({ ...prev, state: stateName, city: "" }));
+  };
+
+  const handleCityChange = (cityId, cityName) => {
+    setSelectedCityId(cityId);
+    setAddress(prev => ({ ...prev, city: cityName }));
   };
 
   if (!vendor) return null;
@@ -409,13 +429,22 @@ export default function VendorProfilePage({ vendor }) {
           isOpen={openSections.address}
           onToggle={() => toggleSection('address')}
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="md:col-span-2">
+          <div className="grid grid-cols-1 gap-6">
+            <div>
               <InputGroup label="Street Address" value={address.street} onChange={(e) => setAddress({ ...address, street: e.target.value })} icon={MapPin} />
             </div>
-            <InputGroup label="City" value={address.city} onChange={(e) => setAddress({ ...address, city: e.target.value })} />
-            <InputGroup label="State" value={address.state} onChange={(e) => setAddress({ ...address, state: e.target.value })} />
-            <InputGroup label="Postal Code" value={address.postalCode} onChange={(e) => setAddress({ ...address, postalCode: e.target.value })} />
+            <div>
+              <LocationSelector
+                selectedStateId={selectedStateId}
+                selectedCityId={selectedCityId}
+                onStateChange={handleStateChange}
+                onCityChange={handleCityChange}
+                required={true}
+              />
+            </div>
+            <div>
+              <InputGroup label="Postal Code" value={address.postalCode} onChange={(e) => setAddress({ ...address, postalCode: e.target.value })} />
+            </div>
           </div>
           <div className="flex justify-end mt-4">
             <button onClick={() => updateSection("address", address)} disabled={loadingSection === "address"} className="flex items-center gap-2 bg-orange-600 text-white px-5 py-2.5 rounded-md font-black uppercase text-[10px] tracking-widest hover:bg-orange-700 transition-all  Active:scale-95 disabled:opacity-50">
