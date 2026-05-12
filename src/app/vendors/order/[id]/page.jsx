@@ -718,10 +718,12 @@ export default function VendorOrderDetailsPage() {
                                                                 <span className="w-1.5 h-1.5 bg-orange-600 rounded-full" />
                                                                 Prepare {totalPortions} {portionText}
                                                             </p>
-                                                            
-                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                                 <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-md p-3">
-                                                                    <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1">Main item</p>
+                                                                    <div className="flex justify-between items-center mb-1">
+                                                                        <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Main item</p>
+                                                                        <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">₦{basePrice.toLocaleString()}</p>
+                                                                    </div>
                                                                     <p className="text-[13px] font-black text-zinc-900 dark:text-white">{quantity} x {itemName}</p>
                                                                 </div>
                                                                 <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-md p-3">
@@ -734,7 +736,10 @@ export default function VendorOrderDetailsPage() {
                                                                 <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                                     {options.map((opt, oIdx) => (
                                                                         <div key={oIdx} className="flex items-center justify-between gap-3 rounded-md bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 px-3 py-2">
-                                                                            <span className="text-[12px] font-bold text-zinc-700 dark:text-zinc-200">{opt.label}</span>
+                                                                            <div className="flex flex-col">
+                                                                                <span className="text-[12px] font-bold text-zinc-700 dark:text-zinc-200">{opt.label || opt.name}</span>
+                                                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">₦{(opt.price_modifier_naira || 0).toLocaleString()} / unit</span>
+                                                                            </div>
                                                                             <span className="text-[12px] font-black text-orange-600">{(Number(opt.quantity) || 1) * quantity}x</span>
                                                                         </div>
                                                                     ))}
