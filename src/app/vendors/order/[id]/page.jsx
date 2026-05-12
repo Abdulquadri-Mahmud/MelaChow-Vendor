@@ -721,14 +721,14 @@ export default function VendorOrderDetailsPage() {
                                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                                 {/* Main item card */}
                                                                 <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-md p-3">
-                                                                    <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Main item</p>
-                                                                    <p className="text-[11px] font-black text-orange-600 mt-0.5">₦{basePrice.toLocaleString()}</p>
-                                                                    <p className="text-[13px] font-black text-zinc-900 dark:text-white mt-1">{quantity} x {itemName}</p>
+                                                                    <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1">Main item</p>
+                                                                    <p className="text-[13px] font-black text-zinc-900 dark:text-white">{quantity} x {itemName}</p>
                                                                 </div>
                                                                 {/* Portion card */}
                                                                 <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-md p-3">
-                                                                    <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1">Portion / size</p>
-                                                                    <p className="text-[13px] font-black text-zinc-900 dark:text-white">{totalPortions} {portionText}</p>
+                                                                    <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Portion / size</p>
+                                                                    <p className="text-[11px] font-black text-orange-600 mt-0.5">₦{basePrice.toLocaleString()}</p>
+                                                                    <p className="text-[13px] font-black text-zinc-900 dark:text-white mt-1">{totalPortions} {portionText}</p>
                                                                 </div>
                                                             </div>
 
