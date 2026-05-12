@@ -718,14 +718,14 @@ export default function VendorOrderDetailsPage() {
                                                                 <span className="w-1.5 h-1.5 bg-orange-600 rounded-full" />
                                                                 Prepare {totalPortions} {portionText}
                                                             </p>
-                                                                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                                {/* Main item card */}
                                                                 <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-md p-3">
-                                                                    <div className="flex justify-between items-center mb-1">
-                                                                        <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Main item</p>
-                                                                        <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">₦{basePrice.toLocaleString()}</p>
-                                                                    </div>
-                                                                    <p className="text-[13px] font-black text-zinc-900 dark:text-white">{quantity} x {itemName}</p>
+                                                                    <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Main item</p>
+                                                                    <p className="text-[11px] font-black text-orange-600 mt-0.5">₦{basePrice.toLocaleString()}</p>
+                                                                    <p className="text-[13px] font-black text-zinc-900 dark:text-white mt-1">{quantity} x {itemName}</p>
                                                                 </div>
+                                                                {/* Portion card */}
                                                                 <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-md p-3">
                                                                     <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1">Portion / size</p>
                                                                     <p className="text-[13px] font-black text-zinc-900 dark:text-white">{totalPortions} {portionText}</p>
@@ -734,18 +734,26 @@ export default function VendorOrderDetailsPage() {
 
                                                             {options.length > 0 && (
                                                                 <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                                                    {options.map((opt, oIdx) => (
-                                                                        <div key={oIdx} className="flex items-center justify-between gap-3 rounded-md bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 px-3 py-2">
-                                                                            <div className="flex flex-col">
-                                                                                <span className="text-[12px] font-bold text-zinc-700 dark:text-zinc-200">{opt.label || opt.name}</span>
-                                                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">₦{(opt.price_modifier_naira || 0).toLocaleString()} / unit</span>
+                                                                    {options.map((opt, oIdx) => {
+                                                                        const optQty = (Number(opt.quantity) || 1) * quantity;
+                                                                        const optPrice = Number(opt.price_modifier_naira) || 0;
+                                                                        const optTotal = optPrice * optQty;
+                                                                        return (
+                                                                            <div key={oIdx} className="flex items-center justify-between gap-3 rounded-md bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 px-3 py-2.5">
+                                                                                <div className="flex flex-col gap-0.5">
+                                                                                    <span className="text-[12px] font-black text-zinc-800 dark:text-zinc-100">{opt.label || opt.name}</span>
+                                                                                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">₦{optPrice.toLocaleString()} / unit</span>
+                                                                                </div>
+                                                                                <div className="flex flex-col items-end gap-0.5 shrink-0">
+                                                                                    <span className="text-[13px] font-black text-orange-600">{optQty}x</span>
+                                                                                    {optPrice > 0 && <span className="text-[9px] font-bold text-zinc-400">= ₦{optTotal.toLocaleString()}</span>}
+                                                                                </div>
                                                                             </div>
-                                                                            <span className="text-[12px] font-black text-orange-600">{(Number(opt.quantity) || 1) * quantity}x</span>
-                                                                        </div>
-                                                                    ))}
+                                                                        );
+                                                                    })}
                                                                 </div>
                                                             )}
-                                                            
+
                                                             {portionQuantity > 1 && quantity > 1 && (
                                                                 <div className="mt-2 text-center py-1.5 bg-orange-600/5 rounded-md border border-orange-600/10">
                                                                     <p className="text-[8px] font-black text-orange-600 uppercase tracking-widest leading-none">CALCULATION: {portionQuantity} PORTIONS × {quantity} ORDERS = {totalPortions} TOTAL UNITS</p>
