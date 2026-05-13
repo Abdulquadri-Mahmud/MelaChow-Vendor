@@ -8,7 +8,7 @@ import { useApi } from "@/app/context/ApiContext";
 import {
   User, Mail, Phone, Lock, Store, FileText, MapPin,
   Clock, CreditCard, ChevronRight, ChevronLeft, Upload,
-  CheckCircle2, AlertCircle, X, Loader2, ChevronDown
+  CheckCircle2, AlertCircle, X, Loader2, ChevronDown, ShieldCheck, ExternalLink
 } from "lucide-react";
 
 /**
@@ -189,6 +189,8 @@ export default function VendorRegisterPage() {
     },
     deliveryManagedBy: "admin",
     flatRateDeliveryFee: 0,
+    termsAccepted: false,
+    termsVersion: "vendor-terms-2026-05-12",
     metadata: { featured: true },
   });
 
@@ -391,6 +393,7 @@ export default function VendorRegisterPage() {
       if (payload.deliveryManagedBy === "vendor") {
         if (!payload.flatRateDeliveryFee || Number(payload.flatRateDeliveryFee) < 0) e.flatRateDeliveryFee = "Delivery fee is required";
       }
+      if (!payload.termsAccepted) e.termsAccepted = "Please accept the vendor terms and policy";
     }
 
     setErrors(e);
@@ -483,6 +486,8 @@ export default function VendorRegisterPage() {
         flatRateDeliveryFee: payload.deliveryManagedBy === "vendor"
           ? Number(payload.flatRateDeliveryFee)
           : 0,
+        termsAccepted: payload.termsAccepted,
+        termsVersion: payload.termsVersion,
       };
 
       const endpoint = `${baseUrl}/vendor/auth/register`;
@@ -862,6 +867,44 @@ export default function VendorRegisterPage() {
                         </p>
                       </div>
                     </div>
+                  </div>
+
+                  <div className={`rounded-[28px] border-2 p-5 transition-all ${
+                    errors.termsAccepted
+                      ? "border-rose-200 bg-rose-50 dark:border-rose-500/30 dark:bg-rose-500/10"
+                      : "border-zinc-100 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-800/30"
+                  }`}>
+                    <label className="flex items-start gap-4 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={payload.termsAccepted}
+                        onChange={(e) => setField("termsAccepted", e.target.checked)}
+                        className="mt-1 h-5 w-5 rounded border-zinc-300 text-orange-600 focus:ring-orange-500"
+                      />
+                      <span className="flex-1">
+                        <span className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-zinc-900 dark:text-white">
+                          <ShieldCheck size={15} className="text-orange-600" />
+                          Vendor Terms & Policy
+                        </span>
+                        <span className="mt-2 block text-[10px] font-bold uppercase tracking-widest leading-relaxed text-zinc-500 dark:text-zinc-400">
+                          I confirm that I have read, understood, and agree to the MelaChow Vendor Terms, Payout Policy, Refund Policy, Data Policy, and Platform Rules.
+                        </span>
+                        <Link
+                          href="/vendors/terms-and-policy"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-3 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-orange-600 hover:text-orange-700"
+                        >
+                          Read terms and policy
+                          <ExternalLink size={12} />
+                        </Link>
+                        {errors.termsAccepted && (
+                          <span className="mt-2 block text-[9px] font-bold uppercase tracking-tight text-rose-500">
+                            {errors.termsAccepted}
+                          </span>
+                        )}
+                      </span>
+                    </label>
                   </div>
 
 
