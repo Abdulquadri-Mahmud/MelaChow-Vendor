@@ -18,7 +18,7 @@ export default function VendorLayout({ children }) {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
+    const mountFrame = requestAnimationFrame(() => setIsMounted(true));
     // Initialize token management
     TokenManager.initialize();
 
@@ -27,13 +27,20 @@ export default function VendorLayout({ children }) {
       console.log('[VendorLayout] TokenManager initialized');
     }
     registerServiceWorker();
+
+    return () => cancelAnimationFrame(mountFrame);
   }, []);
 
   const isAuthRoute = pathname?.startsWith("/vendors/auth");
   const isPendingApprovalRoute = pathname === "/vendors/pending-approval";
+  const isVendorTermsRoute =
+    pathname === "/vendors/terms-and-policy" ||
+    pathname === "/vendors/vendor-terms";
+  const isPublicVendorRoute =
+    isAuthRoute || isPendingApprovalRoute || isVendorTermsRoute;
 
-  // Render public vendor auth pages during SSR so crawlers receive real HTML.
-  if (!isMounted && (isAuthRoute || isPendingApprovalRoute)) {
+  // Render public vendor pages during SSR so crawlers receive real HTML.
+  if (!isMounted && isPublicVendorRoute) {
     return (
       <VendorProfileProvider>
         {children}
@@ -50,8 +57,8 @@ export default function VendorLayout({ children }) {
     );
   }
 
-  // Don't apply DashboardLayout or Bootstrapper to auth or pending status routes
-  const isExcludedRoute = isMounted && (isAuthRoute || isPendingApprovalRoute);
+  // Don't apply DashboardLayout or Bootstrapper to public vendor routes.
+  const isExcludedRoute = isMounted && isPublicVendorRoute;
 
   return (
     <VendorProfileProvider>
