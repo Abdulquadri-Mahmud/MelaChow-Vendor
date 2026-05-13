@@ -59,7 +59,10 @@ const sections = [
     title: "6. Vendor Onboarding Requirements",
     body: [
       "Before a Vendor can fully operate on MelaChow, the Vendor must provide correct business and payout information.",
-      "MelaChow may request business name, owner or representative name, phone number, email, address, CAC details where available, bank details, TIN where applicable, valid identification where required, menu items, prices, and food images.",
+      "For the current MelaChow MVP onboarding process, the Vendor is required to provide business name, business owner or authorized representative name, business phone number, email address, business address, store description, cuisine or food categories, store logo or image, operating hours, and payout bank details.",
+      "Payout bank details must include bank name and account number. The account name is verified automatically through MelaChow's payment provider and may not be entered manually by the Vendor.",
+      "If the Vendor's state or city is not yet listed in MelaChow's active service locations, the Vendor may type the requested state and city during registration. That location will be reviewed by MelaChow before approval, and MelaChow may create or assign the correct state and city record in the system.",
+      "MelaChow does not currently require CAC registration details, Tax Identification Number, or valid identification documents as standard MVP onboarding requirements. MelaChow may request additional verification later if required for compliance, fraud prevention, payout safety, dispute resolution, or platform risk review.",
       "The Vendor confirms that all information provided to MelaChow is true, accurate, and current.",
       "If any information changes, the Vendor must inform MelaChow as soon as reasonably possible.",
       "MelaChow may rely on the information supplied by the Vendor. If false, incomplete, or misleading information causes loss, failed payout, customer complaint, regulatory issue, or payment dispute, the Vendor will be responsible for the result.",
