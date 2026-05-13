@@ -51,9 +51,9 @@ export default function VendorNotificationsPage() {
         let filtered = notifications;
 
         if (activeTab === 'orders') {
-            filtered = notifications.filter(n => n.type?.includes('order') || n.type === 'new_order');
+            filtered = notifications.filter(n => n.type?.includes('order') || n.type === 'new_order' || n.type === 'vendor_new_order');
         } else if (activeTab === 'system') {
-            filtered = notifications.filter(n => !n.type?.includes('order') && n.type !== 'new_order');
+            filtered = notifications.filter(n => !n.type?.includes('order') && n.type !== 'new_order' && n.type !== 'vendor_new_order');
         } else if (activeTab === 'unread') {
             filtered = notifications.filter(n => !n.read);
         } else if (activeTab === 'read') {
@@ -97,6 +97,7 @@ export default function VendorNotificationsPage() {
         switch (type) {
             case 'order_placed':
             case 'new_order':
+            case 'vendor_new_order':
                 return <ShoppingBag className="text-orange-500" size={22} />;
             case 'order_cancelled':
                 return <XCircle className="text-red-500" size={22} />;

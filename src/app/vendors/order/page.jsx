@@ -218,6 +218,22 @@ export default function VendorOrdersPage() {
   }, [fetchOrders, viewMode]);
 
   useEffect(() => {
+    const handleNewOrder = (event) => {
+      if (event.type === "notifications:updated" && event.detail?.type !== "vendor_new_order") return;
+      setViewMode("desk");
+      setDeskStatusTab("pending");
+      fetchOrders(true);
+    };
+
+    window.addEventListener("vendor:new-order", handleNewOrder);
+    window.addEventListener("notifications:updated", handleNewOrder);
+    return () => {
+      window.removeEventListener("vendor:new-order", handleNewOrder);
+      window.removeEventListener("notifications:updated", handleNewOrder);
+    };
+  }, [fetchOrders]);
+
+  useEffect(() => {
     const pendingIds = new Set(
       orders
         .filter((order) => getStatus(order) === "pending")
