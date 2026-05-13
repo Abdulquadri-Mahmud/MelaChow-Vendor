@@ -700,7 +700,7 @@ export default function VendorOrdersPage() {
                     setViewMode(mode.id);
                     if (mode.id === "logs") setStatusFilter("active");
                   }}
-                  className={`rounded-md px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${
+                  className={`rounded-md md:px-4 px-2 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${
                     viewMode === mode.id
                       ? "bg-orange-600 text-white"
                       : "text-zinc-500 hover:text-orange-600 dark:text-zinc-300"

@@ -231,8 +231,8 @@ export default function VendorOrderDeskCard({
     >
       {isPending && <div className="absolute inset-x-0 top-0 h-1.5 bg-orange-600" />}
 
-      <div className={`${isTablet ? "p-5" : "p-4"} space-y-4`}>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div className={`${isTablet ? "p-2" : "p-2"} space-y-3`}>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <span className={`inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-[9px] font-black uppercase tracking-widest ${toneClass}`}>
@@ -254,15 +254,15 @@ export default function VendorOrderDeskCard({
             </p>
           </div>
 
-          <div className={`rounded-lg border px-4 py-3 text-right ${isLate ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300" : "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-300"}`}>
+          <div className={`rounded-lg border px-2 py-3 text-right ${isLate ? "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300" : "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-300"}`}>
             <p className="text-[8px] font-black uppercase tracking-widest opacity-70">Waiting</p>
             <p className={`${isTablet ? "text-3xl" : "text-2xl"} font-black tabular-nums`}>{elapsed.label}</p>
           </div>
         </div>
 
         {isAtRisk && (
-          <div className={`rounded-lg border p-3 ${isFinalWarning ? "border-rose-300 bg-rose-50 dark:border-rose-500/40 dark:bg-rose-500/10" : "border-amber-200 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10"}`}>
-            <div className="flex items-start gap-3">
+          <div className={`rounded-lg border p-2 ${isFinalWarning ? "border-rose-300 bg-rose-50 dark:border-rose-500/40 dark:bg-rose-500/10" : "border-amber-200 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10"}`}>
+            <div className="flex items-start gap-2">
               <div className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg ${isFinalWarning ? "bg-rose-600 text-white" : "bg-amber-500 text-white"}`}>
                 <AlertTriangle size={16} />
               </div>
@@ -278,9 +278,9 @@ export default function VendorOrderDeskCard({
           </div>
         )}
 
-        <div className="grid gap-3 md:grid-cols-2">
-          <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-950/50">
-            <div className="flex items-center gap-3">
+        <div className="grid gap-2 md:grid-cols-2">
+          <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-2 dark:border-zinc-800 dark:bg-zinc-950/50">
+            <div className="flex items-center gap-2">
               <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-white text-orange-600 shadow-sm dark:bg-zinc-900">
                 <User size={16} />
               </div>
@@ -294,8 +294,8 @@ export default function VendorOrderDeskCard({
             </div>
           </div>
 
-          <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-950/50">
-            <div className="flex items-center gap-3">
+          <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-2 dark:border-zinc-800 dark:bg-zinc-950/50">
+            <div className="flex items-center gap-2">
               <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-white text-orange-600 shadow-sm dark:bg-zinc-900">
                 <MapPin size={16} />
               </div>
@@ -304,7 +304,7 @@ export default function VendorOrderDeskCard({
           </div>
         </div>
 
-        <div className="rounded-lg border border-orange-100 bg-orange-50/70 p-3 dark:border-orange-500/20 dark:bg-orange-500/10">
+        <div className="rounded-lg border border-orange-100 bg-orange-50/70 p-2 dark:border-orange-500/20 dark:bg-orange-500/10">
           <div className="mb-3 flex items-center gap-2">
             <ShoppingBag size={14} className="text-orange-700 dark:text-orange-300" />
             <p className="text-[10px] font-black uppercase tracking-widest text-orange-700 dark:text-orange-300">Kitchen Ticket</p>
@@ -313,8 +313,8 @@ export default function VendorOrderDeskCard({
             {items.map((item, index) => {
               const line = buildKitchenLine(item);
               return (
-                <div key={`${line.itemName}-${index}`} className="rounded-md border border-white/70 bg-white p-3 dark:border-orange-500/10 dark:bg-zinc-950/50">
-                  <div className="flex items-start gap-3">
+                <div key={`${line.itemName}-${index}`} className="rounded-md border border-white/70 bg-white p-2 dark:border-orange-500/10 dark:bg-zinc-950/50">
+                  <div className="flex items-start gap-2">
                     <div className="flex h-9 min-w-9 items-center justify-center rounded-md bg-orange-600 px-2 text-sm font-black text-white">
                       x{line.quantity}
                     </div>
@@ -339,7 +339,7 @@ export default function VendorOrderDeskCard({
         </div>
 
         {isLate && (
-          <div className="flex flex-col gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 dark:border-rose-500/30 dark:bg-rose-500/10 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-2 rounded-lg border border-rose-200 bg-rose-50 p-2 dark:border-rose-500/30 dark:bg-rose-500/10 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-[10px] font-black uppercase tracking-widest text-rose-700 dark:text-rose-300">Manual WhatsApp fallback</p>
               <p className="mt-1 text-xs font-bold text-rose-600/80 dark:text-rose-200/80">Use this if staff away from the tablet need a quick reminder.</p>
@@ -347,7 +347,7 @@ export default function VendorOrderDeskCard({
             <button
               type="button"
               onClick={handleWhatsAppFallback}
-              className="inline-flex items-center justify-center gap-2 rounded-md border border-rose-200 bg-white px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-rose-700 transition-all active:scale-95 dark:border-rose-500/30 dark:bg-zinc-950 dark:text-rose-300"
+              className="inline-flex items-center justify-center gap-2 rounded-md border border-rose-200 bg-white px-2 py-2.5 text-[10px] font-black uppercase tracking-widest text-rose-700 transition-all active:scale-95 dark:border-rose-500/30 dark:bg-zinc-950 dark:text-rose-300"
             >
               <MessageCircle size={14} />
               Open WhatsApp
@@ -361,13 +361,13 @@ export default function VendorOrderDeskCard({
               type="button"
               onClick={() => handleStatus(meta.nextStatus)}
               disabled={isUpdating}
-              className="flex min-h-12 items-center justify-center gap-2 rounded-lg bg-orange-600 px-5 py-3 text-[11px] font-black uppercase tracking-widest text-white transition-all hover:bg-orange-700 active:scale-[0.98] disabled:opacity-60"
+              className="flex min-h-10 items-center justify-center gap-2 rounded-lg bg-orange-600 px-5 py-3 text-[11px] font-black uppercase tracking-widest text-white transition-all hover:bg-orange-700 active:scale-[0.98] disabled:opacity-60"
             >
               {isUpdating ? <Loader2 size={16} className="animate-spin" /> : NextIcon ? <NextIcon size={16} /> : null}
               {meta.nextLabel}
             </button>
           ) : (
-            <div className="flex min-h-12 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400">
+            <div className="flex min-h-10 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 px-5 py-3 text-[10px] font-black uppercase tracking-widest text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-400">
               Waiting for next platform step
             </div>
           )}
@@ -380,7 +380,7 @@ export default function VendorOrderDeskCard({
                   if (window.confirm("Cancel this order?")) handleStatus("cancelled");
                 }}
                 disabled={isUpdating}
-                className="flex min-h-12 items-center justify-center rounded-lg border border-rose-200 bg-white px-4 text-rose-600 transition-all active:scale-95 disabled:opacity-60 dark:border-rose-500/30 dark:bg-zinc-950 dark:text-rose-300"
+                className="flex min-h-10 items-center justify-center rounded-lg border border-rose-200 bg-white px-2 text-rose-600 transition-all active:scale-95 disabled:opacity-60 dark:border-rose-500/30 dark:bg-zinc-950 dark:text-rose-300"
                 aria-label="Cancel order"
                 title="Cancel order"
               >
@@ -389,7 +389,7 @@ export default function VendorOrderDeskCard({
             )}
             {isReady && (
               <div
-                className="flex min-h-12 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 px-4 text-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
+                className="flex min-h-10 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 px-2 text-zinc-400 dark:border-zinc-800 dark:bg-zinc-950"
                 aria-label="Cancellation disabled after ready"
                 title="Cancellation disabled after the order is marked ready"
               >
@@ -398,7 +398,7 @@ export default function VendorOrderDeskCard({
             )}
             <Link
               href={`/vendors/order/${id}`}
-              className="flex min-h-12 items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-zinc-950 px-4 text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-95 dark:border-zinc-700 dark:bg-white dark:text-zinc-950"
+              className="flex min-h-10 items-center justify-center gap-2 rounded-lg border border-zinc-200 bg-zinc-950 px-2 text-[10px] font-black uppercase tracking-widest text-white transition-all active:scale-95 dark:border-zinc-700 dark:bg-white dark:text-zinc-950"
             >
               Details
               <ChevronRight size={14} />
