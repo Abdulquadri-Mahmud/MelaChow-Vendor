@@ -222,6 +222,8 @@ export default function VendorOrdersPage() {
       if (event.type === "notifications:updated" && event.detail?.type !== "vendor_new_order") return;
       setViewMode("desk");
       setDeskStatusTab("pending");
+      deskSwiper?.slideTo(0, 0);
+      window.scrollTo({ top: 0, behavior: "smooth" });
       fetchOrders(true);
     };
 
@@ -231,7 +233,7 @@ export default function VendorOrdersPage() {
       window.removeEventListener("vendor:new-order", handleNewOrder);
       window.removeEventListener("notifications:updated", handleNewOrder);
     };
-  }, [fetchOrders]);
+  }, [deskSwiper, fetchOrders]);
 
   useEffect(() => {
     const pendingIds = new Set(
@@ -504,6 +506,18 @@ export default function VendorOrdersPage() {
       emptyText: "No orders are ready for pickup yet.",
     },
   ];
+
+  useEffect(() => {
+    if (!deskSwiper || viewMode !== "desk") return;
+    const activeIndex = deskTabs.findIndex((tab) => tab.id === deskStatusTab);
+    window.requestAnimationFrame(() => {
+      if (activeIndex >= 0 && deskSwiper.activeIndex !== activeIndex) {
+        deskSwiper.slideTo(activeIndex, 0);
+      }
+      deskSwiper.update();
+      deskSwiper.updateAutoHeight(0);
+    });
+  }, [deskSwiper, deskStatusTab, incomingOrders.length, preparingOrders.length, readyOrders.length, viewMode]);
 
   const renderDeskSection = (title, subtitle, sectionOrders, emptyText, icon) => {
     const Icon = icon;
