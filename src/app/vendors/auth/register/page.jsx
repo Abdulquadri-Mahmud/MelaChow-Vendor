@@ -133,6 +133,8 @@ export default function VendorRegisterPage() {
   const [cities, setCities] = useState([]);
   const [selectedStateId, setSelectedStateId] = useState("");
   const [selectedCityId, setSelectedCityId] = useState("");
+  const [useCustomState, setUseCustomState] = useState(false);
+  const [useCustomCity, setUseCustomCity] = useState(false);
   const [isLoadingLocations, setIsLoadingLocations] = useState(false);
   const [locationError, setLocationError] = useState(null);
 
@@ -232,6 +234,19 @@ export default function VendorRegisterPage() {
 
   // Handle state selection
   const handleStateChange = (stateId) => {
+    if (stateId === "__custom__") {
+      setUseCustomState(true);
+      setUseCustomCity(true);
+      setSelectedStateId("__custom__");
+      setSelectedCityId("__custom__");
+      setCities([]);
+      setField("address.state", "");
+      setField("address.city", "");
+      return;
+    }
+
+    setUseCustomState(false);
+    setUseCustomCity(false);
     setSelectedStateId(stateId);
 
     // Find selected state's cities
@@ -247,6 +262,14 @@ export default function VendorRegisterPage() {
 
   // Handle city selection
   const handleCityChange = (cityId) => {
+    if (cityId === "__custom__") {
+      setUseCustomCity(true);
+      setSelectedCityId("__custom__");
+      setField("address.city", "");
+      return;
+    }
+
+    setUseCustomCity(false);
     setSelectedCityId(cityId);
 
     // Find selected city name
@@ -305,6 +328,23 @@ export default function VendorRegisterPage() {
     // Pre-fetch banks for Step 5
     fetchBanks();
   }, []);
+
+  useEffect(() => {
+    const { accountNumber, bankCode, accountName } = payload.payoutDetails;
+    if (bankVerified || isVerifyingBank || accountName || accountNumber.length !== 10 || !bankCode) return;
+
+    const timeoutId = setTimeout(() => {
+      handleVerifyBank();
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [
+    payload.payoutDetails.accountNumber,
+    payload.payoutDetails.bankCode,
+    payload.payoutDetails.accountName,
+    bankVerified,
+    isVerifyingBank,
+  ]);
 
   // Persist form data to session storage
   useEffect(() => {
@@ -718,33 +758,59 @@ export default function VendorRegisterPage() {
                                 {location.state}
                               </option>
                             ))}
+                            <option value="__custom__">My state is not listed</option>
                           </select>
                         )}
                         <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4 pointer-events-none" />
                       </div>
                     </InputWrap>
 
+                    {useCustomState && (
+                      <TextInput
+                        path="address.state"
+                        placeholder="Type State"
+                        icon={MapPin}
+                        error={errors["address.state"]}
+                        payload={payload}
+                        setField={setField}
+                      />
+                    )}
+
                     {/* Dynamic City Selection */}
-                    <InputWrap label="City" icon={MapPin} error={errors["address.city"]}>
-                      <div className="relative">
-                        <select
-                          value={selectedCityId}
-                          onChange={(e) => handleCityChange(e.target.value)}
-                          disabled={!selectedStateId}
-                          className="w-full bg-zinc-50 dark:bg-zinc-800/50  p-3.5 pl-11 pr-8 rounded-2xl outline-none focus:border-orange-500/50 focus:ring-4 focus:ring-orange-500/10 transition-all text-sm font-medium dark:text-white appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          <option value="">
-                            {!selectedStateId ? 'Select state first' : 'Select City'}
-                          </option>
-                          {cities.map((city) => (
-                            <option key={city.cityId} value={city.cityId}>
-                              {city.name}
+                    {!useCustomState && (
+                      <InputWrap label="City" icon={MapPin} error={errors["address.city"]}>
+                        <div className="relative">
+                          <select
+                            value={selectedCityId}
+                            onChange={(e) => handleCityChange(e.target.value)}
+                            disabled={!selectedStateId}
+                            className="w-full bg-zinc-50 dark:bg-zinc-800/50  p-3.5 pl-11 pr-8 rounded-2xl outline-none focus:border-orange-500/50 focus:ring-4 focus:ring-orange-500/10 transition-all text-sm font-medium dark:text-white appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <option value="">
+                              {!selectedStateId ? 'Select state first' : 'Select City'}
                             </option>
-                          ))}
-                        </select>
-                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4 pointer-events-none" />
-                      </div>
-                    </InputWrap>
+                            {cities.map((city) => (
+                              <option key={city.cityId} value={city.cityId}>
+                                {city.name}
+                              </option>
+                            ))}
+                            <option value="__custom__">My city is not listed</option>
+                          </select>
+                          <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4 pointer-events-none" />
+                        </div>
+                      </InputWrap>
+                    )}
+
+                    {(useCustomState || useCustomCity) && (
+                      <TextInput
+                        path="address.city"
+                        placeholder="Type City"
+                        icon={MapPin}
+                        error={errors["address.city"]}
+                        payload={payload}
+                        setField={setField}
+                      />
+                    )}
 
                     <TextInput path="address.street" placeholder="Street Address" icon={MapPin} error={errors["address.street"]} payload={payload} setField={setField} />
 
@@ -799,6 +865,7 @@ export default function VendorRegisterPage() {
                             const selectedBank = banks.find(b => b.code === e.target.value);
                             setField("payoutDetails.bankCode", e.target.value);
                             setField("payoutDetails.bankName", selectedBank ? selectedBank.name : "");
+                            setField("payoutDetails.accountName", "");
                             setBankVerified(false);
                           }}
                           className="w-full bg-zinc-50 dark:bg-zinc-800/50  p-3.5 pl-11 pr-8 rounded-2xl outline-none focus:border-orange-500/50 focus:ring-4 focus:ring-orange-500/10 transition-all text-sm font-medium dark:text-white appearance-none disabled:opacity-60"
@@ -821,7 +888,8 @@ export default function VendorRegisterPage() {
                       error={errors["payoutDetails.accountNumber"]} 
                       payload={payload} 
                       setField={(path, val) => {
-                        setField(path, val);
+                        setField(path, val.replace(/\D/g, "").slice(0, 10));
+                        setField("payoutDetails.accountName", "");
                         setBankVerified(false);
                       }} 
                     />
