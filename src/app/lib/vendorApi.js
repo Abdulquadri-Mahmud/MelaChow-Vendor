@@ -93,7 +93,7 @@ export const getWithdrawalHistory = async () => {
 };
 
 export const getVendorOrders = async () => {
-  const response = await API.get(`/orders/orders`);
+  const response = await API.get(`/vendors/orders`);
   return response.data;
 };
 

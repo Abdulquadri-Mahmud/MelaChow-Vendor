@@ -175,13 +175,16 @@ export const SocketProvider = ({ children }) => {
                 if (role === 'vendor') {
                     console.log('🆕 New order received via socket:', order);
 
+                    const vendorOrderId = order.vendorOrderId || order._id;
+
                     const newOrderNotification = {
-                        _id: `order-${order._id || Date.now()}`,
+                        _id: `order-${vendorOrderId || Date.now()}`,
                         title: '🔔 New Order Received!',
                         body: `Order #${order.orderNumber || order._id?.slice(-6)} · ${order.customerName || 'Customer'} · ${order.deliveryAddress?.address || ''}`,
                         type: 'vendor_new_order',
-                        orderId: order._id,
-                        url: `/vendors/order/${order._id}`,
+                        orderId: vendorOrderId,
+                        orderDatabaseId: vendorOrderId,
+                        url: `/vendors/order/${vendorOrderId}`,
                         createdAt: new Date().toISOString(),
                         read: false,
                         customerName: order.customerName,
@@ -190,6 +193,7 @@ export const SocketProvider = ({ children }) => {
 
                     setLatestNotification(newOrderNotification);
                     setUnreadCount(prev => prev + 1);
+                    window.dispatchEvent(new CustomEvent('vendor:new-order', { detail: order }));
                     window.dispatchEvent(new CustomEvent('notifications:updated', { detail: newOrderNotification }));
 
                     // Premium vendor new order toast
@@ -197,7 +201,7 @@ export const SocketProvider = ({ children }) => {
                         <div
                             className={`bg-white dark:bg-slate-900 shadow-2xl rounded-2xl p-4 flex items-start gap-4 w-full max-w-sm border-l-4 border-orange-500 cursor-pointer ${t.visible ? 'animate-in slide-in-from-right-full' : 'animate-out fade-out'}`}
                             onClick={() => {
-                                window.location.href = `/vendors/order/${order._id}`;
+                                window.location.href = `/vendors/order/${vendorOrderId}`;
                                 toast.dismiss(t.id);
                             }}
                         >
@@ -225,7 +229,7 @@ export const SocketProvider = ({ children }) => {
                     ), {
                         duration: 15000,
                         position: 'top-right',
-                        id: `new-order-${order._id}`
+                        id: `new-order-${vendorOrderId}`
                     });
 
                     // Play alert sound
