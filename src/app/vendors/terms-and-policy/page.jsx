@@ -324,13 +324,13 @@ const sections = [
     ],
   },
   {
-    title: "36. Dispute Resolution and Governing Law",
+    title: "36. Dispute Resolution and Platform Governance",
     body: [
       "Both parties agree to first try to resolve disputes internally and in good faith.",
       "The first step is to report the issue to MelaChow support or management, allow reasonable time for review, provide evidence where needed, and attempt a fair business resolution.",
-      "If the dispute cannot be resolved internally, the parties may proceed according to Nigerian law and applicable dispute resolution procedures.",
-      "Where both parties agree, the dispute may be referred to mediation or arbitration before court action. This does not stop MelaChow from taking urgent platform action to protect customers, riders, payments, or the platform.",
-      "This agreement is governed by the laws of the Federal Republic of Nigeria. Where court action becomes necessary, the appropriate courts or dispute resolution forum in Lagos State, Nigeria may have jurisdiction unless another forum is required by law.",
+      "If the dispute cannot be resolved internally, the parties may consider any further action permitted under applicable law.",
+      "Where both parties agree, the dispute may be referred to mediation or another suitable dispute resolution process before further action. This does not stop MelaChow from taking urgent platform action to protect customers, riders, payments, or the platform.",
+      "This agreement is governed by MelaChow's internal policies, operating standards, and the applicable terms accepted by Vendors when using the platform.",
     ],
   },
   {
