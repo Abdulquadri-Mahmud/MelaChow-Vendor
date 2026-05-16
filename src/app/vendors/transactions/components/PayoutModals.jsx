@@ -119,7 +119,7 @@ export function ConfigureBankModal({ isOpen, onClose, onSaved, existingDetails }
         try {
             const bankObj = banks.find(b => b.code === selectedBank);
             await saveVendorBankAccount({
-                bank_name: bankObj?.name || "",
+                bank_name: bankObj?.name || existingDetails?.bankName || "",
                 bank_code: selectedBank,
                 account_number: accountNumber,
                 account_name: accountName
@@ -154,8 +154,8 @@ export function ConfigureBankModal({ isOpen, onClose, onSaved, existingDetails }
                 >
                     <div className="p-6 border-b border-zinc-50 dark:border-zinc-800/50 flex items-center justify-between">
                         <div>
-                            <h2 className="text-lg font-black text-zinc-900 dark:text-white uppercase tracking-tight">Setup Bank Payout</h2>
-                            <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 mt-0.5 uppercase tracking-widest">Register your local bank for withdrawals.</p>
+                            <h2 className="text-lg font-black text-zinc-900 dark:text-white uppercase tracking-tight">Register Bank Account</h2>
+                            <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 mt-0.5 uppercase tracking-widest">One-time setup — contact support to change.</p>
                         </div>
                         <button onClick={onClose} className="p-2 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-md text-zinc-400 transition-all">
                             <X size={20} />
@@ -163,6 +163,14 @@ export function ConfigureBankModal({ isOpen, onClose, onSaved, existingDetails }
                     </div>
 
                     <div className="p-6 space-y-5">
+                        {/* 🔒 Security Notice */}
+                        <div className="p-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 rounded-md flex items-start gap-2.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-amber-600 mt-0.5 shrink-0"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+                            <p className="text-[9px] font-black text-amber-700 dark:text-amber-400 uppercase tracking-widest leading-relaxed">
+                                This is a one-time registration. For security, bank details cannot be changed from your dashboard. Contact MelaChow support for any payout account updates.
+                            </p>
+                        </div>
+
                         {error && (
                             <div className="p-3 bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 rounded-md flex items-center gap-3 text-rose-600">
                                 <AlertCircle size={16} className="shrink-0" />
