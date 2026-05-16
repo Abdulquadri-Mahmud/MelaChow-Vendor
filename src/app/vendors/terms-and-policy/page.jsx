@@ -324,13 +324,10 @@ const sections = [
     ],
   },
   {
-    title: "36. Dispute Resolution and Platform Governance",
+    title: "36. Governing Law",
     body: [
-      "Both parties agree to first try to resolve disputes internally and in good faith.",
-      "The first step is to report the issue to MelaChow support or management, allow reasonable time for review, provide evidence where needed, and attempt a fair business resolution.",
-      "If the dispute cannot be resolved internally, the parties may consider any further action permitted under applicable law.",
-      "Where both parties agree, the dispute may be referred to mediation or another suitable dispute resolution process before further action. This does not stop MelaChow from taking urgent platform action to protect customers, riders, payments, or the platform.",
-      "This agreement is governed by MelaChow's internal policies, operating standards, and the applicable terms accepted by Vendors when using the platform.",
+      "This agreement is governed by MelaChow’s internal policies, operating standards, and the applicable terms accepted by Vendors when using the platform.",
+      "Where a dispute arises, MelaChow and the Vendor will first attempt to resolve the matter through good-faith communication and internal dispute resolution procedures before considering any further action permitted under applicable law.",
     ],
   },
   {

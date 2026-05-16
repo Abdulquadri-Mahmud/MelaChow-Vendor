@@ -149,8 +149,10 @@ export const VendorProfileProvider = ({ children }) => {
         refetchOnReconnect: true,
     });
 
-    // Simple: query completed = not fetching + has result
-    const hasCheckedSession = fetchStatus === 'idle' && (status === 'success' || status === 'error');
+    // Simple: query completed = not fetching + has result. 
+    // Optimization: If we have data (even from cache), we consider the session "checked" for UI rendering purposes
+    // to prevent the "blank page" during background refetches.
+    const hasCheckedSession = (fetchStatus === 'idle' && (status === 'success' || status === 'error')) || !!data;
 
     useEffect(() => {
         if (process.env.NODE_ENV === 'development') {
