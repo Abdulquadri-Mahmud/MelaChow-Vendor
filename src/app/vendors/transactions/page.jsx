@@ -452,7 +452,7 @@ export default function TransactionsPage() {
                     </motion.div>
                 )}
 
-                {/* Account Details Display (If configured) */}
+                {/* Account Details Display (If configured — READ ONLY) */}
                 {vendorProfile?.payoutDetails?.accountNumber && (
                     <div className="bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800 rounded-md p-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
@@ -466,12 +466,13 @@ export default function TransactionsPage() {
                                 </p>
                             </div>
                         </div>
-                        <button 
-                            onClick={() => setShowBankModal(true)}
-                            className="text-[9px] font-black text-orange-600 uppercase tracking-widest hover:underline"
-                        >
-                            Update Bank Info
-                        </button>
+                        {/* 🔒 Bank details are locked after first registration for security */}
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-md border border-zinc-200 dark:border-zinc-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-400"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            <p className="text-[9px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
+                                Contact support to update
+                            </p>
+                        </div>
                     </div>
                 )}
 
