@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useCreateFoodStore } from "@/app/context/CreateFoodStore";
 import { Edit2, Plus, Trash2, X, ChevronDown, LayoutGrid, Info, Settings2, DollarSign, Camera, Loader2 } from "lucide-react";
 import uploadToCloudinary from "@/app/components/user_profile/helpers/uploadToCloudinary";
@@ -19,6 +20,7 @@ const GROUP_TITLE_PRESETS = {
 
 export default function Step4AddOns() {
     const store = useCreateFoodStore();
+    const [portalTarget, setPortalTarget] = useState(null);
     const [expandedGroupId, setExpandedGroupId] = useState(null);
     const [showGroupForm, setShowGroupForm] = useState(false);
     const [showTemplateDropdown, setShowTemplateDropdown] = useState(false);
@@ -39,6 +41,10 @@ export default function Step4AddOns() {
     const [optionPrice, setOptionPrice] = useState("");
     const [optionImage, setOptionImage] = useState("");
     const [isUploadingOptionImage, setIsUploadingOptionImage] = useState(false);
+
+    useEffect(() => {
+        setPortalTarget(document.body);
+    }, []);
 
     const handleOpenGroupForm = (group = null) => {
         if (typeof group === 'string') {
@@ -180,9 +186,9 @@ export default function Step4AddOns() {
         <motion.div
             initial={{ opacity: 0, y: 5 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-4"
+            className="space-y-3"
         >
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
                 
                 {/* LEFT: PRESETS — clean card, professional */}
                 <div className="lg:col-span-5">
@@ -190,10 +196,10 @@ export default function Step4AddOns() {
                         bg-zinc-50 dark:bg-transparent
                         border border-zinc-200 dark:border-zinc-800/50
                         shadow-sm dark:shadow-none
-                        p-5 space-y-5"
+                        p-3 space-y-3"
                     >
                         {/* Left brand accent bar */}
-                        <div className="absolute top-0 left-0 bottom-0 w-[3px] bg-gradient-to-b from-orange-500 to-orange-600 dark:hidden rounded-l-2xl" />
+                        <div className="absolute top-0 left-0 bottom-0 w-0.75 bg-linear-to-b from-orange-500 to-orange-600 dark:hidden rounded-l-2xl" />
 
                         <div className="pl-1">
                             <h3 className="text-xl font-black text-zinc-900 dark:text-white tracking-tight flex items-center gap-2">
@@ -205,9 +211,9 @@ export default function Step4AddOns() {
                             </p>
                         </div>
 
-                        <div className="space-y-4">
+                        <div className="space-y-3">
                             <div>
-                                <label className="flex items-center gap-2 text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.2em] mb-3 pl-1">
+                                <label className="flex items-center gap-3 text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.2em] mb-3 pl-1">
                                     <LayoutGrid size={10} strokeWidth={3} />
                                     Choose Template
                                 </label>
@@ -223,7 +229,7 @@ export default function Step4AddOns() {
                                 </button>
                             </div>
 
-                            <div className="p-4 bg-white dark:bg-orange-500/10 border border-zinc-200 dark:border-orange-500/10 rounded-xl">
+                            <div className="p-3 bg-white dark:bg-orange-500/10 border border-zinc-200 dark:border-orange-500/10 rounded-xl">
                                 <div className="flex gap-3">
                                     <Info size={14} className="text-orange-500 shrink-0 mt-0.5" />
                                     <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 leading-relaxed italic">
@@ -236,7 +242,7 @@ export default function Step4AddOns() {
                 </div>
 
                 {/* RIGHT: BUILDER */}
-                <div className="lg:col-span-7 space-y-4 pt-1 lg:pt-0">
+                <div className="lg:col-span-7 space-y-3 pt-1 lg:pt-0">
                     <div className="flex items-center justify-between px-2">
                         <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] flex items-center gap-2">
                             <Settings2 size={10} strokeWidth={3} />
@@ -250,7 +256,7 @@ export default function Step4AddOns() {
                         </button>
                     </div>
 
-                    <div className="space-y-4 px-1">
+                    <div className="space-y-3 px-1">
                       <AnimatePresence mode="popLayout">
                         {store.choice_groups.map((group) => (
                           <motion.div
@@ -260,14 +266,14 @@ export default function Step4AddOns() {
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.99 }}
                             className="rounded-2xl overflow-hidden
-                                bg-gradient-to-r from-zinc-900 via-zinc-900 to-zinc-800
+                                bg-linear-to-r from-zinc-900 via-zinc-900 to-zinc-800
                                 border border-orange-900/30
                                 shadow-md shadow-zinc-950/30
                                 transition-all hover:border-orange-500/40 hover:shadow-lg hover:shadow-zinc-950/40"
                           >
                             <div 
                                 onClick={() => setExpandedGroupId(expandedGroupId === group.tempId ? null : group.tempId)}
-                                className="flex items-center justify-between px-5 py-4 border-b border-white/5 cursor-pointer hover:bg-white/5 transition-colors"
+                                className="flex items-center justify-between px-3 py-3 border-b border-white/5 cursor-pointer hover:bg-white/5 transition-colors"
                             >
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
@@ -288,7 +294,7 @@ export default function Step4AddOns() {
                                 </p>
                               </div>
                               
-                              <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-3">
                                 <div className="flex items-center gap-2">
                                     <button
                                         onClick={(e) => { e.stopPropagation(); handleOpenGroupForm(group); }}
@@ -313,12 +319,12 @@ export default function Step4AddOns() {
                                   initial={{ opacity: 0, height: 0 }}
                                   animate={{ opacity: 1, height: 'auto' }}
                                   exit={{ opacity: 0, height: 0 }}
-                                  className="p-4 space-y-4 bg-zinc-950/60 border-t border-white/5"
+                                                                      className="p-3 space-y-3 bg-zinc-950/60 border-t border-white/5"
                                 >
                                   {/* Active Options */}
                                   <div className="space-y-2">
                                     {group.options.length === 0 ? (
-                                        <div className="py-6 px-4 text-center border-2 border-dashed border-zinc-100 dark:border-zinc-800 rounded-2xl bg-zinc-50/50 dark:bg-zinc-900/10">
+                                        <div className="py-3 px-3 text-center border-2 border-dashed border-zinc-100 dark:border-zinc-800 rounded-2xl bg-zinc-50/50 dark:bg-zinc-900/10">
                                             <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">No choices added yet</p>
                                             <p className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mt-1 opacity-70 leading-relaxed">Vendors: Please create your Addons/Extras under this group</p>
                                         </div>
@@ -388,9 +394,10 @@ export default function Step4AddOns() {
             </div>
 
             {/* MODAL: CHOICE GROUP SETTINGS */}
-            <AnimatePresence>
-                {showGroupForm && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            {portalTarget && createPortal(
+                <AnimatePresence>
+                    {showGroupForm && (
+                    <div className="fixed inset-0 z-100 flex items-center justify-center p-3">
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -405,7 +412,7 @@ export default function Step4AddOns() {
                             exit={{ opacity: 0, scale: 0.98, y: 10 }}
                             className="relative w-full max-w-md bg-white dark:bg-zinc-900 rounded-3xl overflow-hidden shadow-2xl border border-zinc-100 dark:border-zinc-800"
                         >
-                            <div className="p-5 space-y-6">
+                            <div className="p-3 space-y-3">
                                 <div className="flex items-center justify-between">
                                     <h3 className="text-lg font-black text-zinc-900 dark:text-white uppercase tracking-tight">Choice Configuration</h3>
                                     <button onClick={() => setShowGroupForm(false)} className="text-zinc-400 hover:text-rose-600 transition-colors">
@@ -413,7 +420,7 @@ export default function Step4AddOns() {
                                     </button>
                                 </div>
 
-                                <div className="space-y-4">
+                                <div className="space-y-3">
                                     <div>
                                         <label className="block text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mb-2 pl-1">Section Header</label>
                                         <input
@@ -421,11 +428,11 @@ export default function Step4AddOns() {
                                             value={groupName}
                                             onChange={e => setGroupName(e.target.value)}
                                             placeholder="e.g. Choose your protein"
-                                            className="w-full h-12 px-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[12px] font-black uppercase tracking-widest text-zinc-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 shadow-inner transition-all"
+                                            className="w-full h-12 px-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[12px] font-black uppercase tracking-widest text-zinc-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 shadow-inner transition-all"
                                         />
                                     </div>
 
-                                    <div className="p-5 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-100 dark:border-zinc-800 space-y-5">
+                                    <div className="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-100 dark:border-zinc-800 space-y-3">
                                         <div className="flex items-center justify-between">
                                             <div className="space-y-0.5">
                                                 <p className="text-[11px] font-black text-zinc-800 dark:text-white uppercase tracking-widest">Required Section?</p>
@@ -439,7 +446,7 @@ export default function Step4AddOns() {
                                             </button>
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-4 pb-1">
+                                        <div className="grid grid-cols-2 gap-3 pb-1">
                                             <div className="space-y-1.5 relative group">
                                                 <label className="text-[8px] font-black text-zinc-400 uppercase tracking-[0.2em] group-focus-within:text-orange-600 transition-colors block pl-1">Min Picks</label>
                                                 <input type="number" min="0" value={minSelections} onChange={e => setMinSelections(e.target.value)} className="w-full h-11 px-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-black tabular-nums outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 shadow-sm transition-all" />
@@ -461,15 +468,18 @@ export default function Step4AddOns() {
                             </div>
                         </motion.div>
                     </div>
-                )}
-            </AnimatePresence>
+                    )}
+                </AnimatePresence>,
+                portalTarget
+            )}
 
             {/* ───────────────────────────────────────────────────────── */}
             {/* MODAL: TEMPLATE PICKER                                    */}
             {/* ───────────────────────────────────────────────────────── */}
-            <AnimatePresence>
-                {showTemplateDropdown && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            {portalTarget && createPortal(
+                <AnimatePresence>
+                    {showTemplateDropdown && (
+                    <div className="fixed inset-0 z-100 flex items-center justify-center p-3">
                         {/* Backdrop */}
                         <motion.div
                             initial={{ opacity: 0 }}
@@ -487,11 +497,11 @@ export default function Step4AddOns() {
                             className="relative w-full max-w-md bg-white dark:bg-zinc-950 rounded-2xl overflow-hidden shadow-2xl border border-zinc-200 dark:border-zinc-800 flex flex-col max-h-[80vh]"
                         >
                             {/* Gradient header */}
-                            <div className="bg-gradient-to-r from-zinc-900 via-zinc-900 to-zinc-800 px-5 py-4 flex items-center justify-between border-b border-white/5 relative overflow-hidden flex-shrink-0">
+                            <div className="bg-linear-to-r from-zinc-900 via-zinc-900 to-zinc-800 px-3 py-3 flex items-center justify-between border-b border-white/5 relative overflow-hidden shrink-0">
                                 {/* Ambient glow */}
                                 <div className="absolute top-0 right-0 w-40 h-40 bg-orange-600/10 blur-[80px] pointer-events-none" />
                                 <div className="relative">
-                                    <div className="absolute -left-3 top-0 w-0.5 h-full bg-gradient-to-b from-orange-400 to-orange-600 rounded-full" />
+                                    <div className="absolute -left-3 top-0 w-0.5 h-full bg-linear-to-b from-orange-400 to-orange-600 rounded-full" />
                                     <h3 className="text-sm font-black text-white uppercase tracking-tight leading-none">Choose a Template</h3>
                                     <p className="text-[9px] font-bold text-orange-400/80 uppercase tracking-widest mt-1">Pick a group type to configure</p>
                                 </div>
@@ -504,7 +514,7 @@ export default function Step4AddOns() {
                             </div>
 
                             {/* Search input */}
-                            <div className="px-4 py-3 border-b border-zinc-100 dark:border-zinc-800 flex-shrink-0">
+                            <div className="px-3 py-3 border-b border-zinc-100 dark:border-zinc-800 shrink-0">
                                 <div className="relative">
                                     <LayoutGrid size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" />
                                     <input
@@ -565,13 +575,16 @@ export default function Step4AddOns() {
                             </div>
                         </motion.div>
                     </div>
-                )}
-            </AnimatePresence>
+                    )}
+                </AnimatePresence>,
+                portalTarget
+            )}
 
             {/* MODAL: CHOICE OPTION BUILDER */}
-            <AnimatePresence>
-                {showOptionForm && (
-                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            {portalTarget && createPortal(
+                <AnimatePresence>
+                    {showOptionForm && (
+                    <div className="fixed inset-0 z-110 flex items-center justify-center p-3">
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
@@ -586,7 +599,7 @@ export default function Step4AddOns() {
                             exit={{ opacity: 0, scale: 0.95, y: 20 }}
                             className="relative w-full max-w-sm bg-white dark:bg-zinc-900 rounded-[2.5rem] overflow-hidden shadow-2xl border border-zinc-100 dark:border-zinc-800"
                         >
-                            <div className="p-5 space-y-6">
+                            <div className="p-3 space-y-3">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-2xl bg-orange-600/10 text-orange-600 flex items-center justify-center">
@@ -602,7 +615,7 @@ export default function Step4AddOns() {
                                     </button>
                                 </div>
 
-                                <div className="space-y-5">
+                                <div className="space-y-3">
                                     <div className="space-y-1.5 relative group">
                                         <label className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] block mb-2 pl-1 group-focus-within:text-orange-600 transition-colors">Item Title</label>
                                         <input
@@ -664,8 +677,10 @@ export default function Step4AddOns() {
                             </div>
                         </motion.div>
                     </div>
-                )}
-            </AnimatePresence>
+                    )}
+                </AnimatePresence>,
+                portalTarget
+            )}
         </motion.div>
     );
 }
