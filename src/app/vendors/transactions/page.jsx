@@ -27,7 +27,7 @@ import {
     getVendorPayoutDetails, 
     getWithdrawalHistory 
 } from "@/app/lib/vendorApi";
-import { ConfigureBankModal, PayoutScheduleInfo } from "./components/PayoutModals";
+import { PayoutScheduleInfo } from "./components/PayoutModals";
 
 export default function TransactionsPage() {
     const [wallet, setWallet] = useState(null);
@@ -42,7 +42,6 @@ export default function TransactionsPage() {
     const [showMonthDropdown, setShowMonthDropdown] = useState(false);
     const [selectedTransaction, setSelectedTransaction] = useState(null);
     const [showModal, setShowModal] = useState(false);
-    const [showBankModal, setShowBankModal] = useState(false);
     const { vendorDetails } = useVendorStorage();
 
     const fetchWallet = async (isRefresh = false) => {
@@ -358,13 +357,10 @@ export default function TransactionsPage() {
                             </div>
                             <h2 className="text-3xl font-black tracking-tight leading-none my-2">₦{wallet?.balance?.toLocaleString() || "0.00"}</h2>
                         </div>
-                        <button 
-                            onClick={() => setShowBankModal(true)}
-                            className="w-full bg-white text-orange-600 px-4 py-2.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 mt-4"
-                        >
+                        <div className="w-full bg-white/90 text-orange-600 px-4 py-2.5 rounded-md text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 mt-4">
                             <Building2 size={14} />
-                            {vendorProfile?.payoutDetails?.payoutEnabled ? "Bank Settings" : "Link Bank Account"}
-                        </button>
+                            Payout Settings Locked
+                        </div>
                     </div>
 
                     {/* Pending Card */}
@@ -443,12 +439,9 @@ export default function TransactionsPage() {
                                 <p className="text-white/70 text-[9px] font-black uppercase tracking-widest">Connect your bank account to receive settled platform revenue.</p>
                             </div>
                         </div>
-                        <button 
-                            onClick={() => setShowBankModal(true)}
-                            className="bg-white text-orange-600 px-6 py-2.5 rounded-md text-[10px] font-black uppercase tracking-widest hover:bg-orange-50 transition-all active:scale-95 shrink-0"
-                        >
-                            Configure Settlements
-                        </button>
+                        <div className="bg-white/90 text-orange-600 px-6 py-2.5 rounded-md text-[10px] font-black uppercase tracking-widest shrink-0">
+                            Settings Locked
+                        </div>
                     </motion.div>
                 )}
 
@@ -728,14 +721,6 @@ export default function TransactionsPage() {
                 </div>
 
                 {/* Modals */}
-                <ConfigureBankModal 
-                    isOpen={showBankModal}
-                    onClose={() => setShowBankModal(false)}
-                    onSaved={() => fetchWallet(true)}
-                    existingDetails={vendorProfile?.payoutDetails}
-                />
-
-
                 {/* Transaction Details Modal */}
                 <TransactionDetailsModal
                     transaction={selectedTransaction}

@@ -566,12 +566,9 @@ export default function VendorProfilePage({ vendor }) {
             <p className="text-[10px] text-zinc-500 max-w-sm font-black uppercase tracking-widest mb-6 leading-relaxed">
               Financial details have been migrated to the secure Paystack verification system. Direct profile overrides are disabled to protect your revenue.
             </p>
-            <button 
-              onClick={() => { window.location.href = "/vendors/transactions" }}
-              className="bg-orange-600 text-white px-6 py-3 rounded-md text-[10px] font-black uppercase tracking-[0.15em] transition-all hover:bg-orange-700 active:scale-95"
-            >
-              Manage Bank via Secure Gateway
-            </button>
+            <div className="bg-orange-600/80 text-white px-6 py-3 rounded-md text-[10px] font-black uppercase tracking-[0.15em]">
+              Payout Settings Locked
+            </div>
           </div>
         </Section>
 
