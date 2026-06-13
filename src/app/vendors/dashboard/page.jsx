@@ -20,8 +20,7 @@ import {
 } from "recharts";
 import { motion } from "framer-motion";
 
-import { getVendorDetails, getVendorPayoutDetails, getVendorWallet } from "@/app/lib/vendorApi";
-import { ConfigureBankModal } from "../transactions/components/PayoutModals";
+import { getVendorDetails, getVendorWallet } from "@/app/lib/vendorApi";
 import { useVendorStorage } from "@/app/hooks/vendorStorage";
 import { useVendorMenu } from "@/app/hooks/useMenu";
 import VendorDashboardSkeleton from "@/app/skeleton/VendorDashboardSkeleton";
@@ -30,10 +29,8 @@ import VendorPromoStatus from "@/components/vendor/VendorPromoStatus";
 export default function VendorDashboard() {
   const [vendorData, setVendorData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [payoutDetails, setPayoutDetails] = useState(null);
   const [liveWalletBalance, setLiveWalletBalance] = useState(0);
   const [livePendingBalance, setLivePendingBalance] = useState(0);
-  const [showBankModal, setShowBankModal] = useState(false);
   const { vendorDetails } = useVendorStorage();
 
   const vendorId = vendorDetails?.vendor?.id || vendorDetails?._id || vendorDetails?.id;
@@ -51,14 +48,10 @@ export default function VendorDashboard() {
         ]);
         setVendorData(vendorRes.data || vendorRes);
 
-        // Non-blocking: fetch payout details and wallet balance in parallel
+        // Non-blocking: fetch wallet balance in parallel
         Promise.allSettled([
-          getVendorPayoutDetails(),
           getVendorWallet(),
-        ]).then(([payoutResult, walletResult]) => {
-          if (payoutResult.status === "fulfilled" && payoutResult.value?.success) {
-            setPayoutDetails(payoutResult.value.payoutDetails);
-          }
+        ]).then(([walletResult]) => {
           if (walletResult.status === "fulfilled" && walletResult.value?.success) {
             setLiveWalletBalance(walletResult.value.data?.balance || 0);
             setLivePendingBalance(walletResult.value.data?.pendingBalance || 0);
@@ -356,13 +349,10 @@ export default function VendorDashboard() {
             </div>
           </div>
           <div className="z-10 flex flex-col gap-2 min-w-[220px] w-full md:w-auto">
-            <button
-              onClick={() => setShowBankModal(true)}
-              className="w-full bg-orange-600 text-white font-black uppercase text-[10px] tracking-widest h-10 px-6 rounded-md transition-all flex items-center justify-center gap-2 active:scale-95"
-            >
+            <div className="w-full bg-orange-600/80 text-white font-black uppercase text-[10px] tracking-widest h-10 px-6 rounded-md flex items-center justify-center gap-2">
               <CreditCard size={14} />
-              {payoutDetails?.payoutEnabled ? "Bank Settings" : "Link Bank Account"}
-            </button>
+              Payout Settings Locked
+            </div>
             <Link href="/vendors/transactions" className="w-full bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-700 dark:text-white font-black uppercase text-[10px] tracking-widest h-10 px-6 rounded-md hover:bg-zinc-200 dark:hover:bg-white/10 transition-all flex items-center justify-center gap-2">
               History
             </Link>
@@ -494,19 +484,6 @@ export default function VendorDashboard() {
         </div>
 
       </div>
-
-      <ConfigureBankModal
-        isOpen={showBankModal}
-        onClose={() => setShowBankModal(false)}
-        onSaved={() => {
-          setShowBankModal(false);
-          getVendorPayoutDetails()
-            .then(res => { if (res?.success) setPayoutDetails(res.payoutDetails); })
-            .catch(() => {});
-        }}
-        existingDetails={payoutDetails}
-      />
-
 
     </div>
   );
