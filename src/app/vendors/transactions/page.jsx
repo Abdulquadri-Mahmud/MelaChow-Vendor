@@ -695,15 +695,22 @@ export default function TransactionsPage() {
                                                     ₦{withdraw.netAmount.toLocaleString()}
                                                 </td>
                                                 <td className="px-5 py-4 text-center">
-                                                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border ${
-                                                        withdraw.status === "completed" 
-                                                            ? "bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-600/10 dark:border-emerald-600/20"
-                                                            : withdraw.status === "failed" || withdraw.status === "reversed"
-                                                            ? "bg-rose-50 text-rose-600 border-rose-100 dark:bg-rose-600/10 dark:border-rose-600/20"
-                                                            : "bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-600/10 dark:border-blue-600/20"
-                                                    }`}>
-                                                        {withdraw.status}
-                                                    </span>
+                                                    <div className="flex flex-col items-center justify-center">
+                                                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border ${
+                                                            withdraw.status === "completed" 
+                                                                ? "bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-600/10 dark:border-emerald-600/20"
+                                                                : withdraw.status === "failed" || withdraw.status === "reversed"
+                                                                ? "bg-rose-50 text-rose-600 border-rose-100 dark:bg-rose-600/10 dark:border-rose-600/20"
+                                                                : "bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-600/10 dark:border-blue-600/20"
+                                                        }`}>
+                                                            {withdraw.status}
+                                                        </span>
+                                                        {withdraw.status === "failed" && withdraw.failureReason && (
+                                                            <p className="text-[8px] text-red-500 font-bold mt-1 text-center max-w-[120px] leading-tight break-words">
+                                                                {withdraw.failureReason}
+                                                            </p>
+                                                        )}
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))
