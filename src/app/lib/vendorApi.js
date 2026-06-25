@@ -21,7 +21,6 @@ API.interceptors.request.use(
 );
 
 // Interceptor to handle 401 Unauthorized globally
-// Interceptor to handle 401 Unauthorized globally
 API.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -200,6 +199,21 @@ export const updateVendorRider = async (vendorId, riderId, riderData) => {
 
 export const deactivateVendorRider = async (vendorId, riderId) => {
   const response = await API.delete(`/vendors/${vendorId}/riders/${riderId}`);
+  return response.data;
+};
+
+// ── Disputed Delivery — Vendor Remake Response ─────────────────────────────────
+/**
+ * Respond YES or NO to a "Can you remake this order?" notification.
+ *
+ * POST /vendors/orders/:vendorOrderId/remake-response
+ * Body: { decision: 'yes' | 'no' }
+ *
+ * @param {string} vendorOrderId - MongoDB _id of the VendorOrder (from notification.orderDatabaseId)
+ * @param {'yes'|'no'} decision
+ */
+export const respondToRemakeRequest = async (vendorOrderId, decision) => {
+  const response = await API.post(`/vendors/orders/${vendorOrderId}/remake-response`, { decision });
   return response.data;
 };
 

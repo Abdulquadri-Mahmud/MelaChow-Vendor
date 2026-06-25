@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useNotificationManager } from '@/app/hooks/useNotificationManager';
 import { useVendorProfile } from '@/app/context/VendorProfileContext';
 import {
@@ -13,7 +13,10 @@ import {
     Trash2,
     Calendar,
     ChevronLeft,
-    RefreshCw
+    RefreshCw,
+    AlertTriangle,
+    Loader2,
+    Timer,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, isToday, isYesterday, parseISO } from 'date-fns';
@@ -21,6 +24,125 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import ClearNotificationsModal from '@/app/components/notifications/ClearNotificationsModal';
+import { respondToRemakeRequest } from '@/app/lib/vendorApi';
+
+
+// ── Remake Response Panel ─────────────────────────────────────────────────────
+/**
+ * Self-contained panel rendered inside an `order_remake_request` notification card.
+ * Shows a 15-minute countdown timer and YES / NO action buttons.
+ * Disables gracefully once the window expires or a decision is made.
+ */
+function RemakeResponsePanel({ notification, onResponded }) {
+    const WINDOW_MS = notification?.remakeWindow || 15 * 60 * 1000; // 15 min default
+    const sentAt = notification?.createdAt ? new Date(notification.createdAt).getTime() : Date.now();
+    const expiresAt = sentAt + WINDOW_MS;
+
+    const [secondsLeft, setSecondsLeft] = useState(() => Math.max(0, Math.floor((expiresAt - Date.now()) / 1000)));
+    const [decision, setDecision] = useState(null); // null | 'yes' | 'no'
+    const [loading, setLoading] = useState(false);
+    const intervalRef = useRef(null);
+
+    useEffect(() => {
+        intervalRef.current = setInterval(() => {
+            const remaining = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+            setSecondsLeft(remaining);
+            if (remaining === 0) clearInterval(intervalRef.current);
+        }, 1000);
+        return () => clearInterval(intervalRef.current);
+    }, [expiresAt]);
+
+    const isExpired = secondsLeft === 0;
+    const isDecided = !!decision;
+
+    const mins = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
+    const secs = String(secondsLeft % 60).padStart(2, '0');
+
+    const handleDecision = async (choice) => {
+        const vendorOrderId = notification?.orderDatabaseId || notification?.orderId;
+        if (!vendorOrderId) {
+            toast.error('Order reference missing. Please contact support.');
+            return;
+        }
+        setLoading(true);
+        try {
+            const res = await respondToRemakeRequest(vendorOrderId, choice);
+            setDecision(choice);
+            toast.success(res?.message || (choice === 'yes' ? 'Confirmed! Start preparing.' : 'Admin has been notified.'));
+            onResponded?.();
+        } catch (err) {
+            toast.error(err?.response?.data?.message || 'Failed to submit response.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (isDecided) {
+        return (
+            <div className="mt-3 p-3 rounded bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 flex items-center gap-2">
+                <CheckCircle2 size={13} className="text-green-600 shrink-0" />
+                <p className="text-[9px] font-black text-green-700 dark:text-green-400 uppercase tracking-widest">
+                    {decision === 'yes' ? 'Response sent — Start preparing!' : 'Declined — Admin notified.'}
+                </p>
+            </div>
+        );
+    }
+
+    if (isExpired) {
+        return (
+            <div className="mt-3 p-3 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center gap-2">
+                <Timer size={13} className="text-zinc-400 shrink-0" />
+                <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">
+                    Response window expired — Escalated to admin.
+                </p>
+            </div>
+        );
+    }
+
+    return (
+        <div
+            className="mt-3 p-3 rounded bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 space-y-2.5"
+            onClick={(e) => e.stopPropagation()}
+        >
+            {/* Timer row */}
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                    <Timer size={11} className="text-amber-600" />
+                    <p className="text-[9px] font-black text-amber-700 dark:text-amber-400 uppercase tracking-widest">
+                        Can you remake this order?
+                    </p>
+                </div>
+                <span className={`text-[10px] font-black tabular-nums px-2 py-0.5 rounded ${
+                    secondsLeft < 120
+                        ? 'bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400'
+                        : 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400'
+                }`}>
+                    {mins}:{secs}
+                </span>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2">
+                <button
+                    onClick={() => handleDecision('yes')}
+                    disabled={loading}
+                    className="flex-1 h-8 rounded bg-green-600 hover:bg-green-700 text-white text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-50"
+                >
+                    {loading ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle2 size={11} />}
+                    YES, Remake
+                </button>
+                <button
+                    onClick={() => handleDecision('no')}
+                    disabled={loading}
+                    className="flex-1 h-8 rounded border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-50 hover:bg-red-100 dark:hover:bg-red-500/20"
+                >
+                    <XCircle size={11} />
+                    NO, Can't
+                </button>
+            </div>
+        </div>
+    );
+}
 
 export default function VendorNotificationsPage() {
     const { vendorProfile } = useVendorProfile();
@@ -104,6 +226,8 @@ export default function VendorNotificationsPage() {
             case 'order_ready':
             case 'order_completed':
                 return <CheckCircle2 className="text-emerald-500" size={22} />;
+            case 'order_remake_request':
+                return <AlertTriangle className="text-amber-500" size={22} />;
             default:
                 return <Bell className="text-indigo-500" size={22} />;
         }
@@ -370,6 +494,14 @@ export default function VendorNotificationsPage() {
                                                                 </div>
                                                             )}
                                                         </div>
+                                                    )}
+
+                                                    {/* Remake Request inline response panel */}
+                                                    {notification.type === 'order_remake_request' && (
+                                                        <RemakeResponsePanel
+                                                            notification={notification}
+                                                            onResponded={() => markAsRead(notification._id)}
+                                                        />
                                                     )}
                                                 </div>
 
