@@ -285,13 +285,14 @@ export function ConfigureBankModal({ isOpen, onClose, onSaved, existingDetails }
 
 export function PayoutScheduleInfo({ nextPayoutTime, balance, payoutDetails }) {
     const now = new Date();
-    const todayAt8PM = new Date();
-    todayAt8PM.setHours(20, 0, 0, 0);
-    const isAfter8PM = now >= todayAt8PM;
+    // Vendor sweep: 10:30 PM WAT (UTC+1) = 22:30 local Lagos time
+    const todayAt1030PM = new Date();
+    todayAt1030PM.setHours(22, 30, 0, 0);
+    const isAfter1030PM = now >= todayAt1030PM;
 
-    const scheduledTime = isAfter8PM
-        ? "Tomorrow at 8:00 PM"
-        : "Today at 8:00 PM";
+    const scheduledTime = isAfter1030PM
+        ? "Tomorrow at 10:30 PM"
+        : "Today at 10:30 PM";
 
     const hasBank = payoutDetails?.payoutEnabled && payoutDetails?.accountNumber;
 
@@ -327,8 +328,12 @@ export function PayoutScheduleInfo({ nextPayoutTime, balance, payoutDetails }) {
                         </p>
                     </div>
                     <p className="text-[9px] text-blue-600/70 dark:text-blue-400/70 font-medium leading-relaxed">
-                        Earnings from today after 8 PM will be included in tomorrow's payout. 
-                        Minimum balance of ₦1,500 required.
+                        Earnings from today after 10:30 PM are included in tomorrow's payout.
+                        Any balance above ₦0 pays out automatically.
+                    </p>
+                    <p className="text-[9px] text-blue-500/60 dark:text-blue-400/50 font-medium leading-relaxed mt-1">
+                        A Paystack transfer fee (₦10–₦50 depending on amount) is deducted
+                        from your payout per your vendor agreement.
                     </p>
                 </>
             ) : (
