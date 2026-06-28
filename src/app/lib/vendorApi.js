@@ -40,8 +40,6 @@ export const getVendorDetails = async () => {
     const response = await API.get(`/vendors/get-vendor`, {
       metadata: { suppressUnauthorized: true },
     });
-
-    console.log(response);
     
     return response.data;
   } catch (error) {
@@ -108,18 +106,11 @@ export const updateOrderStatus = async (vendorOrderId, status) => {
     throw new Error('Invalid order ID format. Please refresh the page and try again.');
   }
 
-  console.log(`🔄 API: Updating order status`, {
-    vendorOrderId,
-    status,
-    url: `/vendors/orders/${vendorOrderId}/update`
-  });
-
   try {
     const response = await API.patch(`/vendors/orders/${vendorOrderId}/update`, { 
       status,
       notify: false // 🔕 Suppress push notification to user
     });
-    console.log(`✅ API: Status update successful`, response.data);
     return response.data;
   } catch (error) {
     console.error(`❌ API: Status update failed`, {
@@ -138,16 +129,10 @@ export const completeOrder = async (vendorOrderId) => {
     throw new Error('Invalid order ID format.');
   }
 
-  console.log(`🔄 API: Completing order`, {
-    vendorOrderId,
-    url: `/vendors/orders/${vendorOrderId}/complete`
-  });
-
   try {
     const response = await API.patch(`/vendors/orders/${vendorOrderId}/complete`, {
       notify: false // 🔕 Suppress push notification to user
     });
-    console.log(`✅ API: Order completion successful`, response.data);
     return response.data;
   } catch (error) {
     console.error(`❌ API: Order completion failed`, {
@@ -172,8 +157,6 @@ export const getVendorRiders = async (vendorId) => {
 
 export const createVendorRider = async (vendorId, riderData) => {
   const response = await API.post(`/vendors/${vendorId}/riders`, riderData);
-  console.log(response);
-
   return response.data;
 };
 
@@ -187,8 +170,6 @@ export const assignRiderToOrder = async (vendorId, orderId, riderId) => {
     riderId,
     notify: false // 🔕 Suppress push notification to user
   });
-  console.log(response.data);
-  
   return response.data;
 };
 

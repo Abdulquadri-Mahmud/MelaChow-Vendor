@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     ArrowUpRight,
     ArrowDownLeft,
+    ArrowDownToLine,
     Wallet,
     Calendar,
     Download,
@@ -19,13 +20,16 @@ import {
     FileText,
     Clock,
     RotateCw,
-    Building2
+    Building2,
+    AlertCircle,
+    Loader2
 } from "lucide-react";
 import { useVendorStorage } from "@/app/hooks/vendorStorage";
 import { 
     getVendorWallet, 
     getVendorPayoutDetails, 
-    getWithdrawalHistory 
+    getWithdrawalHistory,
+    initiateWithdrawal
 } from "@/app/lib/vendorApi";
 import { PayoutScheduleInfo } from "./components/PayoutModals";
 
@@ -42,6 +46,7 @@ export default function TransactionsPage() {
     const [showMonthDropdown, setShowMonthDropdown] = useState(false);
     const [selectedTransaction, setSelectedTransaction] = useState(null);
     const [showModal, setShowModal] = useState(false);
+    const [showWithdrawModal, setShowWithdrawModal] = useState(false);
     const { vendorDetails } = useVendorStorage();
 
     const fetchWallet = async (isRefresh = false) => {
@@ -65,8 +70,14 @@ export default function TransactionsPage() {
             // Fetch payout details — dedicated endpoint, never exposes recipientCode
             try {
                 const payoutRes = await getVendorPayoutDetails();
-                if (payoutRes?.success) {
-                    setVendorProfile({ payoutDetails: payoutRes.payoutDetails });
+                if (payoutRes?.success && payoutRes.payoutDetails) {
+                    // Defensively strip recipientCode — must never reach client state.
+                    // The backend should never send it, but we enforce it here too.
+                    const {
+                        recipientCode: _stripped, // intentionally discarded
+                        ...safePayoutDetails
+                    } = payoutRes.payoutDetails;
+                    setVendorProfile({ payoutDetails: safePayoutDetails });
                 }
             } catch (payoutErr) {
                 console.error("Payout details fetch error:", payoutErr.message);
@@ -357,10 +368,27 @@ export default function TransactionsPage() {
                             </div>
                             <h2 className="text-3xl font-black tracking-tight leading-none my-2">₦{wallet?.balance?.toLocaleString() || "0.00"}</h2>
                         </div>
-                        <div className="w-full bg-white/90 text-orange-600 px-4 py-2.5 rounded-md text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 mt-4">
-                            <Building2 size={14} />
-                            Payout Settings Locked
-                        </div>
+                        {vendorProfile?.payoutDetails?.accountNumber ? (
+                            <button
+                                onClick={() => setShowWithdrawModal(true)}
+                                disabled={(wallet?.balance ?? 0) <= 0}
+                                className="w-full bg-white/90 text-orange-600 px-4 py-2.5 rounded-md
+                                           text-[10px] font-black uppercase tracking-widest
+                                           flex items-center justify-center gap-2 mt-4
+                                           disabled:opacity-40 disabled:cursor-not-allowed
+                                           active:scale-95 transition-all"
+                            >
+                                <ArrowDownToLine size={14} />
+                                Withdraw Now
+                            </button>
+                        ) : (
+                            <div className="w-full bg-white/90 text-orange-600 px-4 py-2.5 rounded-md
+                                            text-[10px] font-black uppercase tracking-widest
+                                            flex items-center justify-center gap-2 mt-4">
+                                <Building2 size={14} />
+                                Payout Settings Locked
+                            </div>
+                        )}
                     </div>
 
                     {/* Pending Card */}
@@ -728,6 +756,16 @@ export default function TransactionsPage() {
                 </div>
 
                 {/* Modals */}
+                <WithdrawModal
+                    isOpen={showWithdrawModal}
+                    onClose={() => setShowWithdrawModal(false)}
+                    availableBalance={Math.max(0, (wallet?.balance ?? 0) - (wallet?.pendingBalance ?? 0))}
+                    wallet={wallet}
+                    onSuccess={() => {
+                        setShowWithdrawModal(false);
+                        fetchWallet(true); // refresh after withdrawal
+                    }}
+                />
                 {/* Transaction Details Modal */}
                 <TransactionDetailsModal
                     transaction={selectedTransaction}
@@ -927,6 +965,286 @@ function TransactionDetailsModal({ transaction, isOpen, onClose, formatDate, dow
                                     Support Reference: hash-{transaction._id.slice(-8)}
                                 </p>
                             </div>
+                        </motion.div>
+                    </div>
+                </>
+            )}
+        </AnimatePresence>
+    );
+}
+
+// ── WithdrawModal Component ──
+function WithdrawModal({ isOpen, onClose, availableBalance, wallet, onSuccess }) {
+    const [amount, setAmount]         = useState("");
+    const [isPending, setIsPending]   = useState(false);
+    const [error, setError]           = useState("");
+    const [success, setSuccess]       = useState(false);
+    const guardRef                    = useRef(false); // useRef — never useState
+
+    // Reset state when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            setAmount("");
+            setError("");
+            setSuccess(false);
+            guardRef.current = false;
+        }
+    }, [isOpen]);
+
+    const parsedAmount = Number(amount.replace(/,/g, ""));
+
+    const isValid =
+        !isNaN(parsedAmount) &&
+        parsedAmount > 0 &&
+        parsedAmount <= availableBalance;
+
+    // Paystack fee preview (vendor absorbs)
+    const calcFee = (amt) => {
+        if (amt < 5000)  return 10;
+        if (amt < 50000) return 25;
+        return 50;
+    };
+    const fee    = isValid ? calcFee(parsedAmount) : 0;
+    const netAmt = isValid ? parsedAmount - fee : 0;
+
+    const handleWithdraw = async () => {
+        if (guardRef.current || !isValid) return;
+        guardRef.current = true;
+        setIsPending(true);
+        setError("");
+        try {
+            await initiateWithdrawal(parsedAmount);
+            setSuccess(true);
+            setTimeout(() => onSuccess(), 1800);
+        } catch (err) {
+            const msg = err?.response?.data?.message
+                     || err?.response?.data?.error
+                     || "Withdrawal failed. Please try again.";
+            setError(msg);
+            guardRef.current = false;
+        } finally {
+            setIsPending(false);
+        }
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <AnimatePresence>
+            {isOpen && (
+                <>
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={onClose}
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+                    />
+                    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0, y: 60 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 60 }}
+                            transition={{ type: "spring", damping: 28, stiffness: 300 }}
+                            className="relative w-full max-w-sm bg-white dark:bg-zinc-900
+                                       rounded-t-2xl sm:rounded-2xl border border-zinc-200
+                                       dark:border-zinc-800 overflow-hidden shadow-2xl"
+                        >
+                            {/* Header */}
+                            <div className="p-5 border-b border-zinc-100 dark:border-zinc-800
+                                            flex items-center justify-between">
+                                <div>
+                                    <h2 className="text-base font-black text-zinc-900 dark:text-white
+                                                   uppercase tracking-tight">
+                                        Withdraw Funds
+                                    </h2>
+                                    <p className="text-[9px] font-black text-zinc-400 mt-0.5
+                                                  uppercase tracking-widest">
+                                        Available: ₦{availableBalance.toLocaleString()}
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={onClose}
+                                    className="p-2 hover:bg-zinc-50 dark:hover:bg-zinc-800
+                                               rounded-md text-zinc-400 transition-all"
+                                >
+                                    <X size={18} />
+                                </button>
+                            </div>
+
+                            {/* Body */}
+                            <div className="p-5 space-y-4">
+                                {success ? (
+                                    <motion.div
+                                        initial={{ scale: 0.9, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        className="text-center py-6 space-y-3"
+                                    >
+                                        <div className="w-14 h-14 bg-emerald-50 rounded-full
+                                                        flex items-center justify-center mx-auto">
+                                            <Check size={28} className="text-emerald-600" />
+                                        </div>
+                                        <p className="font-black text-zinc-900 dark:text-white
+                                                      uppercase tracking-tight">
+                                            Withdrawal Initiated
+                                        </p>
+                                        <p className="text-[10px] text-zinc-500 font-black
+                                                      uppercase tracking-widest">
+                                            ₦{netAmt.toLocaleString()} will reach your bank shortly.
+                                        </p>
+                                    </motion.div>
+                                ) : (
+                                    <>
+                                        {/* Amount Input */}
+                                        <div className="space-y-1.5">
+                                            <label className="text-[10px] font-black text-zinc-400
+                                                              uppercase tracking-widest ml-1">
+                                                Amount (₦)
+                                            </label>
+                                            <div className="relative">
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2
+                                                                 text-zinc-400 font-black text-sm">
+                                                    ₦
+                                                </span>
+                                                <input
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    placeholder="0"
+                                                    value={amount}
+                                                    onChange={e => {
+                                                        const raw = e.target.value.replace(/[^0-9]/g, "");
+                                                        setAmount(raw ? Number(raw).toLocaleString() : "");
+                                                        setError("");
+                                                    }}
+                                                    className="w-full pl-7 pr-4 py-3 bg-zinc-50
+                                                               dark:bg-zinc-950 border border-zinc-100
+                                                               dark:border-zinc-800 rounded-md text-sm
+                                                               font-black text-zinc-900 dark:text-white
+                                                               focus:outline-none focus:border-orange-500
+                                                               tracking-wide"
+                                                />
+                                            </div>
+                                            {/* Quick select buttons */}
+                                            <div className="flex gap-2 mt-2">
+                                                {[0.25, 0.5, 1].map(frac => {
+                                                    const val = Math.floor(availableBalance * frac);
+                                                    const label = frac === 1 ? "Max" : `${frac * 100}%`;
+                                                    return (
+                                                        <button
+                                                            key={frac}
+                                                            onClick={() => setAmount(val.toLocaleString())}
+                                                            className="flex-1 py-1.5 text-[9px] font-black
+                                                                       uppercase tracking-widest rounded-md
+                                                                       border border-zinc-200 dark:border-zinc-700
+                                                                       text-zinc-500 hover:border-orange-400
+                                                                       hover:text-orange-600 transition-all"
+                                                        >
+                                                            {label}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+
+                                        {/* Fee preview — shown once amount is valid */}
+                                        {isValid && (
+                                            <motion.div
+                                                initial={{ opacity: 0, height: 0 }}
+                                                animate={{ opacity: 1, height: "auto" }}
+                                                className="bg-amber-50 dark:bg-amber-500/10 border
+                                                           border-amber-100 dark:border-amber-500/20
+                                                           rounded-md p-3 space-y-1.5"
+                                            >
+                                                <div className="flex justify-between">
+                                                    <span className="text-[9px] font-black text-amber-700
+                                                                    uppercase tracking-widest">
+                                                        Withdrawal Amount
+                                                    </span>
+                                                    <span className="text-[9px] font-black text-amber-900">
+                                                        ₦{parsedAmount.toLocaleString()}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-[9px] font-black text-amber-700
+                                                                    uppercase tracking-widest">
+                                                        Paystack Transfer Fee
+                                                    </span>
+                                                    <span className="text-[9px] font-black text-amber-900">
+                                                        −₦{fee}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between pt-1.5 border-t
+                                                               border-amber-200">
+                                                    <span className="text-[9px] font-black text-amber-900
+                                                                    uppercase tracking-widest">
+                                                        You Receive
+                                                    </span>
+                                                    <span className="text-sm font-black text-amber-900">
+                                                        ₦{netAmt.toLocaleString()}
+                                                    </span>
+                                                </div>
+                                            </motion.div>
+                                        )}
+
+                                        {/* Error */}
+                                        {error && (
+                                            <div className="flex items-center gap-2 p-3 bg-red-50
+                                                           dark:bg-red-500/10 border border-red-100
+                                                           dark:border-red-500/20 rounded-md">
+                                                <AlertCircle size={14} className="text-red-500 shrink-0" />
+                                                <p className="text-[10px] font-black text-red-600
+                                                              uppercase tracking-widest">
+                                                    {error}
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {/* Escrow notice */}
+                                        {(wallet?.pendingBalance ?? 0) > 0 && (
+                                            <p className="text-[9px] text-zinc-400 font-black
+                                                          uppercase tracking-widest">
+                                                ₦{(wallet?.pendingBalance ?? 0).toLocaleString()} is held
+                                                in escrow for active orders and cannot be withdrawn.
+                                            </p>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+
+                            {/* Footer */}
+                            {!success && (
+                                <div className="p-5 bg-zinc-50 dark:bg-zinc-900/50 flex gap-3
+                                               border-t border-zinc-100 dark:border-zinc-800">
+                                    <button
+                                        onClick={onClose}
+                                        className="flex-1 px-4 py-3 border border-zinc-200
+                                                   dark:border-zinc-800 text-zinc-600 dark:text-zinc-400
+                                                   text-[10px] font-black uppercase tracking-widest
+                                                   rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800
+                                                   transition-all active:scale-95"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={handleWithdraw}
+                                        disabled={!isValid || isPending}
+                                        className="flex-[2] px-4 py-3 bg-orange-600 text-white
+                                                   text-[10px] font-black uppercase tracking-widest
+                                                   rounded-md transition-all active:scale-95
+                                                   flex items-center justify-center gap-2
+                                                   disabled:opacity-40 disabled:cursor-not-allowed"
+                                    >
+                                        {isPending ? (
+                                            <Loader2 size={16} className="animate-spin" />
+                                        ) : (
+                                            <>
+                                                <ArrowDownToLine size={14} />
+                                                Confirm Withdrawal
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            )}
                         </motion.div>
                     </div>
                 </>

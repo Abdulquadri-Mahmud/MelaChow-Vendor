@@ -334,7 +334,7 @@ export default function VendorDashboard() {
           <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-orange-500/10 to-transparent opacity-50 pointer-events-none"></div>
           <div className="z-10 w-full md:w-auto">
             <h2 className="text-lg font-black mb-0.5 text-zinc-900 dark:text-white uppercase tracking-tight">Revenue Hub</h2>
-            <p className="text-zinc-500 dark:text-zinc-400 max-w-md text-[10px] font-bold uppercase tracking-widest">Automatic Daily Payouts @ 8:00 PM</p>
+            <p className="text-zinc-500 dark:text-zinc-400 max-w-md text-[10px] font-bold uppercase tracking-widest">Automatic Daily Payouts @ 10:30 PM</p>
 
             <div className="flex items-center gap-3 mt-4">
               <div>
