@@ -22,8 +22,10 @@ import {
     RotateCw,
     Building2,
     AlertCircle,
-    Loader2
+    Loader2,
+    Share2
 } from "lucide-react";
+import toast from "react-hot-toast";
 import { useVendorStorage } from "@/app/hooks/vendorStorage";
 import { 
     getVendorWallet, 
@@ -47,6 +49,8 @@ export default function TransactionsPage() {
     const [selectedTransaction, setSelectedTransaction] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+    const [selectedWithdrawal, setSelectedWithdrawal] = useState(null);
+    const [showPayoutModal, setShowPayoutModal] = useState(false);
     const { vendorDetails } = useVendorStorage();
 
     const fetchWallet = async (isRefresh = false) => {
@@ -705,7 +709,9 @@ export default function TransactionsPage() {
                                 <tbody className="divide-y divide-zinc-50 dark:divide-zinc-800/50">
                                     {withdrawals.length > 0 ? (
                                         withdrawals.map((withdraw) => (
-                                            <tr key={withdraw._id} className="hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-all cursor-default">
+                                            <tr key={withdraw._id}
+                                                onClick={() => { setSelectedWithdrawal(withdraw); setShowPayoutModal(true); }}
+                                                className="hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-all cursor-pointer group">
                                                 <td className="px-5 py-4">
                                                     <div>
                                                         <p className="text-[10px] font-black text-zinc-900 dark:text-white uppercase tracking-tight leading-none">{withdraw.paystackReference || "Pending Ref"}</p>
@@ -776,6 +782,13 @@ export default function TransactionsPage() {
                     }}
                     formatDate={formatDate}
                     downloadReceipt={downloadReceipt}
+                />
+                {/* Payout Details Modal */}
+                <PayoutDetailsModal
+                    withdrawal={selectedWithdrawal}
+                    isOpen={showPayoutModal}
+                    onClose={() => { setShowPayoutModal(false); setSelectedWithdrawal(null); }}
+                    formatDate={formatDate}
                 />
             </div>
         </div>
@@ -1253,3 +1266,220 @@ function WithdrawModal({ isOpen, onClose, availableBalance, wallet, onSuccess })
     );
 }
 
+// ── PayoutDetailsModal ─────────────────────────────────────────────────────────
+function PayoutDetailsModal({ withdrawal, isOpen, onClose, formatDate }) {
+    if (!withdrawal) return null;
+
+    const handleCopyRef = () => {
+        if (withdrawal.paystackReference) {
+            navigator.clipboard.writeText(withdrawal.paystackReference);
+            toast.success("Reference copied!");
+        }
+    };
+
+    const statusIs = (s) => withdrawal.status === s;
+    const isCompleted = statusIs("completed") || statusIs("successful");
+    const isFailed   = statusIs("failed") || statusIs("reversed");
+    const isPending  = statusIs("pending");
+
+    // Progress bar fill: failed → 0%, pending → 50%, processing/completed → 100%
+    const barFill = isFailed ? "w-0" : isPending ? "w-1/2" : "w-full";
+
+    // Step dot styles
+    const dot = (active, failed) =>
+        `w-4 h-4 rounded-full flex items-center justify-center text-[7px] font-black z-10 ${
+            failed  ? "bg-rose-600 text-white" :
+            active  ? "bg-emerald-500 text-white" :
+                      "bg-zinc-200 dark:bg-zinc-800 text-zinc-500"
+        }`;
+
+    return (
+        <AnimatePresence>
+            {isOpen && (
+                <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4">
+                    {/* Backdrop */}
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={onClose}
+                        className="absolute inset-0 bg-black/75 backdrop-blur-sm"
+                    />
+
+                    {/* Sheet */}
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        className="relative w-full max-w-md bg-white dark:bg-zinc-950 rounded-md border border-zinc-200 dark:border-zinc-800 shadow-2xl overflow-hidden max-h-[92vh] overflow-y-auto"
+                    >
+                        {/* Header bar */}
+                        <div className="flex justify-between items-center px-4 py-3 border-b border-zinc-100 dark:border-zinc-800">
+                            <span className="text-[10px] font-black uppercase text-zinc-500 dark:text-zinc-400 tracking-widest">
+                                Payout Details
+                            </span>
+                            <button
+                                onClick={onClose}
+                                className="w-7 h-7 rounded flex items-center justify-center text-zinc-400 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+                            >
+                                <X size={14} />
+                            </button>
+                        </div>
+
+                        <div className="p-4 space-y-4">
+                            {/* Paystack logo + amount + status badge */}
+                            <div className="flex flex-col items-center text-center space-y-2.5 pt-1">
+                                <div className="w-10 h-10 rounded bg-white border border-zinc-200 dark:border-zinc-800 flex items-center justify-center p-1">
+                                    <img
+                                        src="https://paystack.com/assets/img/login/paystack-logo.png"
+                                        alt="Paystack"
+                                        className="w-full object-contain"
+                                        onError={(e) => { e.target.style.display = "none"; }}
+                                    />
+                                </div>
+                                <p className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest">
+                                    Vendor Bank Transfer
+                                </p>
+                                <p className="text-3xl font-black tracking-tight text-zinc-900 dark:text-white">
+                                    ₦{withdrawal.netAmount?.toLocaleString()}.00
+                                </p>
+                                <span className={`text-[9px] font-black px-2 py-0.5 rounded border uppercase tracking-widest ${
+                                    isCompleted
+                                        ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/30"
+                                        : isFailed
+                                        ? "bg-rose-500/10 text-rose-500 border-rose-500/30"
+                                        : "bg-amber-500/10 text-amber-500 border-amber-500/30"
+                                }`}>
+                                    {isCompleted ? "Successful" : withdrawal.status}
+                                </span>
+                            </div>
+
+                            {/* 3-step progress bar */}
+                            <div className="px-4 py-3 border border-zinc-200 dark:border-zinc-800 rounded-md bg-zinc-50 dark:bg-zinc-900/50">
+                                <div className="relative flex items-start justify-between text-[8px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-wider">
+                                    {/* connector */}
+                                    <div className="absolute left-[14%] right-[14%] top-[7px] h-[2px] bg-zinc-200 dark:bg-zinc-800 z-0">
+                                        <div className={`h-full transition-all duration-500 ${
+                                            isFailed ? "w-0 bg-rose-500" : `${barFill} bg-emerald-500`
+                                        }`} />
+                                    </div>
+
+                                    {/* Step 1: Initiated */}
+                                    <div className="flex flex-col items-center gap-1.5">
+                                        <div className={dot(true, isFailed)}>✓</div>
+                                        <span>Initiated</span>
+                                    </div>
+
+                                    {/* Step 2: Processed */}
+                                    <div className="flex flex-col items-center gap-1.5">
+                                        <div className={dot(!isFailed && !isPending, false)}>✓</div>
+                                        <span>Processed</span>
+                                    </div>
+
+                                    {/* Step 3: Settled */}
+                                    <div className="flex flex-col items-center gap-1.5">
+                                        <div className={dot(isCompleted, false)}>✓</div>
+                                        <span>Settled</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Transfer Details */}
+                            <div className="p-3 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md space-y-3.5 text-xs">
+                                <h4 className="text-[10px] font-black uppercase text-zinc-400 dark:text-zinc-500 tracking-widest">
+                                    Transfer Details
+                                </h4>
+
+                                {/* Recipient */}
+                                <div className="space-y-0.5">
+                                    <p className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Recipient Bank Account</p>
+                                    <p className="font-black text-zinc-900 dark:text-white text-xs leading-relaxed uppercase">
+                                        {withdrawal.bankName} · {withdrawal.accountName} · ***{withdrawal.accountNumber?.slice(-4)}
+                                    </p>
+                                </div>
+
+                                {/* Reference */}
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Paystack Reference</p>
+                                        <p className="font-black text-zinc-900 dark:text-white text-xs select-all break-all mt-0.5">
+                                            {withdrawal.paystackReference || "—"}
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={handleCopyRef}
+                                        className="shrink-0 p-1.5 rounded border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-all"
+                                    >
+                                        <Copy size={12} />
+                                    </button>
+                                </div>
+
+                                {/* Amounts */}
+                                <div className="flex justify-between">
+                                    <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Requested Amount</span>
+                                    <span className="font-black text-zinc-900 dark:text-white text-xs">₦{withdrawal.requestedAmount?.toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Transfer Fee</span>
+                                    <span className="font-black text-rose-500 text-xs">-₦{withdrawal.transferFee?.toLocaleString() ?? "0"}</span>
+                                </div>
+                                <div className="flex justify-between border-t border-zinc-200 dark:border-zinc-800 pt-2">
+                                    <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Net Payout</span>
+                                    <span className="font-black text-emerald-600 dark:text-emerald-400 text-xs">₦{withdrawal.netAmount?.toLocaleString()}</span>
+                                </div>
+
+                                {/* Payment Method */}
+                                <div className="flex justify-between">
+                                    <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Payment Method</span>
+                                    <span className="font-black text-zinc-900 dark:text-white text-xs uppercase">Paystack Transfer</span>
+                                </div>
+
+                                {/* Date */}
+                                <div className="flex justify-between">
+                                    <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">Initiated</span>
+                                    <span className="font-black text-zinc-900 dark:text-white text-xs">
+                                        {formatDate(withdrawal.initiatedAt || withdrawal.createdAt)}
+                                    </span>
+                                </div>
+
+                                {/* Failure reason */}
+                                {isFailed && withdrawal.failureReason && (
+                                    <div className="border-t border-zinc-200 dark:border-zinc-800 pt-2 space-y-1">
+                                        <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest">Failure Reason</p>
+                                        <p className="font-bold text-rose-500 dark:text-rose-400 leading-relaxed bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-500/20 p-2.5 rounded-md text-xs">
+                                            {withdrawal.failureReason}
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Footer Buttons */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <button
+                                    onClick={() => toast("Issue report opened — contact support@melachow.com")}
+                                    className="h-10 rounded-md border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                                >
+                                    Report Issue
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        if (withdrawal.paystackReference) {
+                                            navigator.clipboard.writeText(
+                                                `MelaChow Payout — Ref: ${withdrawal.paystackReference} · ₦${withdrawal.netAmount?.toLocaleString()} · ${withdrawal.status}`
+                                            );
+                                            toast.success("Receipt info copied!");
+                                        }
+                                    }}
+                                    className="h-10 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20"
+                                >
+                                    <Share2 size={12} />
+                                    Share Receipt
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+        </AnimatePresence>
+    );
+}
