@@ -712,31 +712,6 @@ export default function VendorOrdersPage() {
             </div>
           </div>
 
-          <div className="mt-6 grid grid-cols-2 gap-3 border-t border-zinc-200 pt-6 dark:border-zinc-800 sm:grid-cols-5">
-            {[
-              { label: "Total Orders", value: stats.total, icon: Package, light: "text-blue-600", lightBg: "bg-blue-50 dark:bg-blue-500/10" },
-              { label: "New", value: stats.pending, icon: Clock, light: "text-amber-600", lightBg: "bg-amber-50 dark:bg-amber-500/10" },
-              { label: "Active", value: stats.active, icon: Timer, light: "text-orange-600", lightBg: "bg-orange-50 dark:bg-orange-500/10" },
-              { label: "Ready", value: stats.ready, icon: CheckCircle2, light: "text-purple-600", lightBg: "bg-purple-50 dark:bg-purple-500/10" },
-              { label: "Completed", value: stats.completed, icon: CheckCircle2, light: "text-emerald-600", lightBg: "bg-emerald-50 dark:bg-emerald-500/10" },
-            ].map((stat, idx) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.06 }}
-                className={`rounded-lg border border-zinc-200 p-3 dark:border-zinc-700 ${stat.lightBg}`}
-              >
-                <div className="mb-3 flex items-start justify-between gap-2">
-                  <p className={`text-[9px] font-black uppercase tracking-wider ${stat.light} opacity-75`}>{stat.label}</p>
-                  <div className={`rounded-lg bg-white p-2 ${stat.light} dark:bg-zinc-900`}>
-                    <stat.icon size={14} strokeWidth={2.5} />
-                  </div>
-                </div>
-                <p className={`text-3xl font-black tabular-nums ${stat.light}`}>{stat.value}</p>
-              </motion.div>
-            ))}
-          </div>
         </motion.div>
 
         <AnimatePresence mode="wait">
@@ -802,6 +777,33 @@ export default function VendorOrdersPage() {
               exit={{ opacity: 0, y: -8 }}
               className="space-y-4"
             >
+              {/* ── Order Stats ── */}
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                {[
+                  { label: "Total Orders", value: stats.total, icon: Package, light: "text-blue-600", lightBg: "bg-blue-50 dark:bg-blue-500/10" },
+                  { label: "New", value: stats.pending, icon: Clock, light: "text-amber-600", lightBg: "bg-amber-50 dark:bg-amber-500/10" },
+                  { label: "Active", value: stats.active, icon: Timer, light: "text-orange-600", lightBg: "bg-orange-50 dark:bg-orange-500/10" },
+                  { label: "Ready", value: stats.ready, icon: CheckCircle2, light: "text-purple-600", lightBg: "bg-purple-50 dark:bg-purple-500/10" },
+                  { label: "Completed", value: stats.completed, icon: CheckCircle2, light: "text-emerald-600", lightBg: "bg-emerald-50 dark:bg-emerald-500/10" },
+                ].map((stat, idx) => (
+                  <motion.div
+                    key={stat.label}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.06 }}
+                    className={`rounded-lg border border-zinc-200 p-3 dark:border-zinc-700 ${stat.lightBg}`}
+                  >
+                    <div className="mb-3 flex items-start justify-between gap-2">
+                      <p className={`text-[9px] font-black uppercase tracking-wider ${stat.light} opacity-75`}>{stat.label}</p>
+                      <div className={`rounded-lg bg-white p-2 ${stat.light} dark:bg-zinc-900`}>
+                        <stat.icon size={14} strokeWidth={2.5} />
+                      </div>
+                    </div>
+                    <p className={`text-3xl font-black tabular-nums ${stat.light}`}>{stat.value}</p>
+                  </motion.div>
+                ))}
+              </div>
+
               <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
                 <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-2 px-1">
