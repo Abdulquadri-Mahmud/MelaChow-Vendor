@@ -29,6 +29,7 @@ export const SocketProvider = ({ children }) => {
     // socket instance, not on every reconnection attempt from the interval
     const listenersRegistered = useRef(false);
     const authFailed = useRef(false);
+    const lastUnreadFetchAt = useRef(0);
 
     // Determine role based on path
     const getRoleFromPath = (path) => {
@@ -48,7 +49,7 @@ export const SocketProvider = ({ children }) => {
 
         try {
             // Refined fetching based on role-specific endpoints
-            const fetchUrl = role === 'vendor' ? `${apiBase}/history` : `${apiBase}/unread-count`;
+            const fetchUrl = `${apiBase}/unread-count`;
 
             const response = await fetch(fetchUrl, {
                 credentials: 'include',
@@ -84,8 +85,10 @@ export const SocketProvider = ({ children }) => {
 
             socketService.connect(token);
 
-            // Fetch initial unread count
-            await fetchUnreadCount();
+            if (Date.now() - lastUnreadFetchAt.current >= 300000) {
+                await fetchUnreadCount();
+                lastUnreadFetchAt.current = Date.now();
+            }
 
             // Only register listeners once — prevent stacking on reconnect attempts
             if (listenersRegistered.current) {
@@ -332,7 +335,7 @@ export const SocketProvider = ({ children }) => {
             if (!status.isConnected && !authFailed.current && TokenManager.getToken(role)) {
                 connect();
             }
-        }, 10000);
+        }, 30000);
 
         return () => {
             clearInterval(interval);

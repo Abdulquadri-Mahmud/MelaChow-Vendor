@@ -20,20 +20,20 @@ import {
 } from "recharts";
 import { motion } from "framer-motion";
 
-import { getVendorDetails, getVendorWallet } from "@/app/lib/vendorApi";
+import { getVendorWallet } from "@/app/lib/vendorApi";
 import { useVendorStorage } from "@/app/hooks/vendorStorage";
 import { useVendorMenu } from "@/app/hooks/useMenu";
 import VendorDashboardSkeleton from "@/app/skeleton/VendorDashboardSkeleton";
 import VendorPromoStatus from "@/components/vendor/VendorPromoStatus";
 
 export default function VendorDashboard() {
-  const [vendorData, setVendorData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [liveWalletBalance, setLiveWalletBalance] = useState(0);
   const [livePendingBalance, setLivePendingBalance] = useState(0);
   const { vendorDetails } = useVendorStorage();
+  const vendorData = vendorDetails?.vendor || null;
 
-  const vendorId = vendorDetails?.vendor?.id || vendorDetails?._id || vendorDetails?.id;
+  const vendorId = vendorDetails?.vendor?._id || vendorDetails?.vendor?.id || vendorDetails?._id || vendorDetails?.id;
   const { data: menuData, isLoading: isMenuLoading } = useVendorMenu(vendorId);
   
   const rawFoods = menuData?.data || menuData?.items || menuData || [];
@@ -43,20 +43,11 @@ export default function VendorDashboard() {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const [vendorRes] = await Promise.all([
-          getVendorDetails()
-        ]);
-        setVendorData(vendorRes.data || vendorRes);
-
-        // Non-blocking: fetch wallet balance in parallel
-        Promise.allSettled([
-          getVendorWallet(),
-        ]).then(([walletResult]) => {
-          if (walletResult.status === "fulfilled" && walletResult.value?.success) {
-            setLiveWalletBalance(walletResult.value.data?.balance || 0);
-            setLivePendingBalance(walletResult.value.data?.pendingBalance || 0);
-          }
-        });
+        const walletResult = await getVendorWallet();
+        if (walletResult?.success) {
+          setLiveWalletBalance(walletResult.data?.balance || 0);
+          setLivePendingBalance(walletResult.data?.pendingBalance || 0);
+        }
 
       } catch (err) {
         console.error("Dashboard fetch error:", err);

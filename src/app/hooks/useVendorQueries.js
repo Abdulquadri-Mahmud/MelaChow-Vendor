@@ -83,7 +83,6 @@ export const useVendors = () => {
     // âœ… On success: confirm and refresh in background
     onSuccess: () => {
       toast.success("âœ… Vendor updated successfully!");
-      queryClient.invalidateQueries(["vendors"]);
     },
 
     // âŒ On error: rollback UI to previous data
@@ -105,7 +104,6 @@ export const useVendors = () => {
     mutationFn: () => deleteVendor(),
     onSuccess: () => {
       toast.success("ðŸ—‘ï¸ Vendor deleted successfully!");
-      queryClient.invalidateQueries(["vendors"]);
     },
     onError: () => toast.error("âŒ Failed to delete vendor."),
   });

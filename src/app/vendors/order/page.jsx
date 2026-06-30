@@ -25,6 +25,7 @@ import {
 import { getVendorOrders } from "@/app/lib/vendorApi";
 import VendorOrderCard from "@/app/components/order/VendorOrderCard";
 import { useVendorStorage } from "@/app/hooks/vendorStorage";
+import { useSocket } from "@/app/context/SocketContext";
 import VendorOrderDeskCard from "./components/VendorOrderDeskCard";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
@@ -163,27 +164,38 @@ export default function VendorOrdersPage() {
   const warningChimeRef = useRef({});
   const hasLoadedOnceRef = useRef(false);
   const voicePrimedRef = useRef(false);
+  const ordersRequestRef = useRef(null);
   const { vendorDetails } = useVendorStorage();
+  const { isConnected: wsConnected } = useSocket();
   const itemsPerPage = tabletMode ? 8 : 6;
 
-  const fetchOrders = useCallback(async (isRefresh = false) => {
-    try {
-      if (isRefresh) {
-        setIsRefreshing(true);
-      } else {
-        setIsLoading(true);
+  const fetchOrders = useCallback((isRefresh = false) => {
+    if (ordersRequestRef.current) return ordersRequestRef.current;
+
+    const request = (async () => {
+      try {
+        if (isRefresh) {
+          setIsRefreshing(true);
+        } else {
+          setIsLoading(true);
+        }
+        const res = await getVendorOrders();
+        const data = res.vendorOrders || res.data || res || [];
+        const orderData = Array.isArray(data) ? data : [];
+        setOrders(orderData);
+        setFilteredOrders(orderData);
+      } catch (error) {
+        console.error("Failed to fetch orders:", error);
+      } finally {
+        setIsLoading(false);
+        setIsRefreshing(false);
       }
-      const res = await getVendorOrders();
-      const data = res.vendorOrders || res.data || res || [];
-      const orderData = Array.isArray(data) ? data : [];
-      setOrders(orderData);
-      setFilteredOrders(orderData);
-    } catch (error) {
-      console.error("Failed to fetch orders:", error);
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
+    })().finally(() => {
+      ordersRequestRef.current = null;
+    });
+
+    ordersRequestRef.current = request;
+    return request;
   }, []);
 
   useEffect(() => {
@@ -212,14 +224,28 @@ export default function VendorOrdersPage() {
   }, []);
 
   useEffect(() => {
-    const poll = () => fetchOrders(true);
-    const interval = window.setInterval(poll, document.hidden ? 30000 : 8000);
-    return () => window.clearInterval(interval);
-  }, [fetchOrders, viewMode]);
+    let interval = null;
+    const scheduleFallback = () => {
+      if (interval) window.clearInterval(interval);
+      interval = !wsConnected && !document.hidden
+        ? window.setInterval(() => fetchOrders(true), 120000)
+        : null;
+    };
+    const handleVisibility = () => {
+      if (!document.hidden) fetchOrders(true);
+      scheduleFallback();
+    };
+
+    scheduleFallback();
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      if (interval) window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [fetchOrders, wsConnected]);
 
   useEffect(() => {
     const handleNewOrder = (event) => {
-      if (event.type === "notifications:updated" && event.detail?.type !== "vendor_new_order") return;
       setViewMode("desk");
       setDeskStatusTab("pending");
       deskSwiper?.slideTo(0, 0);
@@ -228,10 +254,8 @@ export default function VendorOrdersPage() {
     };
 
     window.addEventListener("vendor:new-order", handleNewOrder);
-    window.addEventListener("notifications:updated", handleNewOrder);
     return () => {
       window.removeEventListener("vendor:new-order", handleNewOrder);
-      window.removeEventListener("notifications:updated", handleNewOrder);
     };
   }, [deskSwiper, fetchOrders]);
 
