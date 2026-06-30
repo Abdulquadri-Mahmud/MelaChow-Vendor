@@ -1456,7 +1456,7 @@ function PayoutDetailsModal({ withdrawal, isOpen, onClose, formatDate }) {
                             {/* Footer Buttons */}
                             <div className="grid grid-cols-2 gap-3">
                                 <button
-                                    onClick={() => toast("Issue report opened — contact support@melachow.com")}
+                                    onClick={() => toast("Issue report opened — contact support@melachow.com or help@melachow.com")}
                                     className="h-10 rounded-md border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5"
                                 >
                                     Report Issue

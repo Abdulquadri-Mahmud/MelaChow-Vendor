@@ -273,13 +273,22 @@ export default function VendorFAQs() {
           </div>
         </div>
 
-        <Link
-          href="mailto:vendorsupport@melachow.com"
-          className="relative z-10 shrink-0 w-full sm:w-auto text-center bg-white hover:bg-zinc-100 text-zinc-900 px-6 py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 group"
-        >
-          Contact Support
-          <ArrowRight size={16} className="text-zinc-400 group-hover:text-zinc-900 transition-colors" />
-        </Link>
+        <div className="flex flex-col sm:flex-row gap-3 relative z-10 w-full sm:w-auto shrink-0">
+          <Link
+            href="mailto:support@melachow.com"
+            className="relative z-10 shrink-0 w-full sm:w-auto text-center bg-white hover:bg-zinc-100 text-zinc-900 px-6 py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 group"
+          >
+            Email Support
+            <ArrowRight size={16} className="text-zinc-400 group-hover:text-zinc-900 transition-colors" />
+          </Link>
+          <Link
+            href="mailto:help@melachow.com"
+            className="relative z-10 shrink-0 w-full sm:w-auto text-center bg-zinc-800 hover:bg-zinc-700 text-white border border-zinc-700 px-6 py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 group"
+          >
+            Email Help Desk
+            <ArrowRight size={16} className="text-zinc-400 group-hover:text-white transition-colors" />
+          </Link>
+        </div>
       </div>
 
     </div>
