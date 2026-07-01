@@ -15,6 +15,8 @@ import {
   ArrowRight
 } from "lucide-react";
 import Link from "next/link";
+import ChatWidget from "@/components/vendor/Support/ChatWidget";
+
 
 // Comprehensive FAQ Data for Vendors
 const FAQ_DATA = [
@@ -290,7 +292,7 @@ export default function VendorFAQs() {
           </Link>
         </div>
       </div>
-
+      <ChatWidget />
     </div>
   );
 }
