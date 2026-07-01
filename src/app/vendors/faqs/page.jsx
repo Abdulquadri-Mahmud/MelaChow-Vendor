@@ -290,6 +290,7 @@ export default function VendorFAQs() {
             Email Help Desk
             <ArrowRight size={16} className="text-zinc-400 group-hover:text-white transition-colors" />
           </Link>
+        </div>
       </div>
       <ChatWidget />
     </div>
