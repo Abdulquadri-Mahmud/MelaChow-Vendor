@@ -15,6 +15,8 @@ import {
   ArrowRight
 } from "lucide-react";
 import Link from "next/link";
+import ChatWidget from "@/components/vendor/Support/ChatWidget";
+
 
 // Comprehensive FAQ Data for Vendors
 const FAQ_DATA = [
@@ -288,9 +290,8 @@ export default function VendorFAQs() {
             Email Help Desk
             <ArrowRight size={16} className="text-zinc-400 group-hover:text-white transition-colors" />
           </Link>
-        </div>
       </div>
-
+      <ChatWidget />
     </div>
   );
 }
