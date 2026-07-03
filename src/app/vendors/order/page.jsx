@@ -249,7 +249,10 @@ export default function VendorOrdersPage() {
       setViewMode("desk");
       setDeskStatusTab("pending");
       deskSwiper?.slideTo(0, 0);
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      // Delay scroll slightly so the swiper slide animation completes first
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }, 50);
       fetchOrders(true);
     };
 
@@ -783,6 +786,9 @@ export default function VendorOrdersPage() {
                 speed={300}
                 simulateTouch
                 touchRatio={1}
+                touchStartPreventDefault={false}
+                touchAngle={30}
+                threshold={10}
                 autoHeight
                 style={{ width: "100%" }}
               >
