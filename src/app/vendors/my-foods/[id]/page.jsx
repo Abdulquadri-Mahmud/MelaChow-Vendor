@@ -634,8 +634,17 @@ const AddOnsSection = ({ item, vendorId, itemId, queryClient }) => {
 
     const handleSaveGroup = async () => {
         if (!groupForm.name?.trim()) return toast.error("Name required");
+        const min = Number(groupForm.min_selections || 0);
+        const max = Number(groupForm.max_selections || 1);
+        if (min > max) return toast.error("Min picks cannot be greater than Max picks");
+        const isRequired = min > 0;
         try {
-            await updateChoiceGroup(vendorId, itemId, selectedGroup._id, { name: groupForm.name.trim(), is_required: groupForm.is_required, min_selections: groupForm.is_required ? Math.max(1, Number(groupForm.min_selections || 1)) : 0, max_selections: Number(groupForm.max_selections || 1) });
+            await updateChoiceGroup(vendorId, itemId, selectedGroup._id, { 
+                name: groupForm.name.trim(), 
+                is_required: isRequired, 
+                min_selections: min, 
+                max_selections: max 
+            });
             queryClient.invalidateQueries({ queryKey: ["food-item", itemId] });
             setIsGroupModalOpen(false);
             toast.success("Group updated");
