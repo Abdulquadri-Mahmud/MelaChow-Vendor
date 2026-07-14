@@ -120,6 +120,7 @@ export const useCreateMenuItem = (vendorId) => {
             for (const g of choice_groups) {
                 // Step 3: create the group, capture the REAL _id
                 const groupRes = await addChoiceGroup(vendorId, itemId, {
+                    source_template_id: g.source_template_id || null,
                     name: g.name,
                     min_selections: g.min_selections,
                     max_selections: g.max_selections,
@@ -149,6 +150,9 @@ export const useCreateMenuItem = (vendorId) => {
                         image_url: o.image_url || null,
                         image: o.image_url || null, // alternative key
                         is_available: o.is_available ?? true,
+                        track_stock: o.track_stock === true,
+                        stock_quantity: o.track_stock ? Math.max(0, Number(o.stock_quantity) || 0) : 0,
+                        low_stock_threshold: Math.max(0, Number(o.low_stock_threshold) || 0),
                         sort_order: i,
                     };
 

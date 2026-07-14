@@ -35,6 +35,7 @@ export default function Step5Review() {
         platform_category_id: store.platform_category_id,
         vendor_section_id: store.vendor_section_id,
         choice_groups: store.choice_groups.map((group) => ({
+          source_template_id: group.source_template_id || null,
           name: group.name,
           is_required: group.is_required,
           min_selections: group.min_selections,
@@ -44,6 +45,9 @@ export default function Step5Review() {
             price_modifier_naira: Number(opt.price_modifier_naira) || 0,
             image_url: opt.image_url || null,
             is_available: opt.is_available,
+            track_stock: opt.track_stock === true,
+            stock_quantity: opt.track_stock ? Math.max(0, Number(opt.stock_quantity) || 0) : 0,
+            low_stock_threshold: Math.max(0, Number(opt.low_stock_threshold) || 0),
           })),
         })),
       };
@@ -116,7 +120,7 @@ export default function Step5Review() {
                   {store.description && (
                   <div className="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-lg border border-zinc-100 dark:border-zinc-800">
                     <p className="text-[7px] font-black text-zinc-400 uppercase tracking-widest mb-1 leading-none">Description</p>
-                    <p className="text-[10px] font-medium text-zinc-600 dark:text-zinc-300 leading-normal line-clamp-3 italic">"{store.description}"</p>
+                    <p className="text-[10px] font-medium text-zinc-600 dark:text-zinc-300 leading-normal line-clamp-3 italic">&quot;{store.description}&quot;</p>
                   </div>
                   )}
 
@@ -136,7 +140,7 @@ export default function Step5Review() {
                   <div className="space-y-6 flex-1">
                       <div>
                           <div className="flex items-center justify-between mb-3">
-                              <h4 className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">What's Included</h4>
+                              <h4 className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">What&apos;s Included</h4>
                               <div className="h-px bg-zinc-800 flex-1 ml-4" />
                           </div>
                           <div className="flex flex-wrap gap-1.5">

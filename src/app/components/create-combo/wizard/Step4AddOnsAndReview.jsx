@@ -6,6 +6,7 @@ import { Edit2, Plus, Trash2, X, ChevronDown, LayoutGrid, Info, Settings2, Dolla
 import uploadToCloudinary from "@/app/components/user_profile/helpers/uploadToCloudinary";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import SavedChoiceGroupPicker from "@/app/components/shared/SavedChoiceGroupPicker";
 
 const GROUP_TITLE_PRESETS = {
     "Protein & Meat": ["Choose your protein", "Choose your meat cut", "Choose your meat"],
@@ -38,6 +39,9 @@ export default function Step4AddOns() {
     const [optionLabel, setOptionLabel] = useState("");
     const [optionPrice, setOptionPrice] = useState("");
     const [optionImage, setOptionImage] = useState("");
+    const [optionTrackStock, setOptionTrackStock] = useState(false);
+    const [optionStockQuantity, setOptionStockQuantity] = useState("0");
+    const [optionLowStockThreshold, setOptionLowStockThreshold] = useState("5");
     const [isUploadingOptionImage, setIsUploadingOptionImage] = useState(false);
 
     const handleOpenGroupForm = (group = null) => {
@@ -71,11 +75,17 @@ export default function Step4AddOns() {
             setOptionLabel(option.label);
             setOptionPrice(option.price_modifier_naira.toString());
             setOptionImage(option.image_url || "");
+            setOptionTrackStock(option.track_stock === true);
+            setOptionStockQuantity(String(option.stock_quantity ?? 0));
+            setOptionLowStockThreshold(String(option.low_stock_threshold ?? 5));
         } else {
             setEditingOptionId(null);
             setOptionLabel("");
             setOptionPrice("");
             setOptionImage("");
+            setOptionTrackStock(false);
+            setOptionStockQuantity("0");
+            setOptionLowStockThreshold("5");
         }
         setShowOptionForm(true);
     };
@@ -160,6 +170,9 @@ export default function Step4AddOns() {
             price_modifier_naira: Number(optionPrice) || 0,
             is_available: true,
             image_url: optionImage,
+            track_stock: optionTrackStock,
+            stock_quantity: optionTrackStock ? Math.max(0, Number(optionStockQuantity) || 0) : 0,
+            low_stock_threshold: Math.max(0, Number(optionLowStockThreshold) || 0),
         };
 
         if (editingOptionId) {
@@ -182,6 +195,10 @@ export default function Step4AddOns() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-4"
         >
+            <SavedChoiceGroupPicker
+                existingGroups={store.choice_groups}
+                onAdd={(group) => store.addChoiceGroup(group)}
+            />
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 
                 {/* LEFT: PRESETS */}
@@ -227,7 +244,7 @@ export default function Step4AddOns() {
                                 <div className="flex gap-3">
                                     <Info size={14} className="text-orange-500 shrink-0 mt-0.5" />
                                     <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 leading-relaxed italic">
-                                        Templates add logical rules (e.g. "Pick 1"). You can customize settings later.
+                                        Templates add logical rules (e.g. &quot;Pick 1&quot;). You can customize settings later.
                                     </p>
                                 </div>
                             </div>
@@ -626,6 +643,10 @@ export default function Step4AddOns() {
                                             />
                                         </div>
                                         <p className="text-[8px] font-bold text-zinc-400 uppercase italic tracking-widest pl-4 mt-2">Leave 0 if free</p>
+                                    </div>
+                                    <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950">
+                                        <label className="flex cursor-pointer items-center justify-between gap-4"><span><span className="block text-[10px] font-black uppercase tracking-widest text-zinc-800 dark:text-white">Track stock</span><span className="mt-1 block text-[9px] font-medium text-zinc-400">Stops orders when this choice reaches zero.</span></span><input type="checkbox" checked={optionTrackStock} onChange={e => setOptionTrackStock(e.target.checked)} className="h-5 w-5 accent-orange-600" /></label>
+                                        {optionTrackStock && <div className="mt-4 grid grid-cols-2 gap-3"><label className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Available<input type="number" min="0" step="1" value={optionStockQuantity} onChange={e => setOptionStockQuantity(e.target.value)} className="mt-2 h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" /></label><label className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Low stock at<input type="number" min="0" step="1" value={optionLowStockThreshold} onChange={e => setOptionLowStockThreshold(e.target.value)} className="mt-2 h-11 w-full rounded-xl border border-zinc-200 bg-white px-3 text-sm font-black text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-800 dark:bg-zinc-900 dark:text-white" /></label></div>}
                                     </div>
                                     
                                     {/* Choice Image Section Commented Out 
