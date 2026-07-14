@@ -121,6 +121,7 @@ export const useCreateMenuItem = (vendorId) => {
                 // Step 3: create the group, capture the REAL _id
                 const groupRes = await addChoiceGroup(vendorId, itemId, {
                     source_template_id: g.source_template_id || null,
+                    image_url: g.image_url || null,
                     name: g.name,
                     min_selections: g.min_selections,
                     max_selections: g.max_selections,

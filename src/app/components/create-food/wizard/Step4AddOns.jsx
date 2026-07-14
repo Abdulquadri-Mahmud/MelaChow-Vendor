@@ -31,6 +31,7 @@ export default function Step4AddOns() {
     // Group Form State
     const [editingGroupId, setEditingGroupId] = useState(null);
     const [groupName, setGroupName] = useState("");
+    const [groupImage, setGroupImage] = useState("");
     const [isRequired, setIsRequired] = useState(false);
     const [minSelections, setMinSelections] = useState("0");
     const [maxSelections, setMaxSelections] = useState("");
@@ -54,12 +55,14 @@ export default function Step4AddOns() {
         if (typeof group === 'string') {
             setEditingGroupId(null);
             setGroupName(group);
+            setGroupImage("");
             setIsRequired(false);
             setMinSelections("0");
             setMaxSelections("");
         } else if (group && group.tempId) {
             setEditingGroupId(group.tempId);
             setGroupName(group.name);
+            setGroupImage(group.image_url || "");
             setIsRequired(group.is_required);
             setMinSelections(group.min_selections.toString());
             // Show empty (unlimited) if stored max is 9999
@@ -67,6 +70,7 @@ export default function Step4AddOns() {
         } else {
             setEditingGroupId(null);
             setGroupName("");
+            setGroupImage("");
             setIsRequired(false);
             setMinSelections("0");
             setMaxSelections("");
@@ -113,6 +117,7 @@ export default function Step4AddOns() {
 
         const data = {
             name: groupName.trim(),
+            image_url: groupImage.trim() || null,
             is_required: isRequired,
             min_selections: min,
             max_selections: max,
@@ -447,6 +452,7 @@ export default function Step4AddOns() {
                                             placeholder="e.g. Choose your protein"
                                             className="w-full h-12 px-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[12px] font-black uppercase tracking-widest text-zinc-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 shadow-inner transition-all"
                                         />
+                                        <input type="url" value={groupImage} onChange={e => setGroupImage(e.target.value)} placeholder="Optional group image URL" className="mt-2 w-full h-11 px-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded text-[11px] font-bold text-zinc-900 dark:text-white outline-none focus:border-orange-500" />
                                     </div>
 
                                     <div className="p-3 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-100 dark:border-zinc-800 space-y-3">
