@@ -178,7 +178,6 @@ export const useCreateFoodStore = create(
                         || g.source_template_id?.toString?.()
                         || null,
                     name: g.name,
-                    image_url: g.image_url || null,
                     is_required: g.is_required,
                     min_selections: g.min_selections,
                     max_selections: g.max_selections,

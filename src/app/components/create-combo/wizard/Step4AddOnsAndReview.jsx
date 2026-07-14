@@ -29,7 +29,6 @@ export default function Step4AddOns() {
     // Group Form State
     const [editingGroupId, setEditingGroupId] = useState(null);
     const [groupName, setGroupName] = useState("");
-    const [groupImage, setGroupImage] = useState("");
     const [isRequired, setIsRequired] = useState(false);
     const [minSelections, setMinSelections] = useState("0");
     const [maxSelections, setMaxSelections] = useState("");
@@ -40,6 +39,7 @@ export default function Step4AddOns() {
     const [optionLabel, setOptionLabel] = useState("");
     const [optionPrice, setOptionPrice] = useState("");
     const [optionImage, setOptionImage] = useState("");
+    const [optionIsAvailable, setOptionIsAvailable] = useState(true);
     const [optionTrackStock, setOptionTrackStock] = useState(false);
     const [optionStockQuantity, setOptionStockQuantity] = useState("0");
     const [optionLowStockThreshold, setOptionLowStockThreshold] = useState("5");
@@ -49,14 +49,12 @@ export default function Step4AddOns() {
         if (typeof group === 'string') {
             setEditingGroupId(null);
             setGroupName(group);
-            setGroupImage("");
             setIsRequired(false);
             setMinSelections("0");
             setMaxSelections("");
         } else if (group && group.tempId) {
             setEditingGroupId(group.tempId);
             setGroupName(group.name);
-            setGroupImage(group.image_url || "");
             setIsRequired(group.is_required);
             setMinSelections(group.min_selections.toString());
             // Show empty (unlimited) if stored max is 9999
@@ -64,7 +62,6 @@ export default function Step4AddOns() {
         } else {
             setEditingGroupId(null);
             setGroupName("");
-            setGroupImage("");
             setIsRequired(false);
             setMinSelections("0");
             setMaxSelections("");
@@ -79,6 +76,7 @@ export default function Step4AddOns() {
             setOptionLabel(option.label);
             setOptionPrice(option.price_modifier_naira.toString());
             setOptionImage(option.image_url || "");
+            setOptionIsAvailable(option.is_available !== false);
             setOptionTrackStock(option.track_stock === true);
             setOptionStockQuantity(String(option.stock_quantity ?? 0));
             setOptionLowStockThreshold(String(option.low_stock_threshold ?? 5));
@@ -87,6 +85,7 @@ export default function Step4AddOns() {
             setOptionLabel("");
             setOptionPrice("");
             setOptionImage("");
+            setOptionIsAvailable(true);
             setOptionTrackStock(false);
             setOptionStockQuantity("0");
             setOptionLowStockThreshold("5");
@@ -111,7 +110,6 @@ export default function Step4AddOns() {
 
         const data = {
             name: groupName.trim(),
-            image_url: groupImage.trim() || null,
             is_required: isRequired || min > 0,
             min_selections: min,
             max_selections: max,
@@ -136,6 +134,7 @@ export default function Step4AddOns() {
                 setOptionLabel("");
                 setOptionPrice("");
                 setOptionImage("");
+                setOptionIsAvailable(true);
                 setShowOptionForm(true);
             }, 200);
         }
@@ -173,7 +172,7 @@ export default function Step4AddOns() {
         const data = {
             label: optionLabel.trim(),
             price_modifier_naira: Number(optionPrice) || 0,
-            is_available: true,
+            is_available: optionIsAvailable,
             image_url: optionImage,
             track_stock: optionTrackStock,
             stock_quantity: optionTrackStock ? Math.max(0, Number(optionStockQuantity) || 0) : 0,
@@ -445,7 +444,6 @@ export default function Step4AddOns() {
                                             placeholder="e.g. Choose your protein"
                                             className="w-full h-12 px-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-[12px] font-black uppercase tracking-widest text-zinc-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 shadow-inner transition-all"
                                         />
-                                        <input type="url" value={groupImage} onChange={e => setGroupImage(e.target.value)} placeholder="Optional group image URL" className="mt-2 w-full h-11 px-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded text-[11px] font-bold text-zinc-900 dark:text-white outline-none focus:border-orange-500" />
                                     </div>
 
                                     <div className="p-5 bg-zinc-50 dark:bg-zinc-950 rounded-2xl border border-zinc-100 dark:border-zinc-800 space-y-5">
@@ -649,6 +647,13 @@ export default function Step4AddOns() {
                                             />
                                         </div>
                                         <p className="text-[8px] font-bold text-zinc-400 uppercase italic tracking-widest pl-4 mt-2">Leave 0 if free</p>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] block mb-2 pl-1">Thumbnail URL</label>
+                                        <input type="url" value={optionImage} onChange={e => setOptionImage(e.target.value)} placeholder="Optional image URL" className="w-full h-12 px-4 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl text-[11px] font-bold text-zinc-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10" />
+                                    </div>
+                                    <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950">
+                                        <label className="flex cursor-pointer items-center justify-between gap-4"><span className="text-[10px] font-black uppercase tracking-widest text-zinc-800 dark:text-white">Available to customers</span><input type="checkbox" checked={optionIsAvailable} onChange={e => setOptionIsAvailable(e.target.checked)} className="h-5 w-5 accent-orange-600" /></label>
                                     </div>
                                     <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4 dark:border-zinc-800 dark:bg-zinc-950">
                                         <label className="flex cursor-pointer items-center justify-between gap-4"><span><span className="block text-[10px] font-black uppercase tracking-widest text-zinc-800 dark:text-white">Track stock</span><span className="mt-1 block text-[9px] font-medium text-zinc-400">Stops orders when this choice reaches zero.</span></span><input type="checkbox" checked={optionTrackStock} onChange={e => setOptionTrackStock(e.target.checked)} className="h-5 w-5 accent-orange-600" /></label>

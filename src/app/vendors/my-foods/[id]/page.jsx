@@ -598,7 +598,7 @@ const AddOnsSection = ({ item, vendorId, itemId, queryClient }) => {
     // Group naming mode: preset vs custom
     const [isAddingCustomTitle, setIsAddingCustomTitle] = useState(false);
     const [showAddGroup, setShowAddGroup] = useState(false);
-    const [newGroup, setNewGroup] = useState({ name: "", image_url: "", is_required: false, min_selections: 0, max_selections: 1 });
+    const [newGroup, setNewGroup] = useState({ name: "", is_required: false, min_selections: 0, max_selections: 1 });
     const [groupForm, setGroupForm] = useState({});
     const [optionForm, setOptionForm] = useState({});
 
@@ -610,13 +610,13 @@ const AddOnsSection = ({ item, vendorId, itemId, queryClient }) => {
     const [isEditOption, setIsEditOption] = useState(false);
 
     const openAddGroup = () => {
-        setNewGroup({ name: "", image_url: "", is_required: false, min_selections: 0, max_selections: 1 });
+        setNewGroup({ name: "", is_required: false, min_selections: 0, max_selections: 1 });
         setShowAddGroup(true);
     };
 
     const openEditGroup = (group) => {
         setSelectedGroup(group);
-        setGroupForm({ name: group.name, image_url: group.image_url || "", is_required: group.is_required, min_selections: group.min_selections, max_selections: group.max_selections });
+        setGroupForm({ name: group.name, is_required: group.is_required, min_selections: group.min_selections, max_selections: group.max_selections });
         setIsGroupModalOpen(true);
     };
 
@@ -642,7 +642,6 @@ const AddOnsSection = ({ item, vendorId, itemId, queryClient }) => {
         try {
             await updateChoiceGroup(vendorId, itemId, selectedGroup._id, { 
                 name: groupForm.name.trim(), 
-                image_url: groupForm.image_url?.trim() || null,
                 is_required: isRequired, 
                 min_selections: min, 
                 max_selections: max 
@@ -656,9 +655,9 @@ const AddOnsSection = ({ item, vendorId, itemId, queryClient }) => {
     const handleAddGroup = async () => {
         if (!newGroup.name?.trim()) return toast.error("Name required");
         try {
-            await addChoiceGroup(vendorId, itemId, { name: newGroup.name.trim(), image_url: newGroup.image_url?.trim() || null, is_required: newGroup.is_required, min_selections: newGroup.is_required ? 1 : 0, max_selections: 5, sort_order: item.choice_groups?.length || 0 });
+            await addChoiceGroup(vendorId, itemId, { name: newGroup.name.trim(), is_required: newGroup.is_required, min_selections: newGroup.is_required ? 1 : 0, max_selections: 5, sort_order: item.choice_groups?.length || 0 });
             queryClient.invalidateQueries({ queryKey: ["food-item", itemId] });
-            setShowAddGroup(false); setNewGroup({ name: "", image_url: "", is_required: false });
+            setShowAddGroup(false); setNewGroup({ name: "", is_required: false });
             toast.success("Add-on group created");
         } catch (err) { toast.error("Error adding group"); }
     };
@@ -667,7 +666,6 @@ const AddOnsSection = ({ item, vendorId, itemId, queryClient }) => {
         const result = await addChoiceGroup(vendorId, itemId, {
             source_template_id: group.source_template_id,
             name: group.name,
-            image_url: group.image_url || null,
             is_required: group.is_required,
             min_selections: group.min_selections,
             max_selections: group.max_selections,
@@ -739,7 +737,7 @@ const AddOnsSection = ({ item, vendorId, itemId, queryClient }) => {
                         <div key={g._id} className="p-1 rounded-[2rem] bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 hover:shadow-xl transition-all duration-300">
                              <div className="flex items-center justify-between p-5 border-b border-zinc-50 dark:border-zinc-800/50">
                                 <div className="flex items-center gap-2">
-                                     {g.image_url ? <img src={g.image_url} alt="" className="w-10 h-10 rounded object-cover border border-zinc-200 dark:border-zinc-700" /> : <div className="w-10 h-10 rounded-2xl bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center text-orange-500"><LayoutGrid size={20} /></div>}
+                                     <div className="w-10 h-10 rounded-2xl bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center text-orange-500"><LayoutGrid size={20} /></div>
                                      <div>
                                          <h4 className="text-sm font-black text-zinc-800 dark:text-white uppercase tracking-tight">{g.name}</h4>
                                          <div className="flex items-center gap-2 mt-0.5">
@@ -805,7 +803,6 @@ const AddOnsSection = ({ item, vendorId, itemId, queryClient }) => {
                              </div>
                          )}
                     </div>
-                    <input type="url" className="h-11 px-3 w-full rounded-xl border bg-zinc-50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-xs font-bold" value={newGroup.image_url || ""} onChange={e => setNewGroup({ ...newGroup, image_url: e.target.value })} placeholder="Optional group image URL" />
                     <label className="flex items-center gap-3 p-2 rounded-2xl bg-zinc-50 dark:bg-zinc-800 border-border cursor-pointer">
                         <input type="checkbox" className="w-5 h-5 rounded-md text-orange-500" checked={newGroup.is_required} onChange={e => setNewGroup({ ...newGroup, is_required: e.target.checked })} />
                         <span className="text-xs font-black uppercase tracking-tight">Requirement: Mandatory selection</span>
@@ -827,7 +824,6 @@ const AddOnsSection = ({ item, vendorId, itemId, queryClient }) => {
                         <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">Group Name</label>
                         <input className="h-12 px-4 w-full rounded-xl border bg-zinc-100 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 font-bold" value={groupForm.name} onChange={e => setGroupForm({ ...groupForm, name: e.target.value })} />
                     </div>
-                    <input type="url" className="h-11 px-3 w-full rounded-xl border bg-zinc-100 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-xs font-bold" value={groupForm.image_url || ""} onChange={e => setGroupForm({ ...groupForm, image_url: e.target.value })} placeholder="Optional group image URL" />
                     <div className="grid grid-cols-2 gap-2">
                         <div>
                              <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">Min Select</label>

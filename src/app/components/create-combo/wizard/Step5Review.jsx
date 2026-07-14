@@ -37,7 +37,6 @@ export default function Step5Review() {
         choice_groups: store.choice_groups.map((group) => ({
           source_template_id: group.source_template_id || null,
           name: group.name,
-          image_url: group.image_url || null,
           is_required: group.is_required,
           min_selections: group.min_selections,
           max_selections: group.max_selections,

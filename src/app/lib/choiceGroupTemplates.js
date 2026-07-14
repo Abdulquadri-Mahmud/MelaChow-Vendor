@@ -4,7 +4,6 @@ export const templateToChoiceGroupSnapshot = (template, sequence = 0) => {
         tempId: `template-${template._id}-${seed}`,
         source_template_id: template._id,
         name: template.name,
-        image_url: template.image_url || null,
         is_required: template.is_required,
         min_selections: template.min_selections,
         max_selections: template.max_selections,
