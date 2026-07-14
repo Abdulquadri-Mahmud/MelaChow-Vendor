@@ -254,6 +254,7 @@ export default function EditFoodPage() {
 
                 const groupPayload = {
                     source_template_id: g.source_template_id || null,
+                    image_url: g.image_url || null,
                     name: g.name,
                     min_selections: g.minSelect ?? (g.min_selections || 0),
                     max_selections: g.maxSelect ?? (g.max_selections || 1),

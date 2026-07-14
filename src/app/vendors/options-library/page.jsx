@@ -53,6 +53,7 @@ const STARTERS = [
 
 const emptyForm = {
   name: "",
+  image_url: "",
   is_required: false,
   min_selections: 0,
   max_selections: 1,
@@ -61,6 +62,7 @@ const emptyForm = {
 
 const templateToForm = (template) => ({
   name: template.name,
+  image_url: template.image_url || "",
   is_required: template.is_required,
   min_selections: template.min_selections,
   max_selections: template.max_selections,
@@ -117,6 +119,7 @@ export default function OptionsLibraryPage() {
     setEditingTemplate(null);
     setForm(starter ? {
       name: starter.name,
+      image_url: "",
       is_required: starter.is_required,
       min_selections: starter.min_selections,
       max_selections: starter.max_selections,
@@ -365,6 +368,8 @@ export default function OptionsLibraryPage() {
                 <div>
                   <label className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Group name</label>
                   <input value={form.name} onChange={(event) => setField("name", event.target.value)} placeholder="e.g. Add Protein" className="mt-2 h-12 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-4 text-[12px] font-bold outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 dark:border-white/8 dark:bg-zinc-950 dark:text-white" />
+                  <label className="mt-3 block text-[9px] font-black uppercase tracking-widest text-zinc-500">Group image URL <span className="font-medium normal-case">(optional)</span></label>
+                  <input type="url" value={form.image_url} onChange={(event) => setField("image_url", event.target.value)} placeholder="https://example.com/protein.jpg" className="mt-2 h-11 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-[11px] font-bold outline-none focus:border-orange-500 dark:border-white/8 dark:bg-zinc-950 dark:text-white" />
                 </div>
 
                 <div className="mt-4 grid gap-3 rounded-2xl bg-zinc-50 p-4 sm:grid-cols-3 dark:bg-zinc-950/70">
