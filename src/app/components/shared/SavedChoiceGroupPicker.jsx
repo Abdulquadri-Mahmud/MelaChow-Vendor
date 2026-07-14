@@ -23,6 +23,7 @@ export default function SavedChoiceGroupPicker({ existingGroups = [], onAdd }) {
     const vendorId = vendorProfile?._id || vendorProfile?.id;
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [adding, setAdding] = useState(false);
     const [templates, setTemplates] = useState([]);
     const [selected, setSelected] = useState([]);
     const [search, setSearch] = useState("");
@@ -70,11 +71,20 @@ export default function SavedChoiceGroupPicker({ existingGroups = [], onAdd }) {
         setSearch("");
     };
 
-    const addSelected = () => {
+    const addSelected = async () => {
         const chosen = templates.filter((template) => selected.includes(template._id));
-        chosen.forEach((template, index) => onAdd(templateToChoiceGroupSnapshot(template, index)));
-        toast.success(`${chosen.length} saved group${chosen.length === 1 ? "" : "s"} copied into this item`);
-        close();
+        setAdding(true);
+        try {
+            await Promise.all(chosen.map((template, index) =>
+                Promise.resolve(onAdd(templateToChoiceGroupSnapshot(template, index), index))
+            ));
+            toast.success(`${chosen.length} saved group${chosen.length === 1 ? "" : "s"} copied into this item`);
+            close();
+        } catch (error) {
+            toast.error(error?.response?.data?.message || "Could not add the selected groups");
+        } finally {
+            setAdding(false);
+        }
     };
 
     return (
@@ -157,8 +167,8 @@ export default function SavedChoiceGroupPicker({ existingGroups = [], onAdd }) {
 
                             <div className="flex items-center justify-between gap-3 border-t border-zinc-100 bg-white p-3 dark:border-white/8 dark:bg-zinc-900">
                                 <Link href="/vendors/options-library" className="text-[8px] font-black uppercase tracking-widest text-zinc-500 hover:text-orange-600">Manage library</Link>
-                                <button type="button" onClick={addSelected} disabled={selected.length === 0} className="inline-flex h-11 min-w-36 items-center justify-center gap-2 rounded bg-orange-600 px-3 text-[9px] font-black uppercase tracking-widest text-white shadow-lg shadow-orange-600/20 disabled:cursor-not-allowed disabled:opacity-40">
-                                    <Plus size={13} /> Add {selected.length || ""} selected
+                                <button type="button" onClick={addSelected} disabled={selected.length === 0 || adding} className="inline-flex h-11 min-w-36 items-center justify-center gap-2 rounded bg-orange-600 px-3 text-[9px] font-black uppercase tracking-widest text-white shadow-lg shadow-orange-600/20 disabled:cursor-not-allowed disabled:opacity-40">
+                                    {adding ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />} {adding ? "Adding..." : `Add ${selected.length || ""} selected`}
                                 </button>
                             </div>
                         </motion.div>

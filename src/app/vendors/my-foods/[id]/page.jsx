@@ -17,6 +17,7 @@ import { Plus, Tag, Clock, ChefHat, Leaf, FolderOpen, LayoutGrid, Edit2, Package
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import BackButton from "@/app/components/BackButton";
+import SavedChoiceGroupPicker from "@/app/components/shared/SavedChoiceGroupPicker";
 
 const ITEM_TYPE_META = {
     FOOD:    { emoji: "🍽️", label: "Food" },
@@ -597,7 +598,7 @@ const AddOnsSection = ({ item, vendorId, itemId, queryClient }) => {
     // Group naming mode: preset vs custom
     const [isAddingCustomTitle, setIsAddingCustomTitle] = useState(false);
     const [showAddGroup, setShowAddGroup] = useState(false);
-    const [newGroup, setNewGroup] = useState({ name: "", is_required: false, min_selections: 0, max_selections: 1 });
+    const [newGroup, setNewGroup] = useState({ name: "", image_url: "", is_required: false, min_selections: 0, max_selections: 1 });
     const [groupForm, setGroupForm] = useState({});
     const [optionForm, setOptionForm] = useState({});
 
@@ -609,13 +610,13 @@ const AddOnsSection = ({ item, vendorId, itemId, queryClient }) => {
     const [isEditOption, setIsEditOption] = useState(false);
 
     const openAddGroup = () => {
-        setNewGroup({ name: "", is_required: false, min_selections: 0, max_selections: 1 });
+        setNewGroup({ name: "", image_url: "", is_required: false, min_selections: 0, max_selections: 1 });
         setShowAddGroup(true);
     };
 
     const openEditGroup = (group) => {
         setSelectedGroup(group);
-        setGroupForm({ name: group.name, is_required: group.is_required, min_selections: group.min_selections, max_selections: group.max_selections });
+        setGroupForm({ name: group.name, image_url: group.image_url || "", is_required: group.is_required, min_selections: group.min_selections, max_selections: group.max_selections });
         setIsGroupModalOpen(true);
     };
 
@@ -624,10 +625,10 @@ const AddOnsSection = ({ item, vendorId, itemId, queryClient }) => {
         if (option) {
             setIsEditOption(true);
             setSelectedOption(option);
-            setOptionForm({ label: option.label, price_modifier_naira: option.price_modifier_naira, image_url: option.image_url || "" });
+            setOptionForm({ label: option.label, price_modifier_naira: option.price_modifier_naira, image_url: option.image_url || "", is_available: option.is_available !== false, track_stock: option.track_stock === true, stock_quantity: option.stock_quantity ?? 0, low_stock_threshold: option.low_stock_threshold ?? 5 });
         } else {
             setIsEditOption(false);
-            setOptionForm({ label: "", price_modifier_naira: "", image_url: "" });
+            setOptionForm({ label: "", price_modifier_naira: "", image_url: "", is_available: true, track_stock: false, stock_quantity: 0, low_stock_threshold: 5 });
         }
         setIsAddOptionModalOpen(true);
     };
@@ -641,6 +642,7 @@ const AddOnsSection = ({ item, vendorId, itemId, queryClient }) => {
         try {
             await updateChoiceGroup(vendorId, itemId, selectedGroup._id, { 
                 name: groupForm.name.trim(), 
+                image_url: groupForm.image_url?.trim() || null,
                 is_required: isRequired, 
                 min_selections: min, 
                 max_selections: max 
@@ -654,21 +656,51 @@ const AddOnsSection = ({ item, vendorId, itemId, queryClient }) => {
     const handleAddGroup = async () => {
         if (!newGroup.name?.trim()) return toast.error("Name required");
         try {
-            await addChoiceGroup(vendorId, itemId, { name: newGroup.name.trim(), is_required: newGroup.is_required, min_selections: newGroup.is_required ? 1 : 0, max_selections: 5, sort_order: item.choice_groups?.length || 0 });
+            await addChoiceGroup(vendorId, itemId, { name: newGroup.name.trim(), image_url: newGroup.image_url?.trim() || null, is_required: newGroup.is_required, min_selections: newGroup.is_required ? 1 : 0, max_selections: 5, sort_order: item.choice_groups?.length || 0 });
             queryClient.invalidateQueries({ queryKey: ["food-item", itemId] });
-            setShowAddGroup(false); setNewGroup({ name: "", is_required: false });
+            setShowAddGroup(false); setNewGroup({ name: "", image_url: "", is_required: false });
             toast.success("Add-on group created");
         } catch (err) { toast.error("Error adding group"); }
+    };
+
+    const handleAddSavedGroup = async (group, selectionIndex = 0) => {
+        const result = await addChoiceGroup(vendorId, itemId, {
+            source_template_id: group.source_template_id,
+            name: group.name,
+            image_url: group.image_url || null,
+            is_required: group.is_required,
+            min_selections: group.min_selections,
+            max_selections: group.max_selections,
+            sort_order: (item.choice_groups?.length || 0) + selectionIndex,
+        });
+        const groupId = result?.group?._id || result?.choiceGroup?._id || result?.id;
+        if (!groupId) throw new Error("Choice group was created without an ID");
+        try {
+            await Promise.all((group.options || []).map((option, index) => addChoiceOption(groupId, {
+                label: option.label,
+                price_modifier_naira: Number(option.price_modifier_naira) || 0,
+                image_url: option.image_url || null,
+                is_available: option.is_available !== false,
+                track_stock: option.track_stock === true,
+                stock_quantity: option.track_stock ? Math.max(0, Number(option.stock_quantity) || 0) : 0,
+                low_stock_threshold: Math.max(0, Number(option.low_stock_threshold) || 0),
+                sort_order: index,
+            })));
+        } catch (error) {
+            await deleteChoiceGroup(vendorId, itemId, groupId).catch(() => {});
+            throw error;
+        }
+        await queryClient.invalidateQueries({ queryKey: ["food-item", itemId] });
     };
 
     const handleSaveOption = async () => {
         if (!optionForm.label?.trim()) return toast.error("Label required");
         try {
             if (isEditOption) {
-                await updateChoiceOption(selectedGroup._id, selectedOption._id, { label: optionForm.label.trim(), price_modifier_naira: Number(optionForm.price_modifier_naira) || 0, image_url: optionForm.image_url?.trim() || null });
+                await updateChoiceOption(selectedGroup._id, selectedOption._id, { label: optionForm.label.trim(), price_modifier_naira: Number(optionForm.price_modifier_naira) || 0, image_url: optionForm.image_url?.trim() || null, is_available: optionForm.is_available !== false, track_stock: optionForm.track_stock === true, stock_quantity: optionForm.track_stock ? Math.max(0, Number(optionForm.stock_quantity) || 0) : 0, low_stock_threshold: Math.max(0, Number(optionForm.low_stock_threshold) || 0) });
                 toast.success("Option updated");
             } else {
-                await addChoiceOption(selectedGroup._id, { label: optionForm.label.trim(), price_modifier_naira: Number(optionForm.price_modifier_naira) || 0, image_url: optionForm.image_url?.trim() || null });
+                await addChoiceOption(selectedGroup._id, { label: optionForm.label.trim(), price_modifier_naira: Number(optionForm.price_modifier_naira) || 0, image_url: optionForm.image_url?.trim() || null, is_available: optionForm.is_available !== false, track_stock: optionForm.track_stock === true, stock_quantity: optionForm.track_stock ? Math.max(0, Number(optionForm.stock_quantity) || 0) : 0, low_stock_threshold: Math.max(0, Number(optionForm.low_stock_threshold) || 0) });
                 toast.success("Option added");
             }
             queryClient.invalidateQueries({ queryKey: ["food-item", itemId] });
@@ -700,13 +732,14 @@ const AddOnsSection = ({ item, vendorId, itemId, queryClient }) => {
         <>
             <SectionCard title="Add-on Groups" action={<button onClick={openAddGroup} className="h-9 px-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-[10px] font-black uppercase tracking-widest text-orange-500 hover:text-orange-600 active:scale-95 transition-all shadow-sm">+ Add Group</button>}>
                 <div className="space-y-4">
+                    <SavedChoiceGroupPicker existingGroups={item.choice_groups || []} onAdd={handleAddSavedGroup} />
                     {!item.choice_groups?.length && <div className="py-10 text-center border-2 border-dashed border-zinc-100 dark:border-zinc-800 rounded-3xl"><p className="text-sm font-medium text-zinc-400">No add-ons configured yet.</p></div>}
                     
                     {item.choice_groups?.map(g => (
                         <div key={g._id} className="p-1 rounded-[2rem] bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 hover:shadow-xl transition-all duration-300">
                              <div className="flex items-center justify-between p-5 border-b border-zinc-50 dark:border-zinc-800/50">
                                 <div className="flex items-center gap-2">
-                                     <div className="w-10 h-10 rounded-2xl bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center text-orange-500"><LayoutGrid size={20} /></div>
+                                     {g.image_url ? <img src={g.image_url} alt="" className="w-10 h-10 rounded object-cover border border-zinc-200 dark:border-zinc-700" /> : <div className="w-10 h-10 rounded-2xl bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center text-orange-500"><LayoutGrid size={20} /></div>}
                                      <div>
                                          <h4 className="text-sm font-black text-zinc-800 dark:text-white uppercase tracking-tight">{g.name}</h4>
                                          <div className="flex items-center gap-2 mt-0.5">
@@ -772,6 +805,7 @@ const AddOnsSection = ({ item, vendorId, itemId, queryClient }) => {
                              </div>
                          )}
                     </div>
+                    <input type="url" className="h-11 px-3 w-full rounded-xl border bg-zinc-50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-xs font-bold" value={newGroup.image_url || ""} onChange={e => setNewGroup({ ...newGroup, image_url: e.target.value })} placeholder="Optional group image URL" />
                     <label className="flex items-center gap-3 p-2 rounded-2xl bg-zinc-50 dark:bg-zinc-800 border-border cursor-pointer">
                         <input type="checkbox" className="w-5 h-5 rounded-md text-orange-500" checked={newGroup.is_required} onChange={e => setNewGroup({ ...newGroup, is_required: e.target.checked })} />
                         <span className="text-xs font-black uppercase tracking-tight">Requirement: Mandatory selection</span>
@@ -793,6 +827,7 @@ const AddOnsSection = ({ item, vendorId, itemId, queryClient }) => {
                         <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">Group Name</label>
                         <input className="h-12 px-4 w-full rounded-xl border bg-zinc-100 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 font-bold" value={groupForm.name} onChange={e => setGroupForm({ ...groupForm, name: e.target.value })} />
                     </div>
+                    <input type="url" className="h-11 px-3 w-full rounded-xl border bg-zinc-100 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-xs font-bold" value={groupForm.image_url || ""} onChange={e => setGroupForm({ ...groupForm, image_url: e.target.value })} placeholder="Optional group image URL" />
                     <div className="grid grid-cols-2 gap-2">
                         <div>
                              <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">Min Select</label>
@@ -828,6 +863,9 @@ const AddOnsSection = ({ item, vendorId, itemId, queryClient }) => {
                          <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2 ml-1">Thumbnail URL</label>
                          <input className="h-12 px-4 w-full rounded-xl border text-xs outline-none focus:border-orange-500" value={optionForm.image_url} onChange={e => setOptionForm({ ...optionForm, image_url: e.target.value })} placeholder="Optional image..." />
                     </div>
+                    <label className="flex items-center justify-between rounded-xl border border-zinc-200 dark:border-zinc-800 p-3"><span className="text-[10px] font-black uppercase tracking-widest">Available to customers</span><input type="checkbox" checked={optionForm.is_available !== false} onChange={e => setOptionForm({ ...optionForm, is_available: e.target.checked })} className="h-5 w-5 accent-orange-500" /></label>
+                    <label className="flex items-center justify-between rounded-xl border border-zinc-200 dark:border-zinc-800 p-3"><span className="text-[10px] font-black uppercase tracking-widest">Track stock</span><input type="checkbox" checked={optionForm.track_stock === true} onChange={e => setOptionForm({ ...optionForm, track_stock: e.target.checked })} className="h-5 w-5 accent-orange-500" /></label>
+                    {optionForm.track_stock && <div className="grid grid-cols-2 gap-3"><label className="text-[9px] font-black uppercase text-zinc-400">Available<input type="number" min="0" value={optionForm.stock_quantity} onChange={e => setOptionForm({ ...optionForm, stock_quantity: e.target.value })} className="mt-2 h-11 w-full rounded-xl border px-3 font-bold dark:bg-zinc-950" /></label><label className="text-[9px] font-black uppercase text-zinc-400">Low stock at<input type="number" min="0" value={optionForm.low_stock_threshold} onChange={e => setOptionForm({ ...optionForm, low_stock_threshold: e.target.value })} className="mt-2 h-11 w-full rounded-xl border px-3 font-bold dark:bg-zinc-950" /></label></div>}
                 </div>
             </ManagementModal>
         </>
