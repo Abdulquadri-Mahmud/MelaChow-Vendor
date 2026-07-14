@@ -15,12 +15,14 @@ import Step1BasicInfo from '@/app/components/create-combo/wizard/Step1BasicInfo'
 import Step2Categories from '@/app/components/create-combo/wizard/Step2Categories';
 import Step3Pricing from '@/app/components/create-combo/wizard/Step3Pricing';
 import Step4AddOnsAndReview from '@/app/components/create-combo/wizard/Step4AddOnsAndReview';
+import Step5Review from '@/app/components/create-combo/wizard/Step5Review';
 
 const STEPS = [
   { id: 1, title: 'Basic Info', short: 'Basics' },
   { id: 2, title: 'Categories', short: 'Category' },
   { id: 3, title: 'Pricing', short: 'Price' },
-  { id: 4, title: 'Add-Ons & Review', short: 'Review' },
+  { id: 4, title: 'Add-Ons', short: 'Add-Ons' },
+  { id: 5, title: 'Final Review', short: 'Review' },
 ];
 
 export default function EditComboPage() {
@@ -80,7 +82,8 @@ export default function EditComboPage() {
       case 1: return 'Edit Categories';
       case 2: return 'Adjust Pricing';
       case 3: return 'Review Updates';
-      case 4: return store.isSubmitting ? 'Updating...' : 'Update Combo';
+      case 4: return 'Final Review';
+      case 5: return store.isSubmitting ? 'Updating...' : 'Update Combo';
       default: return 'Continue';
     }
   };
@@ -204,6 +207,7 @@ export default function EditComboPage() {
                   {store.currentStep === 2 && <Step2Categories />}
                   {store.currentStep === 3 && <Step3Pricing />}
                   {store.currentStep === 4 && <Step4AddOnsAndReview />}
+                  {store.currentStep === 5 && <Step5Review />}
                 </motion.div>
               </AnimatePresence>
             </div>
@@ -298,7 +302,7 @@ export default function EditComboPage() {
                </div>
 
                <button 
-                  onClick={store.currentStep === STEPS.length ? () => document.getElementById('submit-combo-btn')?.click() : handleNextWithValidation} 
+                  onClick={store.currentStep === STEPS.length ? () => document.getElementById('final-publish-btn')?.click() : handleNextWithValidation}
                   disabled={store.isSubmitting}
                   className={`h-11 px-3 rounded font-black uppercase tracking-widest text-[10px] transition-all active:scale-95 flex items-center gap-3 shadow-md disabled:opacity-50 ${
                     store.currentStep === STEPS.length 
