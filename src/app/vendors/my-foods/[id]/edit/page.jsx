@@ -147,6 +147,12 @@ export default function EditFoodPage() {
     };
 
     const handleDeleteGroup = (groupId, groupName) => {
+        if (!groupId || groupId.length !== 24) {
+            store.removeChoiceGroup(groupId);
+            toast.success("Choice group removed");
+            return;
+        }
+
         toast((t) => (
             <div className="flex flex-col gap-3 min-w-[240px]">
                 <p className="text-sm font-black text-zinc-900 dark:text-white">
@@ -183,6 +189,12 @@ export default function EditFoodPage() {
     };
 
     const handleDeleteOption = async (groupId, optionId, optionLabel) => {
+        if (!optionId || optionId.length !== 24) {
+            store.removeChoiceOption(groupId, optionId);
+            toast.success(`"${optionLabel}" removed`);
+            return;
+        }
+
         // In edit mode optionId is tempId which equals the real MongoDB _id
         try {
             await deleteChoiceOption(groupId, optionId);
@@ -241,6 +253,7 @@ export default function EditFoodPage() {
                 const isExistingGroup = g.tempId && g.tempId.length === 24; // Simple MongoDB ID check
 
                 const groupPayload = {
+                    source_template_id: g.source_template_id || null,
                     name: g.name,
                     min_selections: g.minSelect ?? (g.min_selections || 0),
                     max_selections: g.maxSelect ?? (g.max_selections || 1),
@@ -269,6 +282,9 @@ export default function EditFoodPage() {
                             image_url: o.image || o.image_url || null,
                             image: o.image || o.image_url || null,
                             is_available: o.is_available ?? true,
+                            track_stock: o.track_stock === true,
+                            stock_quantity: o.track_stock ? Math.max(0, Number(o.stock_quantity) || 0) : 0,
+                            low_stock_threshold: Math.max(0, Number(o.low_stock_threshold) || 0),
                             sort_order: i,
                         };
 
@@ -301,17 +317,17 @@ export default function EditFoodPage() {
         }
     };
     return (
-        <div className="min-h-screen bg-[#F8FAFC] dark:bg-zinc-950 pb-10 transition-colors">
-            <div className="max-w-xl mx-auto pt-6 px-4 md:px-8">
-                <div className="flex items-center justify-between mb-8">
-                    <BackButton label="Back to Menu" className="py-2" />
+        <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 pb-10 transition-colors">
+            <div className="max-w-5xl mx-auto p-3">
+                <div className="flex items-center justify-between mb-6 rounded bg-zinc-900 p-3 shadow-xl">
+                    <BackButton label="Back to Menu" className="p-2 text-zinc-300 hover:text-white" />
                     <div className="text-[10px] font-black uppercase tracking-widest text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-1.5 rounded-full flex items-center gap-2 shadow-sm border border-emerald-100 dark:border-emerald-500/20">
                         <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" /> Edit Mode
                     </div>
                 </div>
 
                 {/* Wizard Progress Bar */}
-                <div className="mb-12">
+                <div className="mb-10 px-3">
                     <div className="flex items-center justify-between relative">
                         {/* Background Track */}
                         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-zinc-200 dark:bg-zinc-800 rounded-full z-0" />
@@ -352,7 +368,7 @@ export default function EditFoodPage() {
                 </div>
 
                 {/* Step Content */}
-                <div className="bg-white dark:bg-zinc-900 rounded-[1.5rem] shadow-sm border border-zinc-200 dark:border-zinc-800 p-3 min-h-[500px] transition-colors">
+                <div className="bg-white dark:bg-zinc-900/70 rounded shadow-xl shadow-black/5 border border-zinc-200 dark:border-zinc-800 p-3 min-h-[500px] transition-colors [&_.p-4]:p-3 [&_.p-5]:p-3 [&_.p-6]:p-3 [&_.p-8]:p-3 [&_.px-4]:px-3 [&_.px-5]:px-3 [&_.px-6]:px-3 [&_.px-8]:px-3 [&_.py-4]:py-3 [&_.py-5]:py-3 [&_.py-6]:py-3 [&_.py-8]:py-3 [&_.rounded-2xl]:rounded [&_.rounded-3xl]:rounded">
                     {store.currentStep === 1 && <Step1BasicInfo onNext={handleNext} />}
                     {store.currentStep === 2 && <Step2Categories onNext={handleNext} onBack={handleBack} />}
                     {store.currentStep === 3 && <Step3Portions onNext={handleNext} onBack={handleBack} onDeletePortion={handleDeletePortion} />}

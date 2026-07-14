@@ -183,7 +183,7 @@ export default function CreateFoodWizardPage() {
           
           {/* Main Form Content */}
           <div className={`${isLastStep ? 'col-span-full' : 'lg:col-span-8'} space-y-3`}>
-            <div className="bg-white dark:bg-zinc-900/50 backdrop-blur-xl rounded p-3 border border-zinc-100 dark:border-white/5 min-h-125 relative overflow-hidden transition-all shadow-xl shadow-black/5">
+            <div className="bg-white dark:bg-zinc-900/70 backdrop-blur-xl rounded p-3 border border-zinc-200 dark:border-zinc-800 min-h-125 relative overflow-hidden transition-all shadow-xl shadow-black/5 [&_.p-4]:p-3 [&_.p-5]:p-3 [&_.p-6]:p-3 [&_.p-8]:p-3 [&_.px-4]:px-3 [&_.px-5]:px-3 [&_.px-6]:px-3 [&_.px-8]:px-3 [&_.py-4]:py-3 [&_.py-5]:py-3 [&_.py-6]:py-3 [&_.py-8]:py-3 [&_.rounded-2xl]:rounded [&_.rounded-3xl]:rounded">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={store.currentStep}
@@ -277,7 +277,7 @@ export default function CreateFoodWizardPage() {
                   <button 
                     onClick={handleBack} 
                     disabled={store.isSubmitting}
-                    className="h-11 px-6 flex items-center text-zinc-600 dark:text-zinc-300 hover:text-orange-600 font-black uppercase tracking-widest gap-2 active:scale-95 text-[10px] transition-all border border-zinc-200 dark:border-zinc-800 rounded bg-white dark:bg-zinc-900"
+                    className="h-11 px-3 flex items-center text-zinc-600 dark:text-zinc-300 hover:text-orange-600 font-black uppercase tracking-widest gap-2 active:scale-95 text-[10px] transition-all border border-zinc-200 dark:border-zinc-800 rounded bg-white dark:bg-zinc-900"
                   >
                     <ArrowLeft size={14} strokeWidth={3} /> 
                     <span className="hidden sm:inline">Back</span>
@@ -294,7 +294,7 @@ export default function CreateFoodWizardPage() {
                <button 
                   onClick={store.currentStep === STEPS.length ? () => document.getElementById('publish-food-btn')?.click() : handleNextWithValidation} 
                   disabled={store.isSubmitting}
-                  className={`h-11 px-8 rounded font-black uppercase tracking-widest text-[10px] transition-all active:scale-95 flex items-center gap-3 disabled:opacity-50 shadow-lg ${
+                  className={`h-11 px-3 rounded font-black uppercase tracking-widest text-[10px] transition-all active:scale-95 flex items-center gap-3 disabled:opacity-50 shadow-lg ${
                     store.currentStep === STEPS.length 
                     ? "bg-zinc-950 dark:bg-white text-white dark:text-zinc-950" 
                     : "bg-orange-600 text-white hover:bg-orange-700"
