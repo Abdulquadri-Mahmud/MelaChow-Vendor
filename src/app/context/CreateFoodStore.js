@@ -174,6 +174,9 @@ export const useCreateFoodStore = create(
                 // Step 4 — Choice Groups
                 choice_groups: (food.choice_groups || []).map(g => ({
                     tempId: g._id?.toString() || Date.now().toString(),
+                    source_template_id: g.source_template_id?._id?.toString?.()
+                        || g.source_template_id?.toString?.()
+                        || null,
                     name: g.name,
                     is_required: g.is_required,
                     min_selections: g.min_selections,
@@ -184,6 +187,9 @@ export const useCreateFoodStore = create(
                         price_modifier_naira: o.price_modifier / 100,  // kobo → naira
                         image_url: o.image_url || null,
                         is_available: o.is_available,
+                        track_stock: o.track_stock === true,
+                        stock_quantity: o.stock_quantity ?? 0,
+                        low_stock_threshold: o.low_stock_threshold ?? 5,
                         sort_order: o.sort_order || 0,
                     })),
                 })),

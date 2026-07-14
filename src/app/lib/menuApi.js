@@ -51,6 +51,47 @@ export const deleteVendorSection = async (vendorId, sectionId) => {
     return res.data;
 };
 
+// Reusable choice-group templates. Templates are copied into menu items;
+// editing a template never mutates an existing food or combo.
+export const getChoiceGroupTemplates = async (vendorId, params = {}) => {
+    const res = await getMenuAxios().get(
+        `/v1/menu/${vendorId}/choice-group-templates`,
+        { params }
+    );
+    return res.data;
+};
+
+export const createChoiceGroupTemplate = async (vendorId, payload) => {
+    const res = await getMenuAxios().post(
+        `/v1/menu/${vendorId}/choice-group-templates`,
+        payload
+    );
+    return res.data;
+};
+
+export const updateChoiceGroupTemplate = async (vendorId, templateId, payload) => {
+    const res = await getMenuAxios().put(
+        `/v1/menu/${vendorId}/choice-group-templates/${templateId}`,
+        payload
+    );
+    return res.data;
+};
+
+export const duplicateChoiceGroupTemplate = async (vendorId, templateId) => {
+    const res = await getMenuAxios().post(
+        `/v1/menu/${vendorId}/choice-group-templates/${templateId}/duplicate`
+    );
+    return res.data;
+};
+
+export const archiveChoiceGroupTemplate = async (vendorId, templateId, is_archived) => {
+    const res = await getMenuAxios().patch(
+        `/v1/menu/${vendorId}/choice-group-templates/${templateId}/archive`,
+        { is_archived }
+    );
+    return res.data;
+};
+
 // ─────────────────────────────────────────────
 // MENU ITEMS
 // ─────────────────────────────────────────────
