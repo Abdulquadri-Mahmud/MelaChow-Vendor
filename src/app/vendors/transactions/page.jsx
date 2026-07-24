@@ -1011,11 +1011,12 @@ function WithdrawModal({ isOpen, onClose, availableBalance, wallet, onSuccess })
         parsedAmount > 0 &&
         parsedAmount <= availableBalance;
 
-    // Paystack fee preview (vendor absorbs)
+    // Paystack fee preview (vendor absorbs per Paystack structure)
     const calcFee = (amt) => {
-        if (amt < 5000) return 100;
-        if (amt < 10000) return 200;
-        return 300;
+        if (!amt || amt <= 0) return 0;
+        const transferFee = amt <= 5000 ? 10 : amt <= 50000 ? 25 : 50;
+        const stampDuty = amt >= 10000 ? 50 : 0;
+        return transferFee + stampDuty;
     };
     const fee    = isValid ? calcFee(parsedAmount) : 0;
     const netAmt = isValid ? parsedAmount - fee : 0;
