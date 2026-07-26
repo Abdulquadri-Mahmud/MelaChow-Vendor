@@ -173,7 +173,7 @@ const sections = [
     body: [
       "Minimum withdrawal amount is N1,500.",
       "Current payout timing is within 24 hours where there is no unresolved complaint, refund, payment issue, or system delay.",
-      "Current vendor automatic payout is targeted around 8:00pm.",
+      "Vendor payouts are processed automatically every morning at 7:30 AM WAT, the day after Paystack settles the previous day's collected payments.",
       "MelaChow may later introduce manual withdrawal requests if needed.",
       "If transaction volume grows or the system becomes operationally overloaded, MelaChow may change Vendor payouts to a weekly payout cycle or another reasonable payout schedule.",
       "Payout timelines are subject to bank availability, Paystack or payment provider processing, fraud checks, public holidays, network issues, and unresolved order disputes.",
