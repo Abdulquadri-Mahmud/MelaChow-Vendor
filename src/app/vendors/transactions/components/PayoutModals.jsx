@@ -332,10 +332,7 @@ export function PayoutScheduleInfo({ nextPayoutTime, balance, payoutDetails }) {
                         after your payment provider settles funds overnight.
                         Any balance above ₦0 pays out automatically.
                     </p>
-                    <p className="text-[9px] text-blue-500/60 dark:text-blue-400/50 font-medium leading-relaxed mt-1">
-                        A Paystack transfer fee (NGN 100-NGN 300 depending on amount) is deducted
-                        from your payout per your vendor agreement.
-                    </p>
+
                 </>
             ) : (
                 <p className="text-[10px] font-black text-blue-700 dark:text-blue-400 uppercase tracking-widest">
