@@ -391,7 +391,7 @@ export default function VendorTermsAndPolicyPage() {
       <section className="mx-auto grid max-w-5xl gap-6 px-5 py-8 md:grid-cols-3">
         {[
           { icon: Store, label: "Commission", value: "0% until 50 orders, then 10%" },
-          { icon: CreditCard, label: "Payout", value: "Riders 7:30pm, vendors 8:00pm where eligible" },
+          { icon: CreditCard, label: "Payout", value: "Daily at 7:30 AM — funds from the previous day settle overnight" },
           { icon: BadgeCheck, label: "Acceptance", value: "Required before registration can be submitted" },
         ].map((item) => (
           <div key={item.label} className="rounded-[24px] border border-zinc-100 bg-zinc-50 p-5 dark:border-zinc-800 dark:bg-zinc-900">

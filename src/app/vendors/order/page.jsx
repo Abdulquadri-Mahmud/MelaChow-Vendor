@@ -27,8 +27,7 @@ import VendorOrderCard from "@/app/components/order/VendorOrderCard";
 import { useVendorStorage } from "@/app/hooks/vendorStorage";
 import { useSocket } from "@/app/context/SocketContext";
 import VendorOrderDeskCard from "./components/VendorOrderDeskCard";
-import { Swiper, SwiperSlide } from "swiper/react";
-import "swiper/css";
+
 
 const ACTIVE_STATUSES = ["pending", "accepted", "preparing", "ready", "ready_for_pickup"];
 const HISTORY_STATUSES = ["out_for_delivery", "delivered", "completed", "cancelled", "failed", "refunded"];
@@ -154,7 +153,7 @@ export default function VendorOrdersPage() {
   const [statusFilter, setStatusFilter] = useState("active");
   const [viewMode, setViewMode] = useState("desk");
   const [deskStatusTab, setDeskStatusTab] = useState("pending");
-  const [deskSwiper, setDeskSwiper] = useState(null);
+
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [voiceAlertsEnabled, setVoiceAlertsEnabled] = useState(false);
   const [tabletMode, setTabletMode] = useState(false);
@@ -245,14 +244,10 @@ export default function VendorOrdersPage() {
   }, [fetchOrders, wsConnected]);
 
   useEffect(() => {
-    const handleNewOrder = (event) => {
+    const handleNewOrder = () => {
       setViewMode("desk");
       setDeskStatusTab("pending");
-      deskSwiper?.slideTo(0, 0);
-      // Delay scroll slightly so the swiper slide animation completes first
-      setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }, 50);
+      window.scrollTo({ top: 0, behavior: "smooth" });
       fetchOrders(true);
     };
 
@@ -260,7 +255,7 @@ export default function VendorOrdersPage() {
     return () => {
       window.removeEventListener("vendor:new-order", handleNewOrder);
     };
-  }, [deskSwiper, fetchOrders]);
+  }, [fetchOrders]);
 
   useEffect(() => {
     const pendingIds = new Set(
@@ -534,17 +529,7 @@ export default function VendorOrdersPage() {
     },
   ];
 
-  useEffect(() => {
-    if (!deskSwiper || viewMode !== "desk") return;
-    const activeIndex = deskTabs.findIndex((tab) => tab.id === deskStatusTab);
-    window.requestAnimationFrame(() => {
-      if (activeIndex >= 0 && deskSwiper.activeIndex !== activeIndex) {
-        deskSwiper.slideTo(activeIndex, 0);
-      }
-      deskSwiper.update();
-      deskSwiper.updateAutoHeight(0);
-    });
-  }, [deskSwiper, deskStatusTab, incomingOrders.length, preparingOrders.length, readyOrders.length, viewMode]);
+
 
   const renderDeskSection = (title, subtitle, sectionOrders, emptyText, icon) => {
     const Icon = icon;
@@ -752,17 +737,14 @@ export default function VendorOrdersPage() {
             >
               <div className="sticky top-2 max-w-3xl mx-auto z-20 rounded-lg border border-zinc-200 bg-white/95 p-2 shadow-sm backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/95">
                 <div className="grid grid-cols-3 gap-2">
-                  {deskTabs.map((tab, index) => {
+                  {deskTabs.map((tab) => {
                     const Icon = tab.icon;
                     const isActive = deskStatusTab === tab.id;
                     return (
                       <button
                         key={tab.id}
                         type="button"
-                        onClick={() => {
-                          setDeskStatusTab(tab.id);
-                          deskSwiper?.slideTo(index);
-                        }}
+                        onClick={() => setDeskStatusTab(tab.id)}
                         className={`flex min-h-11 items-center justify-center gap-2 rounded-md border px-2 text-[10px] font-black uppercase tracking-widest transition-all active:scale-[0.98] ${
                           isActive
                             ? "border-transparent bg-orange-600 text-white shadow-sm"
@@ -780,24 +762,27 @@ export default function VendorOrdersPage() {
                 </div>
               </div>
 
-              <Swiper
-                onSwiper={setDeskSwiper}
-                onSlideChange={(swiper) => setDeskStatusTab(deskTabs[swiper.activeIndex]?.id || "pending")}
-                speed={300}
-                simulateTouch
-                touchRatio={1}
-                touchStartPreventDefault={false}
-                touchAngle={30}
-                threshold={10}
-                autoHeight
-                style={{ width: "100%" }}
-              >
-                {deskTabs.map((tab) => (
-                  <SwiperSlide key={tab.id} style={{ height: "auto", minHeight: "50vh" }}>
-                    {renderDeskSection(tab.label === "New" ? "New Orders" : tab.label === "Ready" ? "Ready for Pickup" : tab.label, tab.subtitle, tab.orders, tab.emptyText, tab.icon)}
-                  </SwiperSlide>
-                ))}
-              </Swiper>
+              <AnimatePresence mode="wait">
+                {deskTabs.map((tab) =>
+                  tab.id === deskStatusTab ? (
+                    <motion.div
+                      key={tab.id}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.18 }}
+                    >
+                      {renderDeskSection(
+                        tab.label === "New" ? "New Orders" : tab.label === "Ready" ? "Ready for Pickup" : tab.label,
+                        tab.subtitle,
+                        tab.orders,
+                        tab.emptyText,
+                        tab.icon
+                      )}
+                    </motion.div>
+                  ) : null
+                )}
+              </AnimatePresence>
             </motion.div>
           ) : (
             <motion.div
