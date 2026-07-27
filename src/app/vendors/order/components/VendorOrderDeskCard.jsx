@@ -130,17 +130,24 @@ function buildKitchenLine(item) {
   const portionLabel = item.portion_label || item.metadata?.portion_label || "";
   const itemName = item.name || item.variant?.name || "Item";
   const options = item.selected_options || item.metadata?.selected_options || [];
-  const optionText = options
-    .map((option) => `${option.quantity || 1} ${option.label || option.name}`)
-    .filter(Boolean)
-    .join(", ");
+  const optionGroups = options.reduce((groups, option) => {
+    const groupName = option.group_name || option.groupName || "Selected options";
+    const label = option.label || option.name;
+    if (!label) return groups;
+    if (!groups[groupName]) groups[groupName] = [];
+    groups[groupName].push(`${Number(option.quantity) || 1} × ${label}`);
+    return groups;
+  }, {});
 
   return {
     itemName,
     quantity,
     totalPortions,
     portionLabel,
-    optionText,
+    optionGroups: Object.entries(optionGroups),
+    preparationText: portionLabel
+      ? `Prepare ${quantity} × ${portionLabel}${portionQuantity > 1 ? ` (${totalPortions} portions in total)` : ""}`
+      : `Prepare ${totalPortions} ${totalPortions === 1 ? "portion" : "portions"}`,
   };
 }
 
@@ -323,12 +330,17 @@ export default function VendorOrderDeskCard({
                         {line.itemName}
                       </p>
                       <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
-                        {line.totalPortions} {line.portionLabel || (line.totalPortions === 1 ? "portion" : "portions")}
+                        {line.preparationText}
                       </p>
-                      {line.optionText && (
-                        <p className="mt-2 text-xs font-bold leading-relaxed text-zinc-700 dark:text-zinc-300">
-                          Add-ons: {line.optionText}
-                        </p>
+                      {line.optionGroups.length > 0 && (
+                        <div className="mt-2 space-y-1.5">
+                          <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Each order includes</p>
+                          {line.optionGroups.map(([groupName, selections]) => (
+                            <p key={groupName} className="text-xs font-bold leading-relaxed text-zinc-700 dark:text-zinc-300">
+                              <span className="text-zinc-500 dark:text-zinc-400">{groupName}:</span> {selections.join(", ")}
+                            </p>
+                          ))}
+                        </div>
                       )}
                     </div>
                   </div>
