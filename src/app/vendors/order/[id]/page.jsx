@@ -289,10 +289,10 @@ export default function VendorOrderDetailsPage() {
         const totalPortions = portionQuantity * quantity;
         const options = item.selected_options || item.metadata?.selected_options || [];
         const cleanPortionLabel = (item.portion_label || item.metadata?.portion_label || "")?.trim();
-        const parts = [`${quantity} ${quantity === 1 ? "unit" : "units"} ${itemName}`];
+        const parts = [`${quantity} × ${itemName}`];
 
         if (totalPortions > 1 || cleanPortionLabel) {
-            parts.push(`${totalPortions} ${cleanPortionLabel || (totalPortions === 1 ? "portion" : "portions")}`);
+            parts.push(`portion/size: ${portionQuantity > 1 ? `${portionQuantity} × ` : ""}${cleanPortionLabel || (totalPortions === 1 ? "portion" : "portions")}`);
         }
 
         if (options.length > 0) {
@@ -304,7 +304,7 @@ export default function VendorOrderDetailsPage() {
                     })
                     .filter(Boolean)
             );
-            if (optionsSentence) parts.push(`add-ons: ${optionsSentence}`);
+            if (optionsSentence) parts.push(`each order includes: ${optionsSentence}`);
         }
         const sentence = `${parts.join(" | ")}.`;
 
@@ -716,19 +716,19 @@ export default function VendorOrderDetailsPage() {
                                                         <div className="space-y-2">
                                                             <p className="text-[10px] font-black text-zinc-700 dark:text-zinc-200 flex items-center gap-2 uppercase tracking-wide leading-none">
                                                                 <span className="w-1.5 h-1.5 bg-orange-600 rounded-full" />
-                                                                Prepare {totalPortions} {portionText}
+                                                                Kitchen to prepare: {quantity} × {portionText}
                                                             </p>
                                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                                 {/* Main item card */}
                                                                 <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-md p-3">
-                                                                    <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1">Main item</p>
+                                                                    <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1">Order quantity</p>
                                                                     <p className="text-[13px] font-black text-zinc-900 dark:text-white">{quantity} x {itemName}</p>
                                                                 </div>
                                                                 {/* Portion card */}
                                                                 <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-md p-3">
-                                                                    <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Portion / size</p>
+                                                                    <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Selected portion / size</p>
                                                                     <p className="text-[11px] font-black text-orange-600 mt-0.5">₦{basePrice.toLocaleString()}</p>
-                                                                    <p className="text-[13px] font-black text-zinc-900 dark:text-white mt-1">{totalPortions} {portionText}</p>
+                                                                    <p className="text-[13px] font-black text-zinc-900 dark:text-white mt-1">{portionQuantity > 1 ? `${portionQuantity} × ` : ""}{portionText}</p>
                                                                 </div>
                                                             </div>
 
@@ -741,7 +741,7 @@ export default function VendorOrderDetailsPage() {
                                                                         return (
                                                                             <div key={oIdx} className="flex items-center justify-between gap-3 rounded-md bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 px-3 py-2.5">
                                                                                 <div className="flex flex-col gap-0.5">
-                                                                                    <span className="text-[12px] font-black text-zinc-800 dark:text-zinc-100">{opt.label || opt.name}</span>
+                                                                                    <span className="text-[12px] font-black text-zinc-800 dark:text-zinc-100">{opt.group_name ? `${opt.group_name}: ` : ""}{opt.label || opt.name}</span>
                                                                                     <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">₦{optPrice.toLocaleString()} / unit</span>
                                                                                 </div>
                                                                                 <div className="flex flex-col items-end gap-0.5 shrink-0">
@@ -756,7 +756,7 @@ export default function VendorOrderDetailsPage() {
 
                                                             {portionQuantity > 1 && quantity > 1 && (
                                                                 <div className="mt-2 text-center py-1.5 bg-orange-600/5 rounded-md border border-orange-600/10">
-                                                                    <p className="text-[8px] font-black text-orange-600 uppercase tracking-widest leading-none">CALCULATION: {portionQuantity} PORTIONS × {quantity} ORDERS = {totalPortions} TOTAL UNITS</p>
+                                                                    <p className="text-[8px] font-black text-orange-600 uppercase tracking-widest leading-none">KITCHEN TOTAL: {quantity} ORDERS × {portionQuantity} PORTIONS = {totalPortions} PORTIONS</p>
                                                                 </div>
                                                             )}
                                                         </div>
