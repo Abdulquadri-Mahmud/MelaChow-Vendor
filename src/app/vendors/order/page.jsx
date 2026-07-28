@@ -28,17 +28,16 @@ import { useVendorStorage } from "@/app/hooks/vendorStorage";
 import { useSocket } from "@/app/context/SocketContext";
 import VendorOrderDeskCard from "./components/VendorOrderDeskCard";
 
-
 const ACTIVE_STATUSES = ["pending", "accepted", "preparing", "ready", "ready_for_pickup"];
 const HISTORY_STATUSES = ["out_for_delivery", "delivered", "completed", "cancelled", "failed", "refunded"];
 const ACK_KEY = "melachow_vendor_acknowledged_orders_v1";
 const WARNING_CHIME_KEY = "melachow_vendor_warning_chime_v1";
 const VOICE_ALERTS_KEY = "melachow_vendor_voice_alerts_v1";
 const ORDER_WARNING_STAGES = [
-  { key: "3m", seconds: 180, voice: "Order needs attention. Accept now to avoid auto cancellation." },
-  { key: "3m30s", seconds: 210, voice: "Order still waiting. Please accept it now." },
-  { key: "4m", seconds: 240, voice: "Urgent. An order is at risk of auto cancellation." },
-  { key: "4m30s", seconds: 270, voice: "Final warning. This order may auto cancel soon." },
+  { key: "6m", seconds: 360, voice: "Order needs attention. Accept now to avoid auto cancellation." },
+  { key: "7m", seconds: 420, voice: "Order still waiting. Please accept it now." },
+  { key: "8m", seconds: 480, voice: "Urgent. An order is at risk of auto cancellation." },
+  { key: "9m", seconds: 540, voice: "Final warning. This order may auto cancel soon." },
 ];
 
 function getOrderId(order) {

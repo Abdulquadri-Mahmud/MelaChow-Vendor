@@ -300,13 +300,13 @@ export default function VendorOrderDetailsPage() {
                 options
                     .map((opt) => {
                         const label = opt.label || opt.name;
-                        return label ? `${Number(opt.quantity) || 1} ${label}` : "";
+                        return label ? `${opt.group_name || "Option"}: ${Number(opt.quantity) || 1} × ${label}` : "";
                     })
                     .filter(Boolean)
             );
             if (optionsSentence) parts.push(`each order includes: ${optionsSentence}`);
         }
-        const sentence = `${parts.join(" | ")}.`;
+        const sentence = `${parts.join(" | ")}. Kitchen total: ${totalPortions} ${cleanPortionLabel || (totalPortions === 1 ? "portion" : "portions")}.`;
 
         return {
             itemName,
@@ -716,7 +716,7 @@ export default function VendorOrderDetailsPage() {
                                                         <div className="space-y-2">
                                                             <p className="text-[10px] font-black text-zinc-700 dark:text-zinc-200 flex items-center gap-2 uppercase tracking-wide leading-none">
                                                                 <span className="w-1.5 h-1.5 bg-orange-600 rounded-full" />
-                                                                Kitchen to prepare: {quantity} × {portionText}
+                                                                Kitchen to prepare: {totalPortions} × {portionText}
                                                             </p>
                                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                                 {/* Main item card */}
