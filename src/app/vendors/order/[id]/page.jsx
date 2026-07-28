@@ -300,17 +300,21 @@ export default function VendorOrderDetailsPage() {
         const portionQuantity = Number(item.portion_quantity) || 1;
         const totalPortions = portionQuantity * quantity;
         const options = item.selected_options || item.metadata?.selected_options || [];
-        const cleanPortionLabel = (item.portion_label || item.metadata?.portion_label || "")?.trim();
-        const parts = [`${quantity} × ${itemName}`];
-
-        if (totalPortions > 1 || cleanPortionLabel) {
-            parts.push(`portion/size: ${portionQuantity > 1 ? `${portionQuantity} × ` : ""}${cleanPortionLabel || (totalPortions === 1 ? "portion" : "portions")}`);
-        }
-
-        if (options.length > 0) {
-            const optionsSentence = formatOptionGroups(options);
-            if (optionsSentence) parts.push(`each order includes: ${optionsSentence}`);
-        }        const sentence = `${parts.join(" | ").replace(/[.]+$/, "")}. Kitchen total: ${totalPortions} ${cleanPortionLabel || (totalPortions === 1 ? "portion" : "portions")}.`;
+        const cleanPortionLabel = (item.portion_label || item.metadata?.portion_label || "portion")?.trim();
+        const customer = order.userOrderId?.userId || order.userId || {};
+        const customerName = `${customer.firstname || ""} ${customer.lastname || ""}`.trim() || customer.name || "The customer";
+        const perPackOptions = joinList(options.map((option) => {
+            const label = option.label || option.name;
+            return label ? `${Number(option.quantity) || 1} ${label}` : "";
+        }).filter(Boolean));
+        const totalOptions = joinList(options.map((option) => {
+            const label = option.label || option.name;
+            return label ? `${(Number(option.quantity) || 1) * quantity} ${label}` : "";
+        }).filter(Boolean));
+        const packText = `${quantity} ${quantity === 1 ? "pack" : "packs"} of ${itemName}`;
+        const eachPack = `${portionQuantity} ${cleanPortionLabel}${perPackOptions ? `, ${perPackOptions}` : ""}`;
+        const preparation = `${totalPortions} ${cleanPortionLabel}${totalOptions ? `, ${totalOptions}` : ""}`;
+        const sentence = quantity === 1 ? `${customerName} ordered ${packText} with ${eachPack}. Prepare: ${preparation}.` : `${customerName} ordered ${packText}. Each pack includes ${eachPack}. Prepare: ${preparation}.`;
 
         return {
             itemName,
@@ -318,11 +322,10 @@ export default function VendorOrderDetailsPage() {
             portionQuantity,
             totalPortions,
             options,
-            portionText: cleanPortionLabel || (totalPortions > 1 ? "portions" : "portion"),
+            portionText: cleanPortionLabel,
             sentence,
         };
     };
-
     const receiptItems = detailedItems.map((item) => {
         const options = item.selected_options || item.metadata?.selected_options || [];
         const quantity = Number(item.quantity) || 1;

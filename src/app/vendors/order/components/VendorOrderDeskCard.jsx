@@ -146,7 +146,7 @@ function buildKitchenLine(item) {
     portionLabel,
     optionGroups: Object.entries(optionGroups),
     preparationText: portionLabel
-      ? `Prepare ${quantity} × ${portionLabel}${portionQuantity > 1 ? ` (${totalPortions} portions in total)` : ""}`
+      ? `Prepare ${totalPortions} × ${portionLabel}`
       : `Prepare ${totalPortions} ${totalPortions === 1 ? "portion" : "portions"}`,
   };
 }
