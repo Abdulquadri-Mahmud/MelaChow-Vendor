@@ -145,8 +145,6 @@ function buildKitchenLine(item) {
     totalPortions,
     portionLabel,
     optionGroups: Object.entries(optionGroups),
-    perPackOptions: options.map((option) => ${Number(option.quantity) || 1} ${option.label || option.name}).filter(Boolean),
-    totalOptions: options.map((option) => ${(Number(option.quantity) || 1) * quantity} ${option.label || option.name}).filter(Boolean),
     preparationText: portionLabel
       ? `Prepare ${totalPortions} × ${portionLabel}`
       : `Prepare ${totalPortions} ${totalPortions === 1 ? "portion" : "portions"}`,
