@@ -731,7 +731,10 @@ export default function VendorOrderDetailsPage() {
                                                                 {/* Portion card */}
                                                                 <div className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-md p-3">
                                                                     <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Selected portion / size</p>
-                                                                    <p className="text-[11px] font-black text-orange-600 mt-0.5">₦{basePrice.toLocaleString()}</p>
+                                                                    <p className="text-[11px] font-black text-orange-600 mt-0.5">₦{basePrice.toLocaleString()} per order</p>
+                                                                    {quantity > 1 && (
+                                                                        <p className="text-[9px] font-bold text-zinc-400 mt-0.5">{quantity} orders = ₦{(basePrice * quantity).toLocaleString()}</p>
+                                                                    )}
                                                                     <p className="text-[13px] font-black text-zinc-900 dark:text-white mt-1">{portionQuantity > 1 ? `${portionQuantity} × ` : ""}{portionText}</p>
                                                                 </div>
                                                             </div>
