@@ -17,6 +17,18 @@ function joinList(parts) {
   return `${parts.slice(0, -1).join(", ")}, and ${parts[parts.length - 1]}`;
 }
 
+function formatOptionGroups(options) {
+  const groups = options.reduce((result, option) => {
+    const label = option.label || option.name;
+    if (!label) return result;
+    const groupName = option.group_name || option.groupName || "Selected options";
+    if (!result[groupName]) result[groupName] = [];
+    result[groupName].push(`${Number(option.quantity) || 1} × ${label}`);
+    return result;
+  }, {});
+  return joinList(Object.entries(groups).map(([groupName, selections]) => `${groupName}: ${joinList(selections)}`));
+}
+
 function buildKitchenSummary(item) {
   const quantity = Number(item.quantity) || 1;
   const portionLabel = item.portion_label || item.metadata?.portion_label || "portion";
@@ -24,10 +36,7 @@ function buildKitchenSummary(item) {
   const itemName = item.name || item.variant?.name || "Item";
   const options = item.selected_options || item.metadata?.selected_options || [];
   const totalPortions = portionQuantity * quantity;
-  const selections = joinList(options.map((option) => {
-    const label = option.label || option.name;
-    return label ? `${option.group_name || "Option"}: ${Number(option.quantity) || 1} × ${label}` : "";
-  }).filter(Boolean));
+  const selections = formatOptionGroups(options);
 
   return `${quantity} × ${itemName}. Each order includes ${portionQuantity} × ${portionLabel}${selections ? `, ${selections}` : ""}. Kitchen total: ${totalPortions} × ${portionLabel}.`;
 }
