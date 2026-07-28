@@ -282,6 +282,18 @@ export default function VendorOrderDetailsPage() {
         return `${parts.slice(0, -1).join(", ")}, and ${parts[parts.length - 1]}`;
     };
 
+    const formatOptionGroups = (options) => {
+        const groups = options.reduce((result, option) => {
+            const label = option.label || option.name;
+            if (!label) return result;
+            const groupName = option.group_name || option.groupName || "Selected options";
+            if (!result[groupName]) result[groupName] = [];
+            result[groupName].push(`${Number(option.quantity) || 1} × ${label}`);
+            return result;
+        }, {});
+        return joinList(Object.entries(groups).map(([groupName, selections]) => `${groupName}: ${joinList(selections)}`));
+    };
+
     const buildKitchenSummary = (item) => {
         const itemName = item.name || item.variant?.name || "this item";
         const quantity = Number(item.quantity) || 1;
@@ -296,17 +308,9 @@ export default function VendorOrderDetailsPage() {
         }
 
         if (options.length > 0) {
-            const optionsSentence = joinList(
-                options
-                    .map((opt) => {
-                        const label = opt.label || opt.name;
-                        return label ? `${opt.group_name || "Option"}: ${Number(opt.quantity) || 1} × ${label}` : "";
-                    })
-                    .filter(Boolean)
-            );
+            const optionsSentence = formatOptionGroups(options);
             if (optionsSentence) parts.push(`each order includes: ${optionsSentence}`);
-        }
-        const sentence = `${parts.join(" | ")}. Kitchen total: ${totalPortions} ${cleanPortionLabel || (totalPortions === 1 ? "portion" : "portions")}.`;
+        }        const sentence = `${parts.join(" | ").replace(/[.]+$/, "")}. Kitchen total: ${totalPortions} ${cleanPortionLabel || (totalPortions === 1 ? "portion" : "portions")}.`;
 
         return {
             itemName,
