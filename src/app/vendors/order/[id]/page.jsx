@@ -404,7 +404,7 @@ export default function VendorOrderDetailsPage() {
                                                     <div className="p-2 bg-zinc-800 rounded-md shrink-0 relative z-10 self-start">
                                                         <Hash size={12} className="text-orange-500" />
                                                     </div>
-                                                    <p className="text-[15px] font-black tracking-wide leading-snug relative z-10 mt-0.5">{sentence}</p>
+                                                    <p className="text-[15px] font-medium tracking-wide leading-snug relative z-10 mt-0.5">{sentence}</p>
                                                 </div>
                                             );
                                         })}
@@ -785,7 +785,7 @@ export default function VendorOrderDetailsPage() {
                                                 </div>
                                                 <div className="flex-1 relative z-10">
                                                     <p className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-1">DIRECTIVE SUMMARY</p>
-                                                    <p className="text-[16px] font-black tracking-wide leading-snug">{sentence}</p>
+                                                    <p className="text-[16px] font-medium tracking-wide leading-snug">{sentence}</p>
                                                 </div>
                                             </div>
                                         </motion.div>
