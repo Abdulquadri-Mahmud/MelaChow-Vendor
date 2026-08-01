@@ -47,7 +47,6 @@ export default function Step5Review({ onBack, onComplete, onSetStep }) {
             dietary_type: store.dietary_type,
             item_type: store.item_type,
             portions_count: store.portions.length,
-            choice_groups_count: store.choice_groups.length,
         });
 
         store.setField("isSubmitting", true);
@@ -67,8 +66,9 @@ export default function Step5Review({ onBack, onComplete, onSetStep }) {
                 },
                 // Pass price_naira — the hook converts to kobo internally
                 portions: store.portions,
-                // Pass price_modifier_naira — the hook converts to kobo internally
-                choice_groups: store.choice_groups,
+                // New foods are independent items. Legacy choice groups can still
+                // be managed on existing foods, but are never created here.
+                choice_groups: [],
             });
 
             // Only runs if mutateAsync resolves without throwing
@@ -163,47 +163,6 @@ export default function Step5Review({ onBack, onComplete, onSetStep }) {
                                     <span className="text-[13px] font-black text-orange-600 tabular-nums">₦{p.price_naira.toLocaleString()}</span>
                                 </div>
                             ))}
-                        </div>
-                    </div>
-
-                    {/* Choice Groups */}
-                    <div className="bg-white dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-md overflow-hidden">
-                        <div className="bg-zinc-50 dark:bg-zinc-900 px-6 py-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
-                            <span className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.2em]">Add-on Options ({store.choice_groups.length})</span>
-                            <button onClick={() => onSetStep(4)} className="text-[10px] font-black text-orange-600 hover:text-orange-700 uppercase tracking-widest transition-colors">Edit</button>
-                        </div>
-                        <div className="p-4 space-y-6">
-                            {store.choice_groups.length === 0 ? (
-                                <p className="text-[10px] font-bold text-zinc-400 text-center py-4 uppercase tracking-[0.15em]">No supplementary interactions configured.</p>
-                            ) : (
-                                <div className="space-y-6">
-                                    {store.choice_groups.map(group => (
-                                        <div key={group.tempId} className="space-y-3">
-                                            <div className="flex items-center gap-2 px-1">
-                                                <h4 className="font-black text-zinc-900 dark:text-white text-[10px] uppercase tracking-widest">{group.name}</h4>
-                                                {group.is_required && <span className="text-[8px] font-black uppercase text-orange-600">Required</span>}
-                                            </div>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                                {group.options.map(opt => (
-                                                    <div key={opt.tempId} className="flex items-center justify-between p-3 rounded-md bg-zinc-50/50 dark:bg-zinc-900/40 border border-zinc-100 dark:border-zinc-800">
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="w-8 h-8 rounded-md bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 overflow-hidden shrink-0 flex items-center justify-center">
-                                                                {opt.image_url ? (
-                                                                    <img src={opt.image_url} alt={opt.label} className="w-full h-full object-cover" />
-                                                                ) : (
-                                                                    <ImageIcon size={12} className="text-zinc-300 dark:text-zinc-700" />
-                                                                )}
-                                                            </div>
-                                                            <span className="text-[10px] font-black text-zinc-600 dark:text-zinc-400 uppercase tracking-widest truncate">{opt.label}</span>
-                                                        </div>
-                                                        <span className="text-[10px] font-black text-orange-600 tabular-nums">+₦{opt.price_modifier_naira.toLocaleString()}</span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
                         </div>
                     </div>
 
