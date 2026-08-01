@@ -101,7 +101,7 @@ function playOrderDeskChime({ urgent = false } = {}) {
   if (!context) return;
 
   const gain = context.createGain();
-  gain.gain.value = urgent ? 0.055 : 0.04;
+  gain.gain.value = urgent ? 0.18 : 0.09;
   gain.connect(context.destination);
 
   const pattern = urgent
@@ -160,6 +160,7 @@ export default function VendorOrdersPage() {
   const [acknowledgedOrders, setAcknowledgedOrders] = useState({});
   const previousPendingIdsRef = useRef(new Set());
   const warningChimeRef = useRef({});
+  const pendingAlarmRef = useRef(null);
   const hasLoadedOnceRef = useRef(false);
   const voicePrimedRef = useRef(false);
   const ordersRequestRef = useRef(null);
@@ -293,6 +294,22 @@ export default function VendorOrdersPage() {
     }
   }, [orders, soundEnabled, voiceAlertsEnabled]);
 
+  useEffect(() => {
+    const hasPendingOrders = orders.some((order) => getStatus(order) === "pending");
+    if (!hasPendingOrders || !soundEnabled) {
+      if (pendingAlarmRef.current) window.clearInterval(pendingAlarmRef.current);
+      pendingAlarmRef.current = null;
+      return;
+    }
+
+    const ring = () => { try { playOrderDeskChime({ urgent: true }); } catch {} };
+    ring();
+    pendingAlarmRef.current = window.setInterval(ring, 6000);
+    return () => {
+      if (pendingAlarmRef.current) window.clearInterval(pendingAlarmRef.current);
+      pendingAlarmRef.current = null;
+    };
+  }, [orders, soundEnabled]);
   useEffect(() => {
     if (!soundEnabled && !voiceAlertsEnabled) return;
 
@@ -791,7 +808,7 @@ export default function VendorOrdersPage() {
               exit={{ opacity: 0, y: -8 }}
               className="space-y-4"
             >
-              {/* ── Order Stats ── */}
+              {/* â”€â”€ Order Stats â”€â”€ */}
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
                 {[
                   { label: "Total Orders", value: stats.total, icon: Package, light: "text-blue-600", lightBg: "bg-blue-50 dark:bg-blue-500/10" },
