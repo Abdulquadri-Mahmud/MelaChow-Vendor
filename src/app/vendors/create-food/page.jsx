@@ -12,15 +12,13 @@ import toast from "react-hot-toast";
 import Step1BasicInfo from "@/app/components/create-food/wizard/Step1BasicInfo";
 import Step2Categories from "@/app/components/create-food/wizard/Step2Categories";
 import Step3Portions from "@/app/components/create-food/wizard/Step3Portions";
-import Step4AddOns from "@/app/components/create-food/wizard/Step4AddOns";
 import Step5Review from "@/app/components/create-food/wizard/Step5Review";
 
 const STEPS = [
   { id: 1, title: "Basic Info", short: "Basics" },
   { id: 2, title: "Category", short: "Category" },
   { id: 3, title: "Pricing", short: "Price" },
-  { id: 4, title: "Extras", short: "Add-Ons" },
-  { id: 5, title: "Review", short: "Done" },
+  { id: 4, title: "Review", short: "Done" },
 ];
 
 export default function CreateFoodWizardPage() {
@@ -45,7 +43,7 @@ export default function CreateFoodWizardPage() {
   if (!mounted) return null; // Avoid hydration mismatch
 
   // Navigation blocks
-  const handleNext = () => store.setStep(Math.min(5, store.currentStep + 1));
+  const handleNext = () => store.setStep(Math.min(STEPS.length, store.currentStep + 1));
   const handleBack = () => store.setStep(Math.max(1, store.currentStep - 1));
   const handleJump = (stepId) => {
     if (stepId < store.currentStep) store.setStep(stepId);
@@ -85,9 +83,8 @@ export default function CreateFoodWizardPage() {
     switch (store.currentStep) {
       case 1: return "Assign Categories";
       case 2: return "Set Pricing & Sizes";
-      case 3: return "Add Custom Choices";
-      case 4: return "Final Review";
-      case 5: return store.isSubmitting ? "Publishing..." : "Publish Live";
+      case 3: return "Review Food";
+      case 4: return store.isSubmitting ? "Publishing..." : "Publish Live";
       default: return "Continue";
     }
   };
@@ -117,7 +114,7 @@ export default function CreateFoodWizardPage() {
                 </div>
             </div>
             <p className="text-[11px] md:text-xs font-bold text-zinc-400 max-w-xl leading-relaxed uppercase tracking-wider opacity-80">
-                Tell us about your next great dish! Add a name, photo, price, and options.
+                Tell us about your next great dish! Add a name, photo, and price.
             </p>
           </div>
 
@@ -195,8 +192,7 @@ export default function CreateFoodWizardPage() {
                   {store.currentStep === 1 && <Step1BasicInfo onNext={handleNext} />}
                   {store.currentStep === 2 && <Step2Categories />}
                   {store.currentStep === 3 && <Step3Portions onNext={handleNext} onBack={handleBack} />}
-                  {store.currentStep === 4 && <Step4AddOns onNext={handleNext} onBack={handleBack} />}
-                  {store.currentStep === 5 && (
+                  {store.currentStep === 4 && (
                     <Step5Review 
                       onBack={handleBack} 
                       onSetStep={(s) => store.setStep(s)} 
