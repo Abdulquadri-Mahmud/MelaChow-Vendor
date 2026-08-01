@@ -11,13 +11,13 @@ import toast from "react-hot-toast";
 // Steps
 import Step1BasicInfo from "@/app/components/create-food/wizard/Step1BasicInfo";
 import Step2Categories from "@/app/components/create-food/wizard/Step2Categories";
-import Step3Portions from "@/app/components/create-food/wizard/Step3Portions";
+import Step3Price from "@/app/components/create-food/wizard/Step3Price";
 import Step5Review from "@/app/components/create-food/wizard/Step5Review";
 
 const STEPS = [
   { id: 1, title: "Basic Info", short: "Basics" },
   { id: 2, title: "Category", short: "Category" },
-  { id: 3, title: "Pricing", short: "Price" },
+  { id: 3, title: "Price", short: "Price" },
   { id: 4, title: "Review", short: "Done" },
 ];
 
@@ -67,8 +67,8 @@ export default function CreateFoodWizardPage() {
       }
     }
     if (store.currentStep === 3) {
-      if (store.portions.length === 0) {
-        toast.error("Add at least one price before continuing");
+      if (!store.portions.some((portion) => Number(portion.price_naira) > 0)) {
+        toast.error("Enter a price before continuing");
         return false;
       }
     }
@@ -82,7 +82,7 @@ export default function CreateFoodWizardPage() {
   const getNextLabel = () => {
     switch (store.currentStep) {
       case 1: return "Assign Categories";
-      case 2: return "Set Pricing & Sizes";
+      case 2: return "Set Price";
       case 3: return "Review Food";
       case 4: return store.isSubmitting ? "Publishing..." : "Publish Live";
       default: return "Continue";
@@ -191,7 +191,7 @@ export default function CreateFoodWizardPage() {
                 >
                   {store.currentStep === 1 && <Step1BasicInfo onNext={handleNext} />}
                   {store.currentStep === 2 && <Step2Categories />}
-                  {store.currentStep === 3 && <Step3Portions onNext={handleNext} onBack={handleBack} />}
+                  {store.currentStep === 3 && <Step3Price />}
                   {store.currentStep === 4 && (
                     <Step5Review 
                       onBack={handleBack} 
