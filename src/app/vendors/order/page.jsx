@@ -27,6 +27,7 @@ import VendorOrderCard from "@/app/components/order/VendorOrderCard";
 import { useVendorStorage } from "@/app/hooks/vendorStorage";
 import { useSocket } from "@/app/context/SocketContext";
 import VendorOrderDeskCard from "./components/VendorOrderDeskCard";
+import { getVendorAlertSettings, saveVendorAlertSettings } from "@/app/lib/vendorAlertSettings";
 
 const ACTIVE_STATUSES = ["pending", "accepted", "preparing", "ready", "ready_for_pickup"];
 const HISTORY_STATUSES = ["out_for_delivery", "delivered", "completed", "cancelled", "failed", "refunded"];
@@ -95,7 +96,7 @@ function getOrderDeskAudioContext() {
   return orderDeskAudioContext;
 }
 
-function playOrderDeskChime({ urgent = false } = {}) {
+function playOrderDeskChime({ urgent = false, vibrationEnabled = true } = {}) {
   if (typeof window === "undefined") return;
   const context = getOrderDeskAudioContext();
   if (!context) return;
@@ -126,7 +127,7 @@ function playOrderDeskChime({ urgent = false } = {}) {
     oscillator.stop(context.currentTime + offset + 0.1);
   });
 
-  if (navigator.vibrate) {
+  if (vibrationEnabled && navigator.vibrate) {
     navigator.vibrate(urgent ? [220, 120, 220] : [160, 80, 160]);
   }
 }
@@ -153,7 +154,7 @@ export default function VendorOrdersPage() {
   const [viewMode, setViewMode] = useState("desk");
   const [deskStatusTab, setDeskStatusTab] = useState("pending");
 
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [alertSettings, setAlertSettings] = useState(() => getVendorAlertSettings());
   const [voiceAlertsEnabled, setVoiceAlertsEnabled] = useState(false);
   const [tabletMode, setTabletMode] = useState(false);
   const [now, setNow] = useState(Date.now());
@@ -203,6 +204,11 @@ export default function VendorOrdersPage() {
     fetchOrders();
   }, [fetchOrders]);
 
+  useEffect(() => {
+    const syncAlertSettings = (event) => setAlertSettings(event.detail || getVendorAlertSettings());
+    window.addEventListener("vendor:alert-settings", syncAlertSettings);
+    return () => window.removeEventListener("vendor:alert-settings", syncAlertSettings);
+  }, []);
   useEffect(() => {
     const unlockStationAudio = () => {
       getOrderDeskAudioContext();
@@ -276,9 +282,9 @@ export default function VendorOrdersPage() {
 
     if (hasNewPending) {
       setViewMode("desk");
-      if (soundEnabled) {
+      if (alertSettings.alarmEnabled) {
         try {
-          playOrderDeskChime();
+          playOrderDeskChime({ vibrationEnabled: alertSettings.vibrationEnabled });
         } catch {
           // Browser audio can be blocked until user interaction.
         }
@@ -292,26 +298,26 @@ export default function VendorOrdersPage() {
         }
       }
     }
-  }, [orders, soundEnabled, voiceAlertsEnabled]);
+  }, [orders, alertSettings, voiceAlertsEnabled]);
 
   useEffect(() => {
     const hasPendingOrders = orders.some((order) => getStatus(order) === "pending");
-    if (!hasPendingOrders || !soundEnabled) {
+    if (!hasPendingOrders || !alertSettings.alarmEnabled) {
       if (pendingAlarmRef.current) window.clearInterval(pendingAlarmRef.current);
       pendingAlarmRef.current = null;
       return;
     }
 
-    const ring = () => { try { playOrderDeskChime({ urgent: true }); } catch {} };
+    const ring = () => { try { playOrderDeskChime({ urgent: true, vibrationEnabled: alertSettings.vibrationEnabled }); } catch {} };
     ring();
-    pendingAlarmRef.current = window.setInterval(ring, 6000);
+    pendingAlarmRef.current = window.setInterval(ring, alertSettings.intervalSeconds * 1000);
     return () => {
       if (pendingAlarmRef.current) window.clearInterval(pendingAlarmRef.current);
       pendingAlarmRef.current = null;
     };
-  }, [orders, soundEnabled]);
+  }, [orders, alertSettings]);
   useEffect(() => {
-    if (!soundEnabled && !voiceAlertsEnabled) return;
+    if (!alertSettings.alarmEnabled && !voiceAlertsEnabled) return;
 
     const persisted = (() => {
       try {
@@ -342,9 +348,9 @@ export default function VendorOrdersPage() {
 
     if (warningEvents.length > 0) {
       window.sessionStorage.setItem(WARNING_CHIME_KEY, JSON.stringify(warningChimeRef.current));
-      if (soundEnabled) {
+      if (alertSettings.alarmEnabled) {
         try {
-          playOrderDeskChime({ urgent: true });
+          playOrderDeskChime({ urgent: true, vibrationEnabled: alertSettings.vibrationEnabled });
         } catch {
           // Browser audio can be blocked until user interaction.
         }
@@ -362,7 +368,7 @@ export default function VendorOrdersPage() {
         }
       }
     }
-  }, [now, orders, soundEnabled, voiceAlertsEnabled]);
+  }, [now, orders, alertSettings, voiceAlertsEnabled]);
 
   const activeOrders = useMemo(
     () => orders.filter((order) => ACTIVE_STATUSES.includes(getStatus(order))).sort(sortOldestFirst),
@@ -642,23 +648,19 @@ export default function VendorOrdersPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setSoundEnabled((value) => {
-                    const next = !value;
-                    if (next) {
-                      try {
-                        playOrderDeskChime();
-                      } catch {}
-                    }
-                    return next;
-                  });
+                  const next = saveVendorAlertSettings({ ...alertSettings, alarmEnabled: !alertSettings.alarmEnabled });
+                  setAlertSettings(next);
+                  if (next.alarmEnabled) {
+                    try { playOrderDeskChime({ vibrationEnabled: next.vibrationEnabled }); } catch {}
+                  }
                 }}
                 className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 ${
-                  soundEnabled
+                  alertSettings.alarmEnabled
                     ? "border-orange-200 bg-orange-50 text-orange-600 dark:border-orange-500/20 dark:bg-orange-500/10 dark:text-orange-400"
                     : "border-zinc-200 bg-white text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
                 }`}
               >
-                {soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+                {alertSettings.alarmEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
                 Sound
               </button>
 
