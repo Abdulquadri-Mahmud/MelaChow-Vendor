@@ -21,7 +21,10 @@ import {
   Truck,
   X,
   CheckCircle2,
-  Plus
+  Plus,
+  Bell,
+  Volume2,
+  Vibrate
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { updateVendor } from "@/app/lib/vendorProfileApi";
@@ -31,6 +34,7 @@ import LocationSelector from "@/app/components/LocationSelector";
 import { useApi } from "@/app/context/ApiContext";
 import axios from "axios";
 import { Loader2 } from "lucide-react";
+import { getVendorAlertSettings, playVendorAlertPreview, saveVendorAlertSettings } from "@/app/lib/vendorAlertSettings";
 
 const CLOUDINARY_PRESET = "GrubDash";
 const CLOUDINARY_HOST = "https://api.cloudinary.com/v1_1/dypn7gna0/image/upload";
@@ -135,7 +139,8 @@ export default function VendorProfilePage({ vendor }) {
   const [coverImage, setCoverImage] = useState("");
   const [platformCategories, setPlatformCategories] = useState([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
-  const [openSections, setOpenSections] = useState({ basicInfo: true }); // Default open first section
+  const [openSections, setOpenSections] = useState({ basicInfo: true });
+  const [alertSettings, setAlertSettings] = useState(() => getVendorAlertSettings()); // Default open first section
   const [loadingSection, setLoadingSection] = useState("");
   const { baseUrl } = useApi();
 
@@ -190,6 +195,10 @@ export default function VendorProfilePage({ vendor }) {
     fetchCategories();
   }, [baseUrl]);
 
+  const updateAlertSettings = (changes) => {
+    const next = saveVendorAlertSettings({ ...alertSettings, ...changes });
+    setAlertSettings(next);
+  };
   const toggleSection = (section) => {
     setOpenSections(prev => ({
       ...prev,
@@ -551,6 +560,32 @@ export default function VendorProfilePage({ vendor }) {
         </Section>
 
 
+        <Section
+          title="Incoming Order Alerts"
+          icon={Bell}
+          isOpen={openSections.alerts}
+          onToggle={() => toggleSection('alerts')}
+        >
+          <div className="space-y-2">
+            <p className="text-xs font-bold leading-relaxed text-zinc-500 dark:text-zinc-400">Set how your order desk notifies you while new orders are awaiting acceptance.</p>
+            <button onClick={() => updateAlertSettings({ alarmEnabled: !alertSettings.alarmEnabled })} className="flex w-full items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-left dark:border-zinc-800 dark:bg-zinc-900/50">
+              <Volume2 size={18} className="text-orange-600" />
+              <div className="flex-1"><p className="text-xs font-black uppercase tracking-wide text-zinc-900 dark:text-white">Loud order alarm</p><p className="mt-1 text-[11px] text-zinc-500">Repeats until the order is accepted.</p></div>
+              <span className={`relative h-6 w-11 rounded-full ${alertSettings.alarmEnabled ? "bg-orange-600" : "bg-zinc-300 dark:bg-zinc-700"}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-all ${alertSettings.alarmEnabled ? "left-6" : "left-1"}`} /></span>
+            </button>
+            <button onClick={() => updateAlertSettings({ vibrationEnabled: !alertSettings.vibrationEnabled })} className="flex w-full items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-left dark:border-zinc-800 dark:bg-zinc-900/50">
+              <Vibrate size={18} className="text-orange-600" />
+              <div className="flex-1"><p className="text-xs font-black uppercase tracking-wide text-zinc-900 dark:text-white">Vibration</p><p className="mt-1 text-[11px] text-zinc-500">Used on devices that support vibration.</p></div>
+              <span className={`relative h-6 w-11 rounded-full ${alertSettings.vibrationEnabled ? "bg-orange-600" : "bg-zinc-300 dark:bg-zinc-700"}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-all ${alertSettings.vibrationEnabled ? "left-6" : "left-1"}`} /></span>
+            </button>
+            <div className="flex items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-900/50">
+              <Bell size={18} className="text-orange-600" />
+              <div className="flex-1"><p className="text-xs font-black uppercase tracking-wide text-zinc-900 dark:text-white">Repeat every</p><p className="mt-1 text-[11px] text-zinc-500">While pending orders remain.</p></div>
+              <select value={alertSettings.intervalSeconds} onChange={(event) => updateAlertSettings({ intervalSeconds: Number(event.target.value) })} className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-xs font-black text-zinc-800 outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"><option value={6}>6 sec</option><option value={10}>10 sec</option><option value={15}>15 sec</option></select>
+            </div>
+            <div className="flex justify-end pt-2"><button onClick={() => { playVendorAlertPreview({ vibrationEnabled: alertSettings.vibrationEnabled }); toast.success("Alarm test started"); }} className="rounded-md bg-orange-600 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white">Test alarm</button></div>
+          </div>
+        </Section>
         {/* Payout Details */}
         <Section
           title="Finance Details"
