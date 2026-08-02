@@ -337,6 +337,7 @@ export default function VendorOrderDetailsPage() {
             unitPrice,
             lineTotal: unitPrice * quantity,
             portion: item.portion_label || item.metadata?.portion_label || "",
+            portionQuantity: Number(item.portion_quantity || item.metadata?.portion_quantity) || 1,
             options,
             note: item.note || "",
         };
@@ -352,6 +353,15 @@ export default function VendorOrderDetailsPage() {
 
     return (
         <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 font-sans">
+            <style jsx global>{`
+                @media print {
+                    body * { visibility: hidden !important; }
+                    .print-receipt, .print-receipt * { visibility: visible !important; }
+                    .print-receipt { position: absolute !important; inset: 0 !important; width: 100% !important; border: 0 !important; box-shadow: none !important; }
+                    .print-hidden { display: none !important; }
+                    @page { margin: 12mm; }
+                }
+            `}</style>
 
             <AnimatePresence>
                 {showSuccessToast && (
@@ -869,7 +879,7 @@ export default function VendorOrderDetailsPage() {
                             initial={{ opacity: 0, x: 10 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.3 }}
-                            className="bg-white dark:bg-zinc-900 rounded-md border border-orange-100 dark:border-orange-500/20 overflow-hidden shadow-none"
+                            className="print-receipt bg-white dark:bg-zinc-900 rounded-md border border-orange-100 dark:border-orange-500/20 overflow-hidden shadow-none"
                         >
                             <div className="px-5 py-4 border-b border-orange-100 dark:border-orange-500/20 bg-orange-50/60 dark:bg-orange-500/5 flex items-center justify-between gap-3">
                                 <div className="flex items-center gap-3">
@@ -883,7 +893,7 @@ export default function VendorOrderDetailsPage() {
                                 </div>
                                 <button
                                     onClick={() => window.print()}
-                                    className="inline-flex items-center gap-1.5 rounded-md border border-orange-200 bg-white px-2.5 py-1.5 text-[9px] font-black uppercase tracking-widest text-orange-600 active:scale-95 dark:border-orange-500/20 dark:bg-zinc-900"
+                                    className="print-hidden inline-flex items-center gap-1.5 rounded-md border border-orange-200 bg-white px-2.5 py-1.5 text-[9px] font-black uppercase tracking-widest text-orange-600 active:scale-95 dark:border-orange-500/20 dark:bg-zinc-900"
                                 >
                                     <Printer size={11} /> Print
                                 </button>
@@ -913,7 +923,7 @@ export default function VendorOrderDetailsPage() {
                                             <div className="flex items-start justify-between gap-3">
                                                 <div className="min-w-0">
                                                     <p className="text-[12px] font-black text-zinc-900 dark:text-white">{item.quantity} x {item.name}</p>
-                                                    {item.portion && <p className="mt-0.5 text-[9px] font-black uppercase tracking-widest text-orange-600">{item.portion}</p>}
+                                                    {item.portion && <p className="mt-0.5 text-[9px] font-black uppercase tracking-widest text-orange-600">{item.portionQuantity > 1 ? `${item.portionQuantity} x ` : ""}{item.portion}</p>}
                                                 </div>
                                                 <div className="text-right">
                                                     <p className="text-[12px] font-black text-zinc-900 dark:text-white">{formatMoney(item.lineTotal)}</p>

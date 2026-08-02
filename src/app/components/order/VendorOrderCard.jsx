@@ -29,20 +29,6 @@ function formatOptionGroups(options) {
   return joinList(Object.entries(groups).map(([groupName, selections]) => `${groupName}: ${joinList(selections)}`));
 }
 
-function buildKitchenSummary(item, customerName = "The customer") {
-  const quantity = Number(item.quantity) || 1;
-  const portionQuantity = Number(item.portion_quantity) || 1;
-  const portionLabel = item.portion_label || item.metadata?.portion_label || "portion";
-  const itemName = item.name || item.variant?.name || "item";
-  const options = item.selected_options || item.metadata?.selected_options || [];
-  const join = (items) => items.length < 2 ? (items[0] || "") : items.length === 2 ? items.join(" and ") : `${items.slice(0, -1).join(", ")}, and ${items.at(-1)}`;
-  const perPack = join(options.map((o) => `${Number(o.quantity) || 1} ${o.label || o.name}`).filter(Boolean));
-  const total = join(options.map((o) => `${(Number(o.quantity) || 1) * quantity} ${o.label || o.name}`).filter(Boolean));
-  const packText = `${quantity} ${quantity === 1 ? "pack" : "packs"} of ${itemName}`;
-  const contents = `${portionQuantity} ${portionLabel}${perPack ? `, ${perPack}` : ""}`;
-  const preparation = `${portionQuantity * quantity} ${portionLabel}${total ? `, ${total}` : ""}`;
-  return quantity === 1 ? `${customerName} ordered ${packText} with ${contents}. Prepare: ${preparation}.` : `${customerName} ordered ${packText}. Each pack includes ${contents}. Prepare: ${preparation}.`;
-}
 export default function VendorOrderCard({ order, onAssign, onRefresh }) {
   const { vendorProfile } = useVendorProfile();
   const vendorDetails = vendorProfile;
@@ -322,31 +308,6 @@ export default function VendorOrderCard({ order, onAssign, onRefresh }) {
           </div>
         )}
       </div>
-
-      {/* Preparation Directive Summary */}
-      {detailedItems.length > 0 && (
-        <div className="p-3 border-b border-orange-200 dark:border-orange-700/50 bg-orange-200/30 dark:bg-orange-900/20 backdrop-blur-sm">
-          <p className="text-[9px] font-black uppercase text-orange-700 dark:text-orange-300 tracking-wider mb-2">📋 Prepare</p>
-          <div className="space-y-1">
-            {detailedItems.map((item, idx) => {
-
-              const fullSentence = buildKitchenSummary(item, `${user?.firstname || ""} ${user?.lastname || ""}`.trim() || "The customer");
-              
-              return (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, y: -5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.05 }}
-                  className="text-[10px] text-orange-900 dark:text-orange-100 leading-snug p-2 bg-white/50 dark:bg-orange-950/40 backdrop-blur-sm rounded border border-orange-200 dark:border-orange-700/50"
-                >
-                  {fullSentence}
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Settlement & Actions Footer */}
       <div className="p-3 bg-linear-to-b from-slate-50 to-white dark:from-slate-800/50 dark:to-slate-900 border-t border-slate-100 dark:border-slate-800 space-y-3">
