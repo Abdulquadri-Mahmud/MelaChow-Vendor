@@ -168,6 +168,9 @@ export const useCreateFoodStore = create(
                     price_naira: p.price / 100,    // kobo → naira
                     is_default: p.is_default,
                     max_quantity: p.max_quantity || null,
+                    track_stock: p.track_stock === true,
+                    stock_quantity: p.stock_quantity ?? 0,
+                    low_stock_threshold: p.low_stock_threshold ?? 5,
                     sort_order: p.sort_order || 0,
                 })),
 
