@@ -280,6 +280,7 @@ export default function VendorOrderCard({ order, onAssign, onRefresh }) {
                   <p className="text-[10px] font-bold text-slate-900 dark:text-white uppercase tracking-tight truncate leading-tight">
                     {item.variant?.name || item.name || "Item"}
                   </p>
+                  {(item.meal_group_label || item.metadata?.meal_group_label) && <p className="mt-0.5 text-[8px] font-black uppercase tracking-wider text-orange-600 dark:text-orange-400">For: {item.meal_group_label || item.metadata?.meal_group_label}</p>}
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="text-[8px] font-black text-orange-600 dark:text-orange-400 uppercase tracking-wider">Qty: {item.quantity}</span>
                     {item.portion_label && (
