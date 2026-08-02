@@ -129,6 +129,7 @@ function buildKitchenLine(item) {
   const totalPortions = quantity * portionQuantity;
   const portionLabel = item.portion_label || item.metadata?.portion_label || "";
   const itemName = item.name || item.variant?.name || "Item";
+  const mealGroupLabel = String(item.meal_group_label || item.metadata?.meal_group_label || "").trim();
   const options = item.selected_options || item.metadata?.selected_options || [];
   const optionGroups = options.reduce((groups, option) => {
     const groupName = option.group_name || option.groupName || "Selected options";
@@ -141,6 +142,7 @@ function buildKitchenLine(item) {
 
   return {
     itemName,
+    mealGroupLabel,
     quantity,
     totalPortions,
     portionLabel,
@@ -329,6 +331,7 @@ export default function VendorOrderDeskCard({
                       <p className={`${isTablet ? "text-base" : "text-sm"} font-black uppercase tracking-tight text-zinc-950 dark:text-white`}>
                         {line.itemName}
                       </p>
+                      {line.mealGroupLabel && <p className="mt-1 text-[9px] font-black uppercase tracking-widest text-orange-700 dark:text-orange-300">For: {line.mealGroupLabel}</p>}
                       <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
                         {line.preparationText}
                       </p>

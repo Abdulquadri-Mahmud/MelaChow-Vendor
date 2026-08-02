@@ -581,6 +581,7 @@ export default function VendorOrderDetailsPage() {
                                     const originalPrice = Number(item.originalPrice) || Number(item.variant?.price) || 0;
                                     const note = item.note || "";
                                     const pricing = item.metadata?.pricing || null;
+                                    const mealGroupLabel = String(item.meal_group_label || item.metadata?.meal_group_label || "").trim();
                                     const {
                                         quantity,
                                         portionQuantity,
@@ -623,6 +624,7 @@ export default function VendorOrderDetailsPage() {
                                                             <h4 className="font-black text-zinc-900 dark:text-white text-[13px] uppercase tracking-tight leading-none mb-1.5 group-hover:text-orange-600 transition-colors">
                                                                 {itemName}
                                                             </h4>
+                                                            {mealGroupLabel && <p className="mb-1 text-[9px] font-black uppercase tracking-widest text-orange-600">For: {mealGroupLabel}</p>}
                                                             <div className="flex flex-wrap items-center gap-1.5">
                                                                 {itemType && (
                                                                     <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-zinc-100 text-zinc-500 dark:bg-zinc-800/50 dark:text-zinc-400 border border-zinc-200/50 dark:border-zinc-700/50">{itemType}</span>
