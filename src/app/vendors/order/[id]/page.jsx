@@ -37,7 +37,6 @@ export default function VendorOrderDetailsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isUpdating, setIsUpdating] = useState(false);
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
-    const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(true);
     const [showSuccessToast, setShowSuccessToast] = useState(false);
     const [errorMessage, setErrorMessage] = useState(null);
     const { vendorDetails } = useVendorStorage();
@@ -323,7 +322,6 @@ export default function VendorOrderDetailsPage() {
             totalPortions,
             options,
             portionText: cleanPortionLabel,
-            sentence,
         };
     };
     const receiptItems = detailedItems.map((item) => {
@@ -354,83 +352,6 @@ export default function VendorOrderDetailsPage() {
 
     return (
         <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 font-sans">
-
-            {/* Global Executive Summary Modal */}
-            <AnimatePresence>
-                {isSummaryModalOpen && order && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm">
-                        <motion.div
-                            initial={{ scale: 0.95, opacity: 0, y: 20 }}
-                            animate={{ scale: 1, opacity: 1, y: 0 }}
-                            exit={{ scale: 0.95, opacity: 0, y: 20 }}
-                            className="bg-white dark:bg-zinc-900 rounded-md w-full max-w-lg border border-zinc-100 dark:border-zinc-800 shadow-2xl overflow-hidden"
-                        >
-                            <div className="p-5 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between bg-zinc-50 dark:bg-zinc-900">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-orange-600/10 rounded-md text-orange-600 border border-orange-600/20">
-                                        <Package size={16} />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-black text-zinc-900 dark:text-white uppercase tracking-tight text-[14px]">Kitchen order summary</h3>
-                                        <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">Plain list of what to prepare</p>
-                                    </div>
-                                </div>
-                                <button 
-                                    onClick={() => setIsSummaryModalOpen(false)}
-                                    className="p-1.5 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-md text-zinc-400 transition-colors cursor-pointer"
-                                >
-                                    <X size={16} />
-                                </button>
-                            </div>
-                            
-                            <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto no-scrollbar">
-                                {/* Status Sentence */}
-                                <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-md border border-blue-100 dark:border-blue-900/30 flex gap-3 items-start">
-                                    <Info className="text-blue-500 shrink-0 mt-0.5" size={16} />
-                                    <p className="text-[12px] font-bold text-blue-800 dark:text-blue-300 leading-relaxed">
-                                        The current status of this order is <span className="font-black uppercase tracking-wide">{statusConfig.label}</span>. 
-                                        {order.orderStatus === 'pending' && " Please review and accept the order immediately to begin preparation."}
-                                        {order.orderStatus === 'accepted' && " The customer has been notified that you accepted the order."}
-                                        {order.orderStatus === 'preparing' && " The kitchen is currently enlisted to prepare these items."}
-                                        {order.orderStatus === 'ready' && " The items have been parked and are awaiting extraction."}
-                                        {order.orderStatus === 'ready_for_pickup' && " The items are securely packaged and awaiting the courier."}
-                                        {order.orderStatus === 'delivered' && " This order has successfully reached the destination."}
-                                    </p>
-                                </div>
-
-                                {/* Directives */}
-                                <div>
-                                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3">Kitchen instructions ({detailedItems.length})</p>
-                                    <div className="space-y-3">
-                                        {detailedItems.map((item, idx) => {
-                                            const { sentence } = buildKitchenSummary(item);
-
-                                            return (
-                                                <div key={idx} className="flex gap-3 bg-zinc-900 text-white p-3.5 rounded-md border border-zinc-800 relative overflow-hidden">
-                                                    <div className="absolute top-0 right-0 w-24 h-24 bg-orange-600/10 rounded-full blur-2xl -mr-12 -mt-12" />
-                                                    <div className="p-2 bg-zinc-800 rounded-md shrink-0 relative z-10 self-start">
-                                                        <Hash size={12} className="text-orange-500" />
-                                                    </div>
-                                                    <p className="text-[15px] font-medium tracking-wide leading-snug relative z-10 mt-0.5">{sentence}</p>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="p-5 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
-                                <button 
-                                    onClick={() => setIsSummaryModalOpen(false)}
-                                    className="w-full py-3 bg-orange-600 text-white text-[11px] font-black uppercase tracking-widest rounded-md hover:opacity-90 transition-opacity active:scale-95 shadow-none"
-                                >
-                                    Acknowledge & Close
-                                </button>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
 
             <AnimatePresence>
                 {showSuccessToast && (
@@ -617,7 +538,7 @@ export default function VendorOrderDetailsPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-2 space-y-4">
 
-                        {/* Items Manifest */}
+                        {/* Order items */}
                         <motion.div
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -630,13 +551,13 @@ export default function VendorOrderDetailsPage() {
                                         <ShoppingBag size={14} strokeWidth={3} />
                                     </div>
                                     <div>
-                                        <h3 className="font-black text-[12px] text-zinc-900 dark:text-white uppercase tracking-widest">Items Manifest</h3>
-                                        <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">Extraction Protocol: Preparation Required</p>
+                                        <h3 className="font-black text-[12px] text-zinc-900 dark:text-white uppercase tracking-widest">Order items</h3>
+                                        <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-0.5">Items in this order</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <div className="px-3 py-1 bg-orange-600 text-white text-[9px] font-black uppercase tracking-widest rounded-md border-none">
-                                        {detailedItems.length} POSITIONS
+                                        {detailedItems.length} ITEMS
                                     </div>
                                 </div>
                             </div>
@@ -656,7 +577,6 @@ export default function VendorOrderDetailsPage() {
                                         totalPortions,
                                         options,
                                         portionText,
-                                        sentence,
                                     } = buildKitchenSummary(item);
                                     const basePrice = pricing?.base_naira || (options.length === 0 ? originalPrice : (originalPrice || 0));
                                     const optionsTotal = options.reduce((sum, opt) => sum + ((Number(opt.price_modifier_naira) || 0) * (Number(opt.quantity) || 1)), 0);
@@ -717,13 +637,13 @@ export default function VendorOrderDetailsPage() {
                                                     <div className="bg-zinc-50/70 dark:bg-zinc-950/30 rounded-md p-4 border border-zinc-100 dark:border-zinc-800/50">
                                                         <div className="flex items-center gap-2 mb-3 leading-none">
                                                             <Package size={13} className="text-orange-600" />
-                                                            <p className="text-[10px] font-black text-zinc-600 dark:text-zinc-300 uppercase tracking-widest">What the kitchen should prepare</p>
+                                                            <p className="text-[10px] font-black text-zinc-600 dark:text-zinc-300 uppercase tracking-widest">Preparation details</p>
                                                         </div>
                                                         
                                                         <div className="space-y-2">
                                                             <p className="text-[10px] font-black text-zinc-700 dark:text-zinc-200 flex items-center gap-2 uppercase tracking-wide leading-none">
                                                                 <span className="w-1.5 h-1.5 bg-orange-600 rounded-full" />
-                                                                Kitchen to prepare: {totalPortions} × {portionText}
+                                                                Prepare: {totalPortions} × {portionText}
                                                             </p>
                                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                                 {/* Main item card */}
@@ -787,17 +707,6 @@ export default function VendorOrderDetailsPage() {
                                                 </div>
                                             </div>
 
-                                            {/* Summary Banner */}
-                                            <div className="flex items-center gap-3 bg-zinc-900 text-white p-3 rounded-md border border-zinc-800 overflow-hidden relative">
-                                                <div className="absolute top-0 right-0 w-24 h-24 bg-orange-600/10 rounded-full blur-2xl -mr-12 -mt-12" />
-                                                <div className="p-2 bg-zinc-800 rounded-md relative z-10 shrink-0">
-                                                    <Hash size={14} className="text-orange-600" />
-                                                </div>
-                                                <div className="flex-1 relative z-10">
-                                                    <p className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-1">DIRECTIVE SUMMARY</p>
-                                                    <p className="text-[16px] font-medium tracking-wide leading-snug">{sentence}</p>
-                                                </div>
-                                            </div>
                                         </motion.div>
                                     );
                                 })}
