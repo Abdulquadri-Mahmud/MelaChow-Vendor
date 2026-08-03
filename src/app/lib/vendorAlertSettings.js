@@ -28,6 +28,33 @@ export function saveVendorAlertSettings(settings) {
   }
   return next;
 }
+let vendorAlertAudioContext;
+
+export function playVendorNewOrderAlert({ vibrationEnabled = true } = {}) {
+  if (typeof window === "undefined") return;
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContext) return;
+  try {
+    if (!vendorAlertAudioContext || vendorAlertAudioContext.state === "closed") {
+      vendorAlertAudioContext = new AudioContext();
+    }
+    if (vendorAlertAudioContext.state === "suspended") {
+      vendorAlertAudioContext.resume().catch(() => {});
+    }
+    const gain = vendorAlertAudioContext.createGain();
+    gain.gain.value = 0.2;
+    gain.connect(vendorAlertAudioContext.destination);
+    [[0, 880], [0.14, 660], [0.28, 880], [0.42, 660]].forEach(([offset, frequency]) => {
+      const oscillator = vendorAlertAudioContext.createOscillator();
+      oscillator.type = "sine";
+      oscillator.frequency.value = frequency;
+      oscillator.connect(gain);
+      oscillator.start(vendorAlertAudioContext.currentTime + offset);
+      oscillator.stop(vendorAlertAudioContext.currentTime + offset + 0.1);
+    });
+    if (vibrationEnabled) navigator.vibrate?.([220, 120, 220]);
+  } catch {}
+}
 export function playVendorAlertPreview({ vibrationEnabled = true } = {}) {
   if (typeof window === "undefined") return;
   const AudioContext = window.AudioContext || window.webkitAudioContext;

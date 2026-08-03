@@ -454,7 +454,7 @@ const PortionsSection = ({ item, vendorId, itemId, queryClient }) => {
 
     const openEdit = (p) => {
         setSelectedPortion(p);
-        setPortionForm({ label: p.label, price_naira: p.price_naira, is_default: p.is_default, max_quantity: p.max_quantity || '' });
+        setPortionForm({ label: p.label, price_naira: p.price_naira, is_default: p.is_default, max_quantity: p.max_quantity || "", track_stock: p.track_stock === true, stock_quantity: p.stock_quantity ?? 0, low_stock_threshold: p.low_stock_threshold ?? 5 });
         setIsEditModalOpen(true);
     };
 
@@ -462,7 +462,7 @@ const PortionsSection = ({ item, vendorId, itemId, queryClient }) => {
         if (!portionForm.price_naira || Number(portionForm.price_naira) <= 0) return toast.error("Price must be > 0");
         setSaving(true);
         try {
-            await updatePortion(vendorId, itemId, selectedPortion._id, { label: portionForm.label.trim(), price: Math.round(Number(portionForm.price_naira) * 100), is_default: portionForm.is_default, max_quantity: portionForm.max_quantity ? parseInt(portionForm.max_quantity, 10) : null });
+            await updatePortion(vendorId, itemId, selectedPortion._id, { label: portionForm.label.trim(), price: Math.round(Number(portionForm.price_naira) * 100), is_default: portionForm.is_default, max_quantity: portionForm.max_quantity ? parseInt(portionForm.max_quantity, 10) : null, track_stock: portionForm.track_stock === true, stock_quantity: portionForm.track_stock ? Math.max(0, Number(portionForm.stock_quantity) || 0) : 0, low_stock_threshold: Math.max(0, Number(portionForm.low_stock_threshold) || 0) });
             queryClient.invalidateQueries({ queryKey: ["food-item", itemId] });
             setIsEditModalOpen(false);
             toast.success("Size updated");
@@ -509,10 +509,10 @@ const PortionsSection = ({ item, vendorId, itemId, queryClient }) => {
                                 <div className="flex flex-col">
                                     <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-0.5">Price</span>
                                     <span className="text-base font-black text-orange-600 dark:text-orange-400">₦{p.price_naira?.toLocaleString()}</span>
-                                </div>
-                                {p.is_default && (
-                                    <span className="text-[8px] bg-indigo-500 text-white font-black uppercase tracking-widest px-2 py-0.5 rounded-md">Primary</span>
-                                )}
+                                </div>                                 {p.track_stock && <span className="text-[8px] bg-emerald-100 text-emerald-700 font-black uppercase tracking-widest px-2 py-0.5 rounded-md">{p.stock_quantity ?? 0} left</span>}
+                                 {p.is_default && (
+                                     <span className="text-[8px] bg-indigo-500 text-white font-black uppercase tracking-widest px-2 py-0.5 rounded-md">Primary</span>
+                                 )}
                             </div>
                             <div className="flex gap-2 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-all">
                                 <button onClick={() => openEdit(p)} className="h-8 px-4 rounded-lg bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 text-[10px] font-black uppercase text-zinc-500 hover:text-orange-500 hover:border-orange-200">Manage</button>
@@ -552,7 +552,31 @@ const PortionsSection = ({ item, vendorId, itemId, queryClient }) => {
                              <input className="h-12 px-4 w-full rounded-xl border bg-zinc-50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-white font-bold outline-none focus:border-orange-500" type="number" value={portionForm.max_quantity} onChange={e => setPortionForm({ ...portionForm, max_quantity: e.target.value })} />
                         </div>
                     </div>
-                    <label className="flex items-center gap-3 p-2 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-100 dark:border-zinc-700 cursor-pointer">
+                    <label className="flex items-center justify-between gap-3 p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-100 dark:border-zinc-700 cursor-pointer">
+                        <span>
+                            <span className="block text-xs font-black text-zinc-800 dark:text-white">Track stock</span>
+                            <span className="block text-[10px] font-medium text-zinc-500">Stop selling this size when it reaches zero.</span>
+                        </span>
+                        <input
+                            type="checkbox"
+                            className="w-5 h-5 accent-orange-500"
+                            checked={portionForm.track_stock === true}
+                            onChange={e => setPortionForm({ ...portionForm, track_stock: e.target.checked, stock_quantity: e.target.checked ? (portionForm.stock_quantity ?? 0) : 0 })}
+                        />
+                    </label>
+                    {portionForm.track_stock && (
+                        <div className="grid grid-cols-2 gap-2">
+                            <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                                Available quantity
+                                <input min="0" type="number" className="mt-2 h-12 px-4 w-full rounded-xl border bg-zinc-50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-white font-bold outline-none focus:border-orange-500" value={portionForm.stock_quantity ?? ""} onChange={e => setPortionForm({ ...portionForm, stock_quantity: e.target.value })} />
+                            </label>
+                            <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                                Low stock at
+                                <input min="0" type="number" className="mt-2 h-12 px-4 w-full rounded-xl border bg-zinc-50 dark:bg-zinc-950 border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-white font-bold outline-none focus:border-orange-500" value={portionForm.low_stock_threshold ?? ""} onChange={e => setPortionForm({ ...portionForm, low_stock_threshold: e.target.value })} />
+                            </label>
+                        </div>
+                    )}
+                    <label className="flex items-center gap-3 p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-100 dark:border-zinc-700 cursor-pointer">
                         <input type="checkbox" className="w-5 h-5 rounded-lg border-zinc-300 text-orange-500 focus:ring-orange-500" checked={portionForm.is_default} onChange={e => setPortionForm({ ...portionForm, is_default: e.target.checked })} />
                         <div>
                             <p className="text-xs font-black text-zinc-800 dark:text-white uppercase tracking-tight">Primary Operational Default</p>
