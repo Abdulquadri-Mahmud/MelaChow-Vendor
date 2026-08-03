@@ -237,6 +237,9 @@ export default function EditFoodPage() {
                     price: p.price_naira * 100,
                     is_default: p.is_default,
                     max_quantity: p.max_quantity || null,
+                    track_stock: p.track_stock === true,
+                    stock_quantity: p.track_stock ? Math.max(0, Number(p.stock_quantity) || 0) : 0,
+                    low_stock_threshold: Math.max(0, Number(p.low_stock_threshold) || 0),
                     sort_order: p.sort_order,
                 };
                 const isExistingPortion = p.tempId && p.tempId.length === 24;

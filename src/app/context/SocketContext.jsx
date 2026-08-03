@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import socketService from '@/app/lib/socketService';
 import { TokenManager } from '@/app/lib/auth-token';
 import toast from 'react-hot-toast';
+import { getVendorAlertSettings, playVendorNewOrderAlert } from '@/app/lib/vendorAlertSettings';
 
 const SocketContext = createContext({
     isConnected: false,
@@ -180,6 +181,14 @@ export const SocketProvider = ({ children }) => {
 
                     const vendorOrderId = order.vendorOrderId || order._id;
 
+                    const alertSettings = getVendorAlertSettings();
+
+                    if (alertSettings.alarmEnabled) {
+
+                        playVendorNewOrderAlert({ vibrationEnabled: alertSettings.vibrationEnabled });
+
+                    }
+
                     const newOrderNotification = {
                         _id: `order-${vendorOrderId || Date.now()}`,
                         title: '🔔 New Order Received!',
@@ -196,7 +205,7 @@ export const SocketProvider = ({ children }) => {
 
                     setLatestNotification(newOrderNotification);
                     setUnreadCount(prev => prev + 1);
-                    window.dispatchEvent(new CustomEvent('vendor:new-order', { detail: order }));
+                    window.dispatchEvent(new CustomEvent('vendor:new-order', { detail: { ...order, alertPlayed: true } }));
                     window.dispatchEvent(new CustomEvent('notifications:updated', { detail: newOrderNotification }));
 
                     // Premium vendor new order toast
@@ -234,13 +243,6 @@ export const SocketProvider = ({ children }) => {
                         position: 'top-right',
                         id: `new-order-${vendorOrderId}`
                     });
-
-                    // Play alert sound
-                    try {
-                        const audio = new Audio('/sounds/notification.mp3');
-                        audio.volume = 0.6;
-                        audio.play().catch(() => { });
-                    } catch (e) { }
                 }
             });
 

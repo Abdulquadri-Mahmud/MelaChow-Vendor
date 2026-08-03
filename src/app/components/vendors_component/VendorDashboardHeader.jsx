@@ -80,6 +80,7 @@ function TodayHoursControl({ vendor }) {
     const todayHours = vendor?.openingHours?.[today] || {};
     const [closeTime, setCloseTime] = useState(todayHours.close || "");
     const [isSaving, setIsSaving] = useState(false);
+    const [isOpen, setIsOpen] = useState(false);
 
     useEffect(() => {
         const timer = window.setInterval(() => setClock(getLagosNowParts()), 30000);
@@ -111,54 +112,42 @@ function TodayHoursControl({ vendor }) {
     };
 
     return (
-        <div className="hidden xl:flex items-center gap-2 rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1.5 dark:border-zinc-800 dark:bg-zinc-950">
-            <div className="flex items-center gap-2 border-r border-zinc-200 pr-2 dark:border-zinc-800">
-                <div className={`h-2.5 w-2.5 rounded-full ${isClosedToday ? "bg-red-500" : "bg-emerald-500"}`} />
-                <div>
-                    <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
-                        {today.slice(0, 3)} {clock.time} WAT
-                    </p>
-                    <p className="text-[10px] font-black uppercase tracking-tight text-zinc-700 dark:text-zinc-200">
-                        {isClosedToday ? "Closed today" : `${formatTime(todayHours.open)} - ${formatTime(todayHours.close)}`}
-                    </p>
+        <div className="relative">
+            <button
+                type="button"
+                onClick={() => setIsOpen((open) => !open)}
+                className={`flex h-10 w-10 items-center justify-center rounded-md border transition active:scale-95 ${isClosedToday ? "border-red-200 bg-red-50 text-red-600 dark:border-red-500/20 dark:bg-red-500/10" : "border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-500/20 dark:bg-emerald-500/10"}`}
+                title="Today's opening hours"
+                aria-label="Today's opening hours"
+            >
+                <Clock size={17} />
+            </button>
+
+            {isOpen && (
+                <div className="absolute right-0 top-12 z-50 w-72 rounded-2xl border border-zinc-200 bg-white p-4 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
+                    <div className="mb-4 flex items-start justify-between gap-3">
+                        <div>
+                            <p className="text-xs font-black text-zinc-900 dark:text-white">Today&apos;s hours</p>
+                            <p className="mt-1 text-[11px] text-zinc-500">{today.slice(0, 3).toUpperCase()} · {clock.time} WAT</p>
+                        </div>
+                        <span className={`rounded-full px-2 py-1 text-[9px] font-black uppercase ${isClosedToday ? "bg-red-50 text-red-600 dark:bg-red-500/10" : "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10"}`}>
+                            {isClosedToday ? "Closed" : "Open"}
+                        </span>
+                    </div>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                        Closing time
+                        <input type="time" value={closeTime} disabled={isSaving || isClosedToday} onChange={(event) => setCloseTime(event.target.value)} className="mt-2 h-11 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm font-bold text-zinc-800 outline-none focus:border-orange-500 disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
+                    </label>
+                    <div className="mt-4 grid grid-cols-2 gap-2">
+                        <button type="button" onClick={() => applyTodayHours({ closed: !isClosedToday, close: closeTime || todayHours.close, open: todayHours.open })} disabled={isSaving} className={`h-10 rounded-xl text-[10px] font-black uppercase tracking-wide transition disabled:opacity-50 ${isClosedToday ? "bg-emerald-600 text-white" : "bg-red-50 text-red-600 dark:bg-red-500/10"}`}>
+                            {isClosedToday ? "Open today" : "Close today"}
+                        </button>
+                        <button type="button" onClick={() => applyTodayHours({ closed: false, close: closeTime || todayHours.close, open: todayHours.open })} disabled={isSaving || isClosedToday || !closeTime} className="flex h-10 items-center justify-center gap-2 rounded-xl bg-orange-600 text-[10px] font-black uppercase tracking-wide text-white transition hover:bg-orange-700 disabled:opacity-50">
+                            {isSaving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Save
+                        </button>
+                    </div>
                 </div>
-            </div>
-
-            <label className="flex items-center gap-1">
-                <Clock size={13} className="text-orange-500" />
-                <input
-                    type="time"
-                    value={closeTime}
-                    disabled={isSaving || isClosedToday}
-                    onChange={(event) => setCloseTime(event.target.value)}
-                    className="w-[82px] rounded-md border border-zinc-200 bg-white px-2 py-1 text-[11px] font-black text-zinc-800 outline-none focus:border-orange-500 disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
-                    title="Today's closing time"
-                />
-            </label>
-
-            <button
-                type="button"
-                onClick={() => applyTodayHours({ closed: false, close: closeTime || todayHours.close, open: todayHours.open })}
-                disabled={isSaving || !closeTime}
-                className="rounded-md bg-orange-600 p-2 text-white transition hover:bg-orange-700 active:scale-95 disabled:opacity-50"
-                title="Update today's closing time"
-            >
-                {isSaving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
-            </button>
-
-            <button
-                type="button"
-                onClick={() => applyTodayHours({ closed: !isClosedToday, close: closeTime || todayHours.close, open: todayHours.open })}
-                disabled={isSaving}
-                className={`rounded-md p-2 transition active:scale-95 disabled:opacity-50 ${
-                    isClosedToday
-                        ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100 dark:bg-emerald-500/10 dark:text-emerald-300"
-                        : "bg-red-50 text-red-600 hover:bg-red-100 dark:bg-red-500/10 dark:text-red-300"
-                }`}
-                title={isClosedToday ? "Reopen today" : "Close for today"}
-            >
-                <Power size={13} />
-            </button>
+            )}
         </div>
     );
 }

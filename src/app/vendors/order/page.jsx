@@ -163,6 +163,7 @@ export default function VendorOrdersPage() {
   const warningChimeRef = useRef({});
   const pendingAlarmRef = useRef(null);
   const hasLoadedOnceRef = useRef(false);
+  const skipNextSocketChimeRef = useRef(false);
   const voicePrimedRef = useRef(false);
   const ordersRequestRef = useRef(null);
   const { vendorDetails } = useVendorStorage();
@@ -250,7 +251,8 @@ export default function VendorOrdersPage() {
   }, [fetchOrders, wsConnected]);
 
   useEffect(() => {
-    const handleNewOrder = () => {
+    const handleNewOrder = (event) => {
+      if (event?.detail?.alertPlayed) skipNextSocketChimeRef.current = true;
       setViewMode("desk");
       setDeskStatusTab("pending");
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -282,7 +284,9 @@ export default function VendorOrdersPage() {
 
     if (hasNewPending) {
       setViewMode("desk");
-      if (alertSettings.alarmEnabled) {
+      const alreadyAlertedBySocket = skipNextSocketChimeRef.current;
+      skipNextSocketChimeRef.current = false;
+      if (alertSettings.alarmEnabled && !alreadyAlertedBySocket) {
         try {
           playOrderDeskChime({ vibrationEnabled: alertSettings.vibrationEnabled });
         } catch {
