@@ -185,6 +185,7 @@ export default function VendorOrdersPage() {
         const orderData = Array.isArray(data) ? data : [];
         setOrders(orderData);
         setFilteredOrders(orderData);
+        window.dispatchEvent(new CustomEvent('vendor:orders-updated'));
       } catch (error) {
         console.error("Failed to fetch orders:", error);
       } finally {

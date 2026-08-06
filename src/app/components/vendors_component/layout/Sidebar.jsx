@@ -28,6 +28,8 @@ import {
 import { useApi } from "@/app/context/ApiContext";
 import PermanentInstallButton from "@/app/components/PermanentInstallButton";
 import { useVendorStorage } from "@/app/hooks/vendorStorage";
+import { useSocket } from "@/app/context/SocketContext";
+import { getVendorOrders } from "@/app/lib/vendorApi";
 
 const navigation = [
   {
@@ -73,8 +75,49 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
+  const { unreadCount } = useSocket();
+  const [ordersCount, setOrdersCount] = useState(0);
+
   // Check active path
   const isSegmentActive = (href) => pathname === href || pathname?.startsWith(href + '/');
+
+  const fetchOrdersCount = async () => {
+    try {
+      const res = await getVendorOrders();
+      const raw = res?.vendorOrders || res?.orders || res?.data || (Array.isArray(res) ? res : []);
+      const activeStatuses = ["pending", "accepted", "preparing", "ready", "ready_for_pickup"];
+      const activeCount = raw.filter(o => {
+        const st = (o.orderStatus || o.status || "").toLowerCase();
+        return activeStatuses.includes(st);
+      }).length;
+      setOrdersCount(activeCount);
+    } catch (err) {
+      console.error("Sidebar fetchOrdersCount error:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrdersCount();
+
+    const handleNewOrder = () => {
+      setOrdersCount(prev => prev + 1);
+      fetchOrdersCount();
+    };
+
+    const handleOrdersUpdated = () => {
+      fetchOrdersCount();
+    };
+
+    window.addEventListener("vendor:new-order", handleNewOrder);
+    window.addEventListener("notifications:updated", handleOrdersUpdated);
+    window.addEventListener("vendor:orders-updated", handleOrdersUpdated);
+
+    return () => {
+      window.removeEventListener("vendor:new-order", handleNewOrder);
+      window.removeEventListener("notifications:updated", handleOrdersUpdated);
+      window.removeEventListener("vendor:orders-updated", handleOrdersUpdated);
+    };
+  }, []);
 
   // Handle Resize for Mobile Check
   useEffect(() => {
@@ -188,6 +231,13 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
                   const isActive = isSegmentActive(item.href);
                   const Icon = item.icon;
 
+                  let badgeCount = 0;
+                  if (item.href === "/vendors/order") {
+                    badgeCount = ordersCount;
+                  } else if (item.href === "/vendors/notifications") {
+                    badgeCount = unreadCount;
+                  }
+
                   return (
                     <button
                       key={item.href}
@@ -223,11 +273,20 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
                         <span className="absolute left-0 top-1/4 bottom-1/4 w-[3px] bg-gradient-to-b from-orange-400 to-amber-500 rounded-full shadow-[0_0_12px_rgba(251,146,60,0.9)]" />
                       )}
 
-                      <Icon
-                        size={open || isMobile ? 16 : 20}
-                        strokeWidth={isActive ? 2.5 : 2}
-                        className={`${isActive ? "text-orange-400" : "text-slate-500 group-hover:text-slate-300"} shrink-0 relative z-10 transition-colors`}
-                      />
+                      <div className="relative shrink-0 z-10">
+                        <Icon
+                          size={open || isMobile ? 16 : 20}
+                          strokeWidth={isActive ? 2.5 : 2}
+                          className={`${isActive ? "text-orange-400" : "text-slate-500 group-hover:text-slate-300"} transition-colors`}
+                        />
+                        {!open && !isMobile && badgeCount > 0 && (
+                          <span className={`absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] px-0.5 rounded-full text-[8px] font-black flex items-center justify-center text-white z-20 shadow-md ${
+                            item.href === "/vendors/order" ? "bg-orange-500 animate-pulse" : "bg-rose-500"
+                          }`}>
+                            {badgeCount > 9 ? "9+" : badgeCount}
+                          </span>
+                        )}
+                      </div>
 
                       <AnimatePresence>
                         {(open || isMobile) && (
@@ -242,12 +301,26 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
                         )}
                       </AnimatePresence>
 
-                      {isActive && (open || isMobile) && (
+                      {(open || isMobile) && badgeCount > 0 ? (
                         <motion.span
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
-                          className="ml-auto w-1.5 h-1.5 rounded-full bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.8)] shrink-0 relative z-10"
-                        />
+                          className={`ml-auto px-2 py-0.5 text-[10px] font-black rounded-full text-white shadow-md relative z-10 shrink-0 ${
+                            item.href === "/vendors/order"
+                              ? "bg-gradient-to-r from-orange-500 to-amber-500 shadow-orange-500/30 animate-pulse"
+                              : "bg-rose-500 shadow-rose-500/30"
+                          }`}
+                        >
+                          {badgeCount > 99 ? "99+" : badgeCount}
+                        </motion.span>
+                      ) : (
+                        isActive && (open || isMobile) && (
+                          <motion.span
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            className="ml-auto w-1.5 h-1.5 rounded-full bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.8)] shrink-0 relative z-10"
+                          />
+                        )
                       )}
                     </button>
                   );
