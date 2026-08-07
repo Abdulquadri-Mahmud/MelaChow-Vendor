@@ -118,6 +118,7 @@ export default function VendorOrderDetailsPage() {
             const res = await getVendorOrderById(id);
             const data = res.data || res;
             setOrder(data);
+            window.dispatchEvent(new CustomEvent('vendor:orders-updated'));
 
             setShowSuccessToast(true);
             setTimeout(() => setShowSuccessToast(false), 3000);
