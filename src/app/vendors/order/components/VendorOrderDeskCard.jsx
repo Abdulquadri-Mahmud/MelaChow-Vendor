@@ -181,6 +181,7 @@ export default function VendorOrderDeskCard({
     });
     return scopedItems.length ? scopedItems : sourceItems;
   }, [order.items, restaurantId, userOrder.items]);
+  const orderedKitchenItems = useMemo(() => [...items].sort((first, second) => String(first.meal_group_label || first.metadata?.meal_group_label || "Person 1").localeCompare(String(second.meal_group_label || second.metadata?.meal_group_label || "Person 1"))), [items]);
 
   const isPending = status === "pending";
   const isReady = ["ready", "ready_for_pickup"].includes(status);
@@ -319,10 +320,14 @@ export default function VendorOrderDeskCard({
             <p className="text-[10px] font-black uppercase tracking-widest text-orange-700 dark:text-orange-300">Kitchen Ticket</p>
           </div>
           <div className="space-y-2">
-            {items.map((item, index) => {
+            {orderedKitchenItems.map((item, index) => {
               const line = buildKitchenLine(item);
+              const personLabel = line.mealGroupLabel || "Person 1";
+              const previousPersonLabel = index > 0 ? (orderedKitchenItems[index - 1].meal_group_label || orderedKitchenItems[index - 1].metadata?.meal_group_label || "Person 1") : null;
               return (
-                <div key={`${line.itemName}-${index}`} className="rounded-md border border-white/70 bg-white p-2 dark:border-orange-500/10 dark:bg-zinc-950/50">
+                <div key={`${line.itemName}-${index}`}>
+                  {personLabel !== previousPersonLabel && <div className="mb-2 rounded-md border border-orange-200 bg-orange-100/70 px-2.5 py-2 text-[10px] font-black uppercase tracking-widest text-orange-800 dark:border-orange-500/30 dark:bg-orange-500/15 dark:text-orange-200">{personLabel}</div>}
+                <div className="rounded-md border border-white/70 bg-white p-2 dark:border-orange-500/10 dark:bg-zinc-950/50">
                   <div className="flex items-start gap-2">
                     <div className="flex h-9 min-w-9 items-center justify-center rounded-md bg-orange-600 px-2 text-sm font-black text-white">
                       x{line.quantity}
@@ -331,7 +336,6 @@ export default function VendorOrderDeskCard({
                       <p className={`${isTablet ? "text-base" : "text-sm"} font-black uppercase tracking-tight text-zinc-950 dark:text-white`}>
                         {line.itemName}
                       </p>
-                      {line.mealGroupLabel && <p className="mt-1 text-[9px] font-black uppercase tracking-widest text-orange-700 dark:text-orange-300">For: {line.mealGroupLabel}</p>}
                       <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
                         {line.preparationText}
                       </p>
@@ -347,6 +351,7 @@ export default function VendorOrderDeskCard({
                       )}
                     </div>
                   </div>
+                </div>
                 </div>
               );
             })}

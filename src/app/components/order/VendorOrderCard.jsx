@@ -42,6 +42,7 @@ export default function VendorOrderCard({ order, onAssign, onRefresh }) {
   const timeStr = dateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 
   const detailedItems = userOrderId?.items?.filter(item => item.restaurantId === restaurantId) || [];
+  const orderedDetailedItems = [...detailedItems].sort((first, second) => String(first.meal_group_label || first.metadata?.meal_group_label || "Person 1").localeCompare(String(second.meal_group_label || second.metadata?.meal_group_label || "Person 1")));
   const itemCount = detailedItems.length > 0 ? detailedItems.length : (order.items?.length || 0);
 
   const vendorOrderId = order._id?.$oid || order._id;
@@ -257,9 +258,13 @@ export default function VendorOrderCard({ order, onAssign, onRefresh }) {
 
         {detailedItems.length > 0 ? (
           <div className="space-y-2 max-h-32 overflow-y-auto custom-scrollbar">
-            {detailedItems.slice(0, 3).map((item, idx) => (
+            {orderedDetailedItems.slice(0, 3).map((item, idx) => {
+              const personLabel = item.meal_group_label || item.metadata?.meal_group_label || "Person 1";
+              const previousPersonLabel = idx > 0 ? (orderedDetailedItems[idx - 1].meal_group_label || orderedDetailedItems[idx - 1].metadata?.meal_group_label || "Person 1") : null;
+              return (
+              <div key={idx}>
+              {personLabel !== previousPersonLabel && <p className="mb-1.5 mt-2 text-[8px] font-black uppercase tracking-widest text-orange-600 dark:text-orange-400">{personLabel}</p>}
               <motion.div 
-                key={idx} 
                 initial={{ opacity: 0, x: -5 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: idx * 0.05 }}
@@ -280,7 +285,6 @@ export default function VendorOrderCard({ order, onAssign, onRefresh }) {
                   <p className="text-[10px] font-bold text-slate-900 dark:text-white uppercase tracking-tight truncate leading-tight">
                     {item.variant?.name || item.name || "Item"}
                   </p>
-                  {(item.meal_group_label || item.metadata?.meal_group_label) && <p className="mt-0.5 text-[8px] font-black uppercase tracking-wider text-orange-600 dark:text-orange-400">For: {item.meal_group_label || item.metadata?.meal_group_label}</p>}
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="text-[8px] font-black text-orange-600 dark:text-orange-400 uppercase tracking-wider">Qty: {item.quantity}</span>
                     {item.portion_label && (
@@ -291,7 +295,8 @@ export default function VendorOrderCard({ order, onAssign, onRefresh }) {
                   </div>
                 </div>
               </motion.div>
-            ))}
+              </div>
+            )})}
             {detailedItems.length > 3 && (
               <motion.div 
                 initial={{ opacity: 0 }}
