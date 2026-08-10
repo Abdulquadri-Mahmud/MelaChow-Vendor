@@ -35,7 +35,6 @@ const navigationItems = [
     { icon: ClipboardList,   label: "Orders",        href: "/vendors/order" },
     { icon: Bell,            label: "Notifications", href: "/vendors/notifications" },
     { icon: UtensilsCrossed, label: "My Foods",    href: "/vendors/my-foods" },
-    { icon: Package,         label: "My Combos",   href: "/vendors/my-combos" },
     { icon: PlusCircle,      label: "Create Food", href: "/vendors/create-food" },
     { icon: Star,            label: "Reviews",     href: "/vendors/reviews" },
     { icon: User,            label: "Profile",     href: "/vendors/profile" },

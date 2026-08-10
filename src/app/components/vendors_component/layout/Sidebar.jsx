@@ -45,7 +45,6 @@ const navigation = [
     title: "Inventory",
     items: [
       { icon: UtensilsCrossed, label: "My Foods",    href: "/vendors/my-foods" },
-      { icon: Package,         label: "My Combos",   href: "/vendors/my-combos" },
       { icon: PlusCircle,      label: "Create Food", href: "/vendors/create-food" },
       { icon: SlidersHorizontal, label: "Options Library", href: "/vendors/options-library" },
       { icon: BookOpen,        label: "Menu Guide",  href: "/vendors/menu-guide" },

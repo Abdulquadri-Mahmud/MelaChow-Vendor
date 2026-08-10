@@ -190,15 +190,6 @@ export default function MyFoodsPage() {
                 <RotateCw size={16} className={isFetching ? "animate-spin" : ""} />
               </button>
 
-              {/* Create Combo — secondary */}
-              <button
-                onClick={() => router.push("/vendors/menu/create-combo")}
-                disabled={stats.total < 2}
-                className="h-10 px-4 rounded-md border border-zinc-200 dark:border-zinc-700 text-[10px] font-black uppercase tracking-widest text-zinc-600 dark:text-zinc-300 hover:border-zinc-400 dark:hover:border-zinc-500 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-2 bg-white dark:bg-zinc-900"
-              >
-                🍱 Combo
-              </button>
-
               {/* Add Food — primary */}
               <button
                 onClick={() => router.push("/vendors/create-food")}

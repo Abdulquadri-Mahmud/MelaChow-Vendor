@@ -204,9 +204,6 @@ export default function MenuGuidePage() {
                 <Link href="/vendors/create-food" className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-orange-600 px-5 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-orange-600/20 transition hover:bg-orange-500 active:scale-[0.98]">
                   <Plus size={15} /> Create a food item
                 </Link>
-                <Link href="/vendors/my-combos/create" className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-5 text-[10px] font-black uppercase tracking-widest text-white backdrop-blur transition hover:bg-white/10 active:scale-[0.98]">
-                  <Package size={15} /> Create a combo
-                </Link>
               </div>
             </div>
 
@@ -319,10 +316,10 @@ export default function MenuGuidePage() {
               </div>
             </div>
             <Link
-              href={activeGuide === "food" ? "/vendors/create-food" : "/vendors/my-combos/create"}
+              href="/vendors/create-food"
               className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-zinc-950 px-4 text-[9px] font-black uppercase tracking-widest text-white transition hover:bg-orange-600 dark:bg-white dark:text-zinc-950 dark:hover:bg-orange-500 dark:hover:text-white"
             >
-              Open {activeGuide === "food" ? "food" : "combo"} wizard <ArrowRight size={13} />
+              Open food wizard <ArrowRight size={13} />
             </Link>
           </div>
         </section>
@@ -531,9 +528,6 @@ export default function MenuGuidePage() {
             <div className="flex flex-col gap-3 sm:flex-row">
               <Link href="/vendors/create-food" className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-white px-5 text-[9px] font-black uppercase tracking-widest text-orange-600 shadow-lg transition hover:bg-zinc-950 hover:text-white">
                 Create food <ArrowRight size={14} />
-              </Link>
-              <Link href="/vendors/my-combos/create" className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-5 text-[9px] font-black uppercase tracking-widest text-white backdrop-blur transition hover:bg-white/20">
-                Create combo <ArrowRight size={14} />
               </Link>
             </div>
           </div>
