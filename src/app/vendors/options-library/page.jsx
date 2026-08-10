@@ -251,7 +251,7 @@ export default function OptionsLibraryPage() {
               </div>
               <h1 className="mt-5 text-3xl font-black tracking-[-0.04em] sm:text-4xl">Options Library</h1>
               <p className="mt-3 text-sm font-medium leading-7 text-zinc-400">
-                Create choice groups once, then copy them into any food or combo. Each copied group remains independent.
+                Create choice groups once and reuse them across foods and combos. Updates, availability, and stock stay in sync everywhere.
               </p>
             </div>
             <button onClick={() => openCreate()} className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-orange-600 px-5 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-orange-600/25 transition hover:bg-orange-500 active:scale-[0.98]">

@@ -10,6 +10,7 @@ export const templateToChoiceGroupSnapshot = (template, sequence = 0) => {
         sort_order: template.sort_order || 0,
         options: (template.options || []).map((option, optionIndex) => ({
             tempId: `template-option-${option._id || optionIndex}-${seed}`,
+            source_template_option_id: option._id,
             label: option.label,
             price_modifier_naira: Number(option.price_modifier_naira) || 0,
             image_url: option.image_url || null,

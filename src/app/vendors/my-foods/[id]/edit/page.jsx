@@ -279,6 +279,7 @@ export default function EditFoodPage() {
                         const isExistingOption = o.tempId && o.tempId.length === 24;
 
                         const optionPayload = {
+                            source_template_option_id: o.source_template_option_id || null,
                             label: o.name || o.label,
                             price_modifier: Math.round((Number(o.price || o.price_modifier_naira || 0)) * 100),
                             price_modifier_naira: Number(o.price || o.price_modifier_naira || 0),

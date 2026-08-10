@@ -147,6 +147,7 @@ export const useCreateMenuItem = (vendorId) => {
                 for (let i = 0; i < g.options.length; i++) {
                     const o = g.options[i];
                     const optionPayload = {
+                        source_template_option_id: o.source_template_option_id || null,
                         label: o.label,
                         price_modifier: Math.round((Number(o.price_modifier_naira) || 0) * 100), // kobo
                         price_modifier_naira: Number(o.price_modifier_naira) || 0, // naira
