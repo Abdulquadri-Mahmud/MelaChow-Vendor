@@ -224,6 +224,7 @@ export default function VendorOrderDetailsPage() {
         const itemRestId = item.restaurantId?._id || item.restaurantId?.$oid || item.restaurantId;
         return String(itemRestId) === String(effectiveRestaurantId);
     });
+    const customerNote = String(order.customerNote || "").trim();
 
     // Progress Timeline Mapping (Maps to 6 visual steps)
     const statusToIndex = {
@@ -575,6 +576,7 @@ export default function VendorOrderDetailsPage() {
                             </div>
 
                             <div className="divide-y divide-zinc-50 dark:divide-zinc-800/10">
+                                {customerNote && <div className="mx-4 mt-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold leading-relaxed text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100"><span className="mr-2 text-[10px] font-black uppercase tracking-widest">Customer note</span>{customerNote}</div>}
                                 {orderedDetailedItems.map((item, idx) => {
                                     const itemName = item.name || item.variant?.name || "Unknown Item";
                                     const itemImage = item.image_url || item.variant?.image || null;

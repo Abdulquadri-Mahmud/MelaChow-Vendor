@@ -194,6 +194,7 @@ export default function VendorOrderDeskCard({
   const customerName = getCustomerName(user);
   const locationText = address?.street || address?.address || address?.city || "Delivery location pending";
   const displayOrderId = userOrder.orderId || order.orderId || id.slice(-6).toUpperCase();
+  const customerNote = String(order.customerNote || "").trim();
 
   const handleStatus = async (newStatus) => {
     if (!id) return;
@@ -315,6 +316,7 @@ export default function VendorOrderDeskCard({
         </div>
 
         <div className="rounded-lg border border-orange-100 bg-orange-50/70 p-2 dark:border-orange-500/20 dark:bg-orange-500/10">
+          {customerNote && <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs font-bold leading-relaxed text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100"><span className="mr-1 font-black uppercase tracking-widest">Customer note:</span>{customerNote}</div>}
           <div className="mb-3 flex items-center gap-2">
             <ShoppingBag size={14} className="text-orange-700 dark:text-orange-300" />
             <p className="text-[10px] font-black uppercase tracking-widest text-orange-700 dark:text-orange-300">Kitchen Ticket</p>

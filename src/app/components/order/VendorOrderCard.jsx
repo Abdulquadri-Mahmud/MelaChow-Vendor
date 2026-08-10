@@ -43,6 +43,7 @@ export default function VendorOrderCard({ order, onAssign, onRefresh }) {
 
   const detailedItems = userOrderId?.items?.filter(item => item.restaurantId === restaurantId) || [];
   const orderedDetailedItems = [...detailedItems].sort((first, second) => String(first.meal_group_label || first.metadata?.meal_group_label || "Person 1").localeCompare(String(second.meal_group_label || second.metadata?.meal_group_label || "Person 1")));
+  const customerNote = String(order.customerNote || "").trim();
   const itemCount = detailedItems.length > 0 ? detailedItems.length : (order.items?.length || 0);
 
   const vendorOrderId = order._id?.$oid || order._id;
@@ -254,6 +255,7 @@ export default function VendorOrderCard({ order, onAssign, onRefresh }) {
 
       {/* Manifest/Items Section */}
       <div className="flex-1 p-3 border-b border-slate-100 dark:border-slate-800 min-h-0">
+        {customerNote && <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-2 text-[9px] font-bold leading-relaxed text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100"><span className="mr-1 font-black uppercase tracking-wider">Customer note:</span>{customerNote}</div>}
         <p className="text-[9px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider mb-2.5">Order Items ({itemCount})</p>
 
         {detailedItems.length > 0 ? (
