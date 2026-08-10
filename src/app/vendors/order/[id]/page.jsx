@@ -325,6 +325,7 @@ export default function VendorOrderDetailsPage() {
             portionText: cleanPortionLabel,
         };
     };
+    const orderedDetailedItems = [...detailedItems].sort((first, second) => String(first.meal_group_label || first.metadata?.meal_group_label || "Person 1").localeCompare(String(second.meal_group_label || second.metadata?.meal_group_label || "Person 1")));
     const receiptItems = detailedItems.map((item) => {
         const options = item.selected_options || item.metadata?.selected_options || [];
         const quantity = Number(item.quantity) || 1;
@@ -574,7 +575,7 @@ export default function VendorOrderDetailsPage() {
                             </div>
 
                             <div className="divide-y divide-zinc-50 dark:divide-zinc-800/10">
-                                {detailedItems.map((item, idx) => {
+                                {orderedDetailedItems.map((item, idx) => {
                                     const itemName = item.name || item.variant?.name || "Unknown Item";
                                     const itemImage = item.image_url || item.variant?.image || null;
                                     const dietaryType = item.dietary_type || item.metadata?.dietary_type || null;
@@ -583,6 +584,8 @@ export default function VendorOrderDetailsPage() {
                                     const note = item.note || "";
                                     const pricing = item.metadata?.pricing || null;
                                     const mealGroupLabel = String(item.meal_group_label || item.metadata?.meal_group_label || "").trim();
+                                    const personLabel = mealGroupLabel || "Person 1";
+                                    const previousPersonLabel = idx > 0 ? String(orderedDetailedItems[idx - 1].meal_group_label || orderedDetailedItems[idx - 1].metadata?.meal_group_label || "Person 1").trim() || "Person 1" : null;
                                     const {
                                         quantity,
                                         portionQuantity,
@@ -603,6 +606,7 @@ export default function VendorOrderDetailsPage() {
                                             transition={{ delay: idx * 0.05 + 0.2 }}
                                             className="p-4 flex flex-col gap-4 hover:bg-zinc-50/30 dark:hover:bg-zinc-800/10 transition-all group"
                                         >
+                                            {personLabel !== previousPersonLabel && <div className="-mx-4 -mt-4 mb-4 border-b border-orange-200 bg-orange-50 px-4 py-3 text-[10px] font-black uppercase tracking-widest text-orange-800 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-200">{personLabel}</div>}
                                             <div className="flex flex-col sm:flex-row gap-5">
                                                 {/* Image & Quantity */}
                                                 <div className="w-20 h-20 rounded-md bg-zinc-50 dark:bg-zinc-950 overflow-hidden flex-shrink-0 relative border border-zinc-100 dark:border-zinc-800">
@@ -625,7 +629,6 @@ export default function VendorOrderDetailsPage() {
                                                             <h4 className="font-black text-zinc-900 dark:text-white text-[13px] uppercase tracking-tight leading-none mb-1.5 group-hover:text-orange-600 transition-colors">
                                                                 {itemName}
                                                             </h4>
-                                                            {mealGroupLabel && <p className="mb-1 text-[9px] font-black uppercase tracking-widest text-orange-600">For: {mealGroupLabel}</p>}
                                                             <div className="flex flex-wrap items-center gap-1.5">
                                                                 {itemType && (
                                                                     <span className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md bg-zinc-100 text-zinc-500 dark:bg-zinc-800/50 dark:text-zinc-400 border border-zinc-200/50 dark:border-zinc-700/50">{itemType}</span>
