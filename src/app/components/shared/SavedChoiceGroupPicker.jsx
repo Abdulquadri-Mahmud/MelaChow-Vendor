@@ -5,7 +5,6 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import {
     Check,
-    Copy,
     Layers3,
     Library,
     Loader2,
@@ -98,7 +97,7 @@ export default function SavedChoiceGroupPicker({ existingGroups = [], onAdd }) {
                         <div>
                             <p className="text-[11px] font-black uppercase tracking-widest text-zinc-900 dark:text-white">Add from Options Library</p>
                             <p className="mt-1 text-[10px] font-medium leading-5 text-zinc-500 dark:text-zinc-400">
-                                Select several saved groups at once, then customize their copied prices or rules here.
+                                Select saved groups to link them to this item. Prices, availability, and stock stay managed in the library.
                             </p>
                         </div>
                     </div>
@@ -115,7 +114,7 @@ export default function SavedChoiceGroupPicker({ existingGroups = [], onAdd }) {
                         <motion.div initial={{ opacity: 0, scale: 0.97, y: 18 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97, y: 18 }} className="relative flex max-h-[88vh] w-full max-w-2xl flex-col overflow-hidden rounded border border-zinc-200 bg-white shadow-2xl dark:border-white/10 dark:bg-zinc-900">
                             <div className="flex items-center justify-between bg-zinc-950 p-3 text-white">
                                 <div>
-                                    <p className="text-[8px] font-black uppercase tracking-[0.2em] text-orange-400">Copy-on-select</p>
+                                    <p className="text-[8px] font-black uppercase tracking-[0.2em] text-orange-400">Shared library groups</p>
                                     <h3 className="mt-1 text-base font-black">Choose saved groups</h3>
                                 </div>
                                 <button type="button" onClick={close} className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white"><X size={15} /></button>
@@ -127,8 +126,7 @@ export default function SavedChoiceGroupPicker({ existingGroups = [], onAdd }) {
                                     <input autoFocus value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search groups or options..." className="h-11 w-full rounded-xl border border-zinc-200 bg-zinc-50 pl-10 pr-4 text-[11px] font-bold outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 dark:border-white/8 dark:bg-zinc-950 dark:text-white" />
                                 </div>
                                 <div className="mt-3 flex items-start gap-2 rounded-xl bg-amber-50 p-3 text-[9px] font-bold leading-4 text-amber-800 dark:bg-amber-500/5 dark:text-amber-300">
-                                    <Copy size={13} className="mt-0.5 shrink-0" />
-                                    Future library edits will not change the copy added to this item.
+                                    Library edits, including stock and availability, automatically apply everywhere this group is used.
                                 </div>
                             </div>
 

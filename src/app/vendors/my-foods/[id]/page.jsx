@@ -700,6 +700,7 @@ const AddOnsSection = ({ item, vendorId, itemId, queryClient }) => {
         try {
             await Promise.all((group.options || []).map((option, index) => addChoiceOption(groupId, {
                 label: option.label,
+                source_template_option_id: option.source_template_option_id,
                 price_modifier_naira: Number(option.price_modifier_naira) || 0,
                 image_url: option.image_url || null,
                 is_available: option.is_available !== false,

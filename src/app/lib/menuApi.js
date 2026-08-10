@@ -51,8 +51,8 @@ export const deleteVendorSection = async (vendorId, sectionId) => {
     return res.data;
 };
 
-// Reusable choice-group templates. Templates are copied into menu items;
-// editing a template never mutates an existing food or combo.
+// Reusable choice-group templates. Linked groups share their prices,
+// availability, and stock with every food or combo that uses them.
 export const getChoiceGroupTemplates = async (vendorId, params = {}) => {
     const res = await getMenuAxios().get(
         `/v1/menu/${vendorId}/choice-group-templates`,
