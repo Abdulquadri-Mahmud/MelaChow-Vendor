@@ -53,6 +53,11 @@ export const getVendorWallet = async () => {
     return response.data;
 };
 
+export const setVendorLiveStatus = async (isLive) => {
+  const response = await API.patch('/vendors/live-status', { isLive });
+  return response.data;
+};
+
 // --- PAYOUT & BANK MANAGEMENT ---
 export const getBankList = async () => {
     const response = await API.get('/wallet/banks');

@@ -89,6 +89,11 @@ export default function VendorLoginPage() {
         setTimeout(() => {
           router.push(`/vendors/auth/verify-registration?email=${encodeURIComponent(formData.email)}`);
         }, 2000);
+      } else if (status === 400 && errorData?.requiresPasswordSetup) {
+        setMessage(errorData.message || "No password has been created for this account. Redirecting you to create one securely...");
+        setTimeout(() => {
+          router.push(`/vendors/auth/forgot-password?email=${encodeURIComponent(formData.email)}`);
+        }, 1800);
       } else if (status === 423) {
         // Guide: Brute force lock.
         setMessage("🚨 Security Lock: Too many attempts. Please wait 15 minutes.");

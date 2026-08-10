@@ -20,7 +20,7 @@ import {
 } from "recharts";
 import { motion } from "framer-motion";
 
-import { getVendorWallet } from "@/app/lib/vendorApi";
+import { getVendorWallet, setVendorLiveStatus } from "@/app/lib/vendorApi";
 import { useVendorStorage } from "@/app/hooks/vendorStorage";
 import { useVendorMenu } from "@/app/hooks/useMenu";
 import VendorDashboardSkeleton from "@/app/skeleton/VendorDashboardSkeleton";
@@ -30,7 +30,8 @@ export default function VendorDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [liveWalletBalance, setLiveWalletBalance] = useState(0);
   const [livePendingBalance, setLivePendingBalance] = useState(0);
-  const { vendorDetails } = useVendorStorage();
+  const { vendorDetails, updateVendor } = useVendorStorage();
+  const [isUpdatingLiveStatus, setIsUpdatingLiveStatus] = useState(false);
   const vendorData = vendorDetails?.vendor || null;
 
   const vendorId = vendorDetails?.vendor?._id || vendorDetails?.vendor?.id || vendorDetails?._id || vendorDetails?.id;
@@ -38,6 +39,24 @@ export default function VendorDashboard() {
   
   const rawFoods = menuData?.data || menuData?.items || menuData || [];
   const foods = Array.isArray(rawFoods) ? rawFoods : [];
+
+  const toggleStoreLiveStatus = async () => {
+    const nextStatus = !vendorData?.isLive;
+    const prompt = nextStatus
+      ? "Make your store visible to customers and start accepting orders?"
+      : "Pause your store? Customers will not be able to place new orders.";
+    if (!window.confirm(prompt)) return;
+
+    try {
+      setIsUpdatingLiveStatus(true);
+      const result = await setVendorLiveStatus(nextStatus);
+      updateVendor(result.data);
+    } catch (error) {
+      window.alert(error.response?.data?.message || "Could not update your store status.");
+    } finally {
+      setIsUpdatingLiveStatus(false);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -283,6 +302,23 @@ export default function VendorDashboard() {
       <div className="space-y-4">
         
         <VendorPromoStatus />
+
+        <div className="rounded-md border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-800 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-wider">Store visibility</p>
+            <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
+              {vendorData?.isLive ? "Live — customers can place orders" : vendorData?.liveReadiness?.isReady ? "Ready to go live" : "Add a priced, in-stock menu item to unlock Go Live"}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={toggleStoreLiveStatus}
+            disabled={isUpdatingLiveStatus || (!vendorData?.isLive && !vendorData?.liveReadiness?.isReady)}
+            className={`h-10 rounded-md px-5 text-[10px] font-black uppercase tracking-widest text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${vendorData?.isLive ? "bg-zinc-700 hover:bg-zinc-800 dark:bg-zinc-600" : "bg-emerald-600 hover:bg-emerald-700"}`}
+          >
+            {isUpdatingLiveStatus ? "Updating…" : vendorData?.isLive ? "Pause Store" : "Go Live"}
+          </button>
+        </div>
 
         {/* TOP METRICS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
