@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useApi } from "@/app/context/ApiContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mail, ArrowRight, Loader2, Store } from "lucide-react";
@@ -10,7 +10,8 @@ import Link from "next/link";
 
 export default function VendorForgotPassword() {
     const { baseUrl } = useApi();
-    const [email, setEmail] = useState("");
+    const searchParams = useSearchParams();
+    const [email, setEmail] = useState(() => searchParams.get("email") || "");
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState(null);
     const router = useRouter();

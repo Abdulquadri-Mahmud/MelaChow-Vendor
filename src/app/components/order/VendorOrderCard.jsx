@@ -253,6 +253,34 @@ export default function VendorOrderCard({ order, onAssign, onRefresh }) {
         </div>
       </div>
 
+      {/* Assigned Rider Badge Banner */}
+      {(() => {
+        const assignedRider = 
+          (typeof order.riderId === 'object' && order.riderId?.name ? order.riderId : null) ||
+          (typeof order.userOrderId?.riderId === 'object' && order.userOrderId?.riderId?.name ? order.userOrderId.riderId : null) ||
+          (order.riderAssignment?.riderName ? { name: order.riderAssignment.riderName, phone: order.riderAssignment.riderPhone } : null);
+
+        if (!assignedRider) return null;
+
+        return (
+          <div className="px-3 py-1.5 bg-orange-50/80 dark:bg-orange-500/10 border-b border-orange-100 dark:border-orange-500/20 flex items-center justify-between text-[10px]">
+            <div className="flex items-center gap-1.5 text-orange-700 dark:text-orange-300 font-extrabold truncate">
+              <Bike size={12} className="shrink-0 text-orange-500" />
+              <span className="truncate">Rider: {assignedRider.name}</span>
+            </div>
+            {assignedRider.phone && (
+              <a 
+                href={`tel:${assignedRider.phone}`} 
+                onClick={(e) => e.stopPropagation()}
+                className="text-[9px] font-black uppercase text-orange-600 hover:text-orange-700 underline shrink-0"
+              >
+                Call ({assignedRider.phone})
+              </a>
+            )}
+          </div>
+        );
+      })()}
+
       {/* Manifest/Items Section */}
       <div className="flex-1 p-3 border-b border-slate-100 dark:border-slate-800 min-h-0">
         {customerNote && <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-2 text-[9px] font-bold leading-relaxed text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100"><span className="mr-1 font-black uppercase tracking-wider">Customer note:</span>{customerNote}</div>}

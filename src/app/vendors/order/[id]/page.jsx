@@ -209,6 +209,15 @@ export default function VendorOrderDetailsPage() {
     const userOrderId = order.userOrderId || (order.userId ? order : null);
     const user = order.userOrderId?.userId || order.userId;
     const address = order.userOrderId?.deliveryAddress || order.deliveryAddress;
+    const assignedRider = 
+        (typeof order.riderId === 'object' && order.riderId?.name ? order.riderId : null) ||
+        (typeof order.userOrderId?.riderId === 'object' && order.userOrderId?.riderId?.name ? order.userOrderId.riderId : null) ||
+        (order.riderAssignment?.riderName ? {
+            name: order.riderAssignment.riderName,
+            phone: order.riderAssignment.riderPhone || "N/A",
+            vehicleType: order.riderAssignment.vehicleType || "bike",
+            avatar: order.riderAssignment.avatar || ""
+        } : null);
 
     // Extract restaurantId (could be at root or inside first item)
     const effectiveRestaurantId = order.restaurantId?._id || order.restaurantId?.$oid || order.restaurantId || order.items?.[0]?.restaurantId?._id || order.items?.[0]?.restaurantId?.$oid || order.items?.[0]?.restaurantId;
@@ -839,6 +848,57 @@ export default function VendorOrderDetailsPage() {
                                 </a>
                             </div>
                         </motion.div>
+
+                        {/* Assigned Rider Interface */}
+                        {assignedRider ? (
+                            <motion.div
+                                initial={{ opacity: 0, x: 10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.15 }}
+                                className="bg-white dark:bg-zinc-900 rounded-md border border-orange-200 dark:border-orange-500/30 overflow-hidden shadow-none"
+                            >
+                                <div className="px-5 py-4 border-b border-orange-100 dark:border-orange-500/20 bg-orange-50/50 dark:bg-orange-500/10 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <Truck size={16} className="text-orange-600" strokeWidth={2.5} />
+                                        <h4 className="font-black text-[11px] text-zinc-900 dark:text-white uppercase tracking-widest">Assigned Platform Rider</h4>
+                                    </div>
+                                    <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-orange-600 text-white">
+                                        {assignedRider.vehicleType || "Platform Rider"}
+                                    </span>
+                                </div>
+                                <div className="p-5 flex flex-col items-center text-center">
+                                    <div className="w-16 h-16 rounded-full bg-orange-100 dark:bg-orange-950/40 border-2 border-orange-500/30 overflow-hidden flex items-center justify-center mb-3">
+                                        {assignedRider.avatar ? (
+                                            <img src={assignedRider.avatar} alt={assignedRider.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <User size={28} className="text-orange-500" />
+                                        )}
+                                    </div>
+                                    <h3 className="font-black text-[14px] text-zinc-900 dark:text-white uppercase tracking-tight">{assignedRider.name}</h3>
+                                    <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mt-1 flex items-center gap-1">
+                                        <CheckCircle2 size={10} /> Active Dispatch Rider
+                                    </p>
+
+                                    <div className="w-full mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                                        <a
+                                            href={`tel:${assignedRider.phone}`}
+                                            className="w-full bg-orange-600 hover:bg-orange-700 text-white py-3 rounded-md flex items-center justify-center gap-2 font-black text-[11px] uppercase tracking-widest transition-all active:scale-95 shadow-sm"
+                                        >
+                                            <Phone size={14} />
+                                            <span>Call Rider ({assignedRider.phone})</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ) : (
+                            <div className="bg-amber-50/60 dark:bg-amber-950/20 rounded-md border border-amber-200 dark:border-amber-500/20 p-4 text-center">
+                                <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/40 text-amber-600 flex items-center justify-center mx-auto mb-2">
+                                    <Truck size={16} />
+                                </div>
+                                <p className="text-[10px] font-black uppercase tracking-wider text-amber-900 dark:text-amber-300">Rider Assignment Pending</p>
+                                <p className="text-[9px] font-bold text-amber-700 dark:text-amber-400 mt-1">Platform automatically assigns an available rider as soon as order preparation begins.</p>
+                            </div>
+                        )}
 
                         {/* Logistics Context */}
                         {address && (
