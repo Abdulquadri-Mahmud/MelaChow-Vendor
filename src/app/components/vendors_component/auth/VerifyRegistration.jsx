@@ -92,7 +92,7 @@ export default function VendorVerifyRegistration() {
                 console.log('[VendorVerify] Sending request to:', endpoint);
             }
 
-            await axios.post(
+            const { data } = await axios.post(
                 endpoint,
                 { email, otp: otpString },
                 {
@@ -102,7 +102,7 @@ export default function VendorVerifyRegistration() {
             );
 
             toast.success("Verified! Please set your password.");
-            setTimeout(() => router.push(`/vendors/auth/set-password?email=${encodeURIComponent(email)}`), 1000);
+            setTimeout(() => router.push(`/vendors/auth/set-password?email=${encodeURIComponent(email)}&token=${encodeURIComponent(data.passwordSetupToken)}`), 1000);
         } catch (error) {
             console.error('[VendorVerify] Verification error:', error);
             if (error.response) {

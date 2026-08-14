@@ -124,7 +124,7 @@ export default function VerifyAccount() {
       }
 
       setMessage("✅ Verified successfully! Now set your password...");
-      setTimeout(() => router.push(`/vendors/auth/set-password?email=${encodeURIComponent(email)}`), 1500);
+      setTimeout(() => router.push(`/vendors/auth/set-password?email=${encodeURIComponent(email)}&token=${encodeURIComponent(data.passwordSetupToken)}`), 1500);
     } catch (error) {
       console.error('[VendorVerify] Verification error:', error);
 
