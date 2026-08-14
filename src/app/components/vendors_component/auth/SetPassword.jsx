@@ -21,6 +21,7 @@ export default function VendorSetPassword() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const email = searchParams.get("email") || "";
+    const passwordSetupToken = searchParams.get("token") || "";
 
     const handleSetPassword = async (e) => {
         e.preventDefault();
@@ -46,7 +47,7 @@ export default function VendorSetPassword() {
 
             const { data } = await axios.post(
                 endpoint,
-                { email, password },
+                { email, password, passwordSetupToken },
                 {
                     headers: { "Content-Type": "application/json" },
                     withCredentials: true,
