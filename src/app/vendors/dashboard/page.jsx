@@ -30,7 +30,7 @@ export default function VendorDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [liveWalletBalance, setLiveWalletBalance] = useState(0);
   const [livePendingBalance, setLivePendingBalance] = useState(0);
-  const { vendorDetails, updateVendor } = useVendorStorage();
+  const { vendorDetails, updateVendor, refetchVendorProfile } = useVendorStorage();
   const [isUpdatingLiveStatus, setIsUpdatingLiveStatus] = useState(false);
   const vendorData = vendorDetails?.vendor || null;
 
@@ -39,6 +39,13 @@ export default function VendorDashboard() {
   
   const rawFoods = menuData?.data || menuData?.items || menuData || [];
   const foods = Array.isArray(rawFoods) ? rawFoods : [];
+
+  // Menu eligibility controls Go Live on the backend. Refresh the vendor
+  // profile when the menu finishes loading so liveReadiness cannot remain
+  // stuck in the long-lived profile cache after an availability change.
+  useEffect(() => {
+    if (!isMenuLoading && menuData) refetchVendorProfile();
+  }, [isMenuLoading, menuData, refetchVendorProfile]);
 
   const toggleStoreLiveStatus = async () => {
     const nextStatus = !vendorData?.isLive;
