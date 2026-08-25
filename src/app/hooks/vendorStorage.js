@@ -87,6 +87,7 @@ export const useVendorStorage = () => {
     vendorDetails,
     isLoading,
     hasCheckedSession,
+    refetchVendorProfile,
     saveVendor,
     updateVendor,
     clearVendor,

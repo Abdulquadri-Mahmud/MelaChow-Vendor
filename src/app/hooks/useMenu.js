@@ -183,6 +183,7 @@ export const useCreateMenuItem = (vendorId) => {
             // Invalidate so vendor menu lists re-fetch with the new item
             queryClient.invalidateQueries({ queryKey: ["vendor-menu", vendorId] });
             queryClient.invalidateQueries({ queryKey: ["vendor-foods", vendorId] });
+            queryClient.invalidateQueries({ queryKey: ["vendors"] });
         },
 
         onError: (error) => {
@@ -206,6 +207,7 @@ export const useUpdateMenuItem = (vendorId) => {
         onSuccess: () => {
             toast.success("Food updated");
             queryClient.invalidateQueries({ queryKey: ["vendor-menu", vendorId] });
+            queryClient.invalidateQueries({ queryKey: ["vendors"] });
         },
         onError: () => toast.error("Failed to update food"),
     });
@@ -220,6 +222,7 @@ export const useToggleAvailability = (vendorId) => {
         onSuccess: (_, { is_available }) => {
             toast.success(is_available ? "Food is now available" : "Food hidden from customers");
             queryClient.invalidateQueries({ queryKey: ["vendor-menu", vendorId] });
+            queryClient.invalidateQueries({ queryKey: ["vendors"] });
         },
         onError: () => toast.error("Failed to update availability"),
     });
@@ -234,6 +237,7 @@ export const useToggleStock = (vendorId) => {
         onSuccess: (_, { is_in_stock }) => {
             toast.success(is_in_stock ? "Marked as in stock" : "Marked as sold out");
             queryClient.invalidateQueries({ queryKey: ["vendor-menu", vendorId] });
+            queryClient.invalidateQueries({ queryKey: ["vendors"] });
         },
         onError: () => toast.error("Failed to update stock status"),
     });
@@ -252,6 +256,7 @@ export const useArchiveMenuItem = (vendorId) => {
         onSuccess: () => {
             toast.success("Food removed from menu");
             queryClient.invalidateQueries({ queryKey: ["vendor-menu", vendorId] });
+            queryClient.invalidateQueries({ queryKey: ["vendors"] });
         },
         onError: () => toast.error("Failed to remove food"),
     });
