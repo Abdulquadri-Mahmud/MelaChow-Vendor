@@ -18,7 +18,7 @@ import {
   ResponsiveContainer,
   Tooltip
 } from "recharts";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 
 import { getVendorWallet, setVendorLiveStatus } from "@/app/lib/vendorApi";
 import { useVendorStorage } from "@/app/hooks/vendorStorage";
@@ -32,6 +32,7 @@ export default function VendorDashboard() {
   const [livePendingBalance, setLivePendingBalance] = useState(0);
   const { vendorDetails, updateVendor, refetchVendorProfile } = useVendorStorage();
   const [isUpdatingLiveStatus, setIsUpdatingLiveStatus] = useState(false);
+  const [pendingLiveStatus, setPendingLiveStatus] = useState(null);
   const vendorData = vendorDetails?.vendor || null;
 
   const vendorId = vendorDetails?.vendor?._id || vendorDetails?.vendor?.id || vendorDetails?._id || vendorDetails?.id;
@@ -49,15 +50,16 @@ export default function VendorDashboard() {
 
   const toggleStoreLiveStatus = async () => {
     const nextStatus = !vendorData?.isLive;
-    const prompt = nextStatus
-      ? "Make your store visible to customers and start accepting orders?"
-      : "Pause your store? Customers will not be able to place new orders.";
-    if (!window.confirm(prompt)) return;
+    setPendingLiveStatus(nextStatus);
+  };
 
+  const confirmStoreLiveStatus = async () => {
+    if (typeof pendingLiveStatus !== "boolean") return;
     try {
       setIsUpdatingLiveStatus(true);
-      const result = await setVendorLiveStatus(nextStatus);
+      const result = await setVendorLiveStatus(pendingLiveStatus);
       updateVendor(result.data);
+      setPendingLiveStatus(null);
     } catch (error) {
       window.alert(error.response?.data?.message || "Could not update your store status.");
     } finally {
@@ -305,6 +307,59 @@ export default function VendorDashboard() {
 
   return (
     <div className="font-sans text-zinc-900 dark:text-white min-h-screen bg-zinc-50 dark:bg-zinc-900">
+
+      <AnimatePresence>
+        {typeof pendingLiveStatus === "boolean" && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/60 p-4 backdrop-blur-sm"
+            onMouseDown={() => !isUpdatingLiveStatus && setPendingLiveStatus(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 16, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.98 }}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="store-status-title"
+              className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl dark:border-zinc-700 dark:bg-zinc-900"
+              onMouseDown={(event) => event.stopPropagation()}
+            >
+              <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-full ${pendingLiveStatus ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15" : "bg-amber-100 text-amber-600 dark:bg-amber-500/15"}`}>
+                {pendingLiveStatus ? <CheckCircle2 size={24} /> : <AlertCircle size={24} />}
+              </div>
+              <h2 id="store-status-title" className="text-lg font-black tracking-tight">
+                {pendingLiveStatus ? "Make your store live?" : "Pause your store?"}
+              </h2>
+              <p className="mt-2 text-sm font-medium leading-6 text-zinc-500 dark:text-zinc-400">
+                {pendingLiveStatus
+                  ? "Your store will become visible to customers and can start accepting orders."
+                  : "Your store will be hidden from customers and will stop accepting new orders."}
+              </p>
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  type="button"
+                  disabled={isUpdatingLiveStatus}
+                  onClick={() => setPendingLiveStatus(null)}
+                  className="h-10 rounded-lg border border-zinc-200 px-4 text-[10px] font-black uppercase tracking-widest text-zinc-600 transition hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isUpdatingLiveStatus}
+                  onClick={confirmStoreLiveStatus}
+                  className={`h-10 rounded-lg px-5 text-[10px] font-black uppercase tracking-widest text-white transition disabled:cursor-wait disabled:opacity-60 ${pendingLiveStatus ? "bg-emerald-600 hover:bg-emerald-700" : "bg-amber-600 hover:bg-amber-700"}`}
+                >
+                  {isUpdatingLiveStatus ? "Updating…" : pendingLiveStatus ? "Yes, Go Live" : "Yes, Pause Store"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="space-y-4">
         

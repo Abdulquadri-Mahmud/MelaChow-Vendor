@@ -29,7 +29,7 @@ import { useSocket } from "@/app/context/SocketContext";
 import VendorOrderDeskCard from "./components/VendorOrderDeskCard";
 import { getVendorAlertSettings, saveVendorAlertSettings } from "@/app/lib/vendorAlertSettings";
 
-const ACTIVE_STATUSES = ["pending", "accepted", "preparing", "ready", "ready_for_pickup"];
+const ACTIVE_STATUSES = ["pending", "accepted", "preparing", "ready", "ready_for_pickup", "rider_assigned"];
 const HISTORY_STATUSES = ["out_for_delivery", "delivered", "completed", "cancelled", "failed", "refunded"];
 const ACK_KEY = "melachow_vendor_acknowledged_orders_v1";
 const WARNING_CHIME_KEY = "melachow_vendor_warning_chime_v1";
@@ -391,7 +391,7 @@ export default function VendorOrdersPage() {
   );
 
   const readyOrders = useMemo(
-    () => activeOrders.filter((order) => ["ready", "ready_for_pickup"].includes(getStatus(order))),
+    () => activeOrders.filter((order) => ["ready", "ready_for_pickup", "rider_assigned"].includes(getStatus(order))),
     [activeOrders]
   );
 
@@ -427,7 +427,7 @@ export default function VendorOrdersPage() {
         const status = getStatus(order);
         if (statusFilter === "active") return ACTIVE_STATUSES.includes(status);
         if (statusFilter === "history") return HISTORY_STATUSES.includes(status);
-        if (statusFilter === "ready_for_pickup") return status === "ready_for_pickup" || status === "ready";
+        if (statusFilter === "ready_for_pickup") return ["ready_for_pickup", "ready", "rider_assigned"].includes(status);
         return status === statusFilter;
       });
     }
@@ -476,7 +476,7 @@ export default function VendorOrdersPage() {
     if (tabId === "active") return activeOrders.length;
     if (tabId === "history") return orders.filter((order) => HISTORY_STATUSES.includes(getStatus(order))).length;
     if (tabId === "ready_for_pickup") {
-      return orders.filter((order) => ["ready", "ready_for_pickup"].includes(getStatus(order))).length;
+      return orders.filter((order) => ["ready", "ready_for_pickup", "rider_assigned"].includes(getStatus(order))).length;
     }
     return orders.filter((order) => getStatus(order) === tabId).length;
   };

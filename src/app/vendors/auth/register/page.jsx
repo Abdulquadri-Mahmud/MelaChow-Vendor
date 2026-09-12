@@ -1,10 +1,11 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useApi } from "@/app/context/ApiContext";
+import GoogleVendorAddressSearch from "@/app/components/GoogleVendorAddressSearch";
 import {
   User, Mail, Phone, Lock, Store, FileText, MapPin,
   Clock, CreditCard, ChevronRight, ChevronLeft, Upload,
@@ -86,29 +87,6 @@ const TextInput = ({ path, placeholder, type = "text", icon, error, payload, set
   </InputWrap>
 );
 
-const SelectInput = ({ path, label, options, icon, error, payload, setField, onChange }) => (
-  <InputWrap label={label} icon={icon} error={error}>
-    <div className="relative">
-      <select
-        value={path.split('.').reduce((o, i) => o[i], payload)}
-        onChange={(e) => {
-          setField(path, e.target.value);
-          if (onChange) onChange(e.target.value);
-        }}
-        className="w-full bg-zinc-50 dark:bg-zinc-800/50  p-3.5 pl-11 pr-8 rounded-2xl outline-none focus:border-orange-500/50 focus:ring-4 focus:ring-orange-500/10 transition-all text-sm font-medium dark:text-white appearance-none"
-      >
-        <option value="">Select {label}</option>
-        {options.map((opt) => (
-          <option key={opt} value={opt}>
-            {opt}
-          </option>
-        ))}
-      </select>
-      <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4 pointer-events-none" />
-    </div>
-  </InputWrap>
-);
-
 const StepHeader = ({ title, desc }) => (
   <div className="text-center space-y-2 mb-8 mt-2">
     <h2 className="text-3xl font-black italic uppercase tracking-tighter text-zinc-900 dark:text-white leading-none">
@@ -127,16 +105,6 @@ export default function VendorRegisterPage() {
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [modal, setModal] = useState({ open: false, title: "", message: "", type: "info" });
-
-  // Location state management
-  const [locations, setLocations] = useState([]);
-  const [cities, setCities] = useState([]);
-  const [selectedStateId, setSelectedStateId] = useState("");
-  const [selectedCityId, setSelectedCityId] = useState("");
-  const [useCustomState, setUseCustomState] = useState(false);
-  const [useCustomCity, setUseCustomCity] = useState(false);
-  const [isLoadingLocations, setIsLoadingLocations] = useState(false);
-  const [locationError, setLocationError] = useState(null);
 
   const [previews, setPreviews] = useState({
     logo: null,
@@ -169,6 +137,10 @@ export default function VendorRegisterPage() {
       city: "",
       state: "",
       postalCode: "",
+      formattedAddress: "",
+      googlePlaceId: "",
+      latitude: null,
+      longitude: null,
       coordinates: { type: "Point", coordinates: [0, 0] },
     },
     cuisineTypes: [],
@@ -196,28 +168,6 @@ export default function VendorRegisterPage() {
     metadata: { featured: true },
   });
 
-  // Fetch locations from API
-  const fetchLocations = async () => {
-    try {
-      setIsLoadingLocations(true);
-      setLocationError(null);
-      const response = await axios.get(`${baseUrl}/user/locations`, {
-        withCredentials: true,
-      });
-
-      if (response.data.success) {
-        setLocations(response.data.locations || []);
-      } else {
-        setLocationError("Failed to load locations");
-      }
-    } catch (err) {
-      console.error("Error fetching locations:", err);
-      setLocationError("Error loading locations. Please refresh.");
-    } finally {
-      setIsLoadingLocations(false);
-    }
-  };
-
   const fetchPlatformCategories = async () => {
     try {
       setIsLoadingCategories(true);
@@ -230,52 +180,6 @@ export default function VendorRegisterPage() {
     } finally {
       setIsLoadingCategories(false);
     }
-  };
-
-  // Handle state selection
-  const handleStateChange = (stateId) => {
-    if (stateId === "__custom__") {
-      setUseCustomState(true);
-      setUseCustomCity(true);
-      setSelectedStateId("__custom__");
-      setSelectedCityId("__custom__");
-      setCities([]);
-      setField("address.state", "");
-      setField("address.city", "");
-      return;
-    }
-
-    setUseCustomState(false);
-    setUseCustomCity(false);
-    setSelectedStateId(stateId);
-
-    // Find selected state's cities
-    const selectedLocation = locations.find(loc => loc.stateId === stateId);
-    setCities(selectedLocation?.cities || []);
-    setSelectedCityId(''); // Reset city selection
-
-    // Update payload with state name
-    const stateName = selectedLocation?.state || '';
-    setField("address.state", stateName);
-    setField("address.city", ""); // Reset city in payload
-  };
-
-  // Handle city selection
-  const handleCityChange = (cityId) => {
-    if (cityId === "__custom__") {
-      setUseCustomCity(true);
-      setSelectedCityId("__custom__");
-      setField("address.city", "");
-      return;
-    }
-
-    setUseCustomCity(false);
-    setSelectedCityId(cityId);
-
-    // Find selected city name
-    const selectedCity = cities.find(city => city.cityId === cityId);
-    const cityName = selectedCity?.name || '';
-    setField("address.city", cityName);
   };
 
   // Fetch locations when component mounts
@@ -292,6 +196,8 @@ export default function VendorRegisterPage() {
   };
 
   // Resolve Bank Account
+  const lastAutoVerificationRef = useRef("");
+
   const handleVerifyBank = async () => {
     const { accountNumber, bankCode } = payload.payoutDetails;
     if (!accountNumber || !bankCode) {
@@ -323,7 +229,6 @@ export default function VendorRegisterPage() {
   };
 
   useEffect(() => {
-    fetchLocations();
     fetchPlatformCategories();
     // Pre-fetch banks for Step 5
     fetchBanks();
@@ -333,7 +238,14 @@ export default function VendorRegisterPage() {
     const { accountNumber, bankCode, accountName } = payload.payoutDetails;
     if (bankVerified || isVerifyingBank || accountName || accountNumber.length !== 10 || !bankCode) return;
 
+    // Only auto-verify a bank/account combination once. A failed request used to
+    // toggle isVerifyingBank back to false and immediately schedule itself again,
+    // repeatedly reopening the error modal and triggering the API rate limiter.
+    const verificationKey = `${bankCode}:${accountNumber}`;
+    if (lastAutoVerificationRef.current === verificationKey) return;
+
     const timeoutId = setTimeout(() => {
+      lastAutoVerificationRef.current = verificationKey;
       handleVerifyBank();
     }, 500);
 
@@ -504,10 +416,7 @@ export default function VendorRegisterPage() {
 
         // Step 3 - Address
         address: {
-          street: payload.address.street,
-          city: payload.address.city,
-          state: payload.address.state,
-          postalCode: payload.address.postalCode,
+          ...payload.address,
         },
 
         // Step 4 - Operations
@@ -546,7 +455,10 @@ export default function VendorRegisterPage() {
           open: true,
           title: "Registration Successful",
           message: "Verification code sent! 📩",
-          type: "success"
+          type: "success",
+          ...(res.data?.devOtp
+            ? { message: `Your local test verification code is ${res.data.devOtp}` }
+            : {})
         });
 
         // Clear sessionStorage keys
@@ -556,7 +468,7 @@ export default function VendorRegisterPage() {
         // After 2 seconds redirect to verify-account page
         setTimeout(() => {
           router.push(`/vendors/auth/verify-account?email=${encodeURIComponent(payload.email)}`);
-        }, 2000);
+        }, res.data?.devOtp ? 6000 : 2000);
       } else {
         setModal({
           open: true,
@@ -727,94 +639,30 @@ export default function VendorRegisterPage() {
               {step === 4 && (
                 <div className="space-y-6">
                   <StepHeader title="Business Location" desc="Where do we send the orders?" />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Dynamic State Selection */}
-                    <InputWrap label="State" icon={MapPin} error={errors["address.state"]}>
-                      <div className="relative">
-                        {isLoadingLocations ? (
-                          <div className="w-full bg-zinc-50 dark:bg-zinc-800/50  p-3.5 pl-11 rounded-2xl flex items-center">
-                            <Loader2 className="w-4 h-4 animate-spin text-orange-500 mr-2" />
-                            <span className="text-sm text-zinc-400">Loading locations...</span>
-                          </div>
-                        ) : locationError ? (
-                          <div className="w-full bg-red-50 border border-red-200 p-3.5 pl-11 rounded-2xl flex items-center justify-between">
-                            <span className="text-sm text-red-600">{locationError}</span>
-                            <button
-                              onClick={fetchLocations}
-                              className="text-red-600 hover:text-red-700 text-sm font-medium"
-                            >
-                              Retry
-                            </button>
-                          </div>
-                        ) : (
-                          <select
-                            value={selectedStateId}
-                            onChange={(e) => handleStateChange(e.target.value)}
-                            className="w-full bg-zinc-50 dark:bg-zinc-800/50  p-3.5 pl-11 pr-8 rounded-2xl outline-none focus:border-orange-500/50 focus:ring-4 focus:ring-orange-500/10 transition-all text-sm font-medium dark:text-white appearance-none"
-                          >
-                            <option value="">Select State</option>
-                            {locations.map((location) => (
-                              <option key={location.stateId} value={location.stateId}>
-                                {location.state}
-                              </option>
-                            ))}
-                            <option value="__custom__">My state is not listed</option>
-                          </select>
-                        )}
-                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4 pointer-events-none" />
+                  <GoogleVendorAddressSearch
+                    baseUrl={baseUrl}
+                    value={payload.address.formattedAddress}
+                    confirmed={Boolean(payload.address.googlePlaceId)}
+                    onSelect={(selectedAddress) => setPayload((current) => ({
+                      ...current,
+                      address: { ...current.address, ...selectedAddress },
+                    }))}
+                  />
+                  <div className="rounded-2xl border border-zinc-200 bg-zinc-50/70 p-4 dark:border-zinc-700 dark:bg-zinc-800/40">
+                    <p className="mb-4 text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                      {payload.address.googlePlaceId ? "Confirmed address details" : "Manual fallback if Google is unavailable"}
+                    </p>
+                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                      <div className="md:col-span-2">
+                        <TextInput path="address.street" placeholder="Street Address" icon={MapPin} error={errors["address.street"]} payload={payload} setField={setField} readOnly={Boolean(payload.address.googlePlaceId)} />
                       </div>
-                    </InputWrap>
-
-                    {useCustomState && (
-                      <TextInput
-                        path="address.state"
-                        placeholder="Type State"
-                        icon={MapPin}
-                        error={errors["address.state"]}
-                        payload={payload}
-                        setField={setField}
-                      />
+                      <TextInput path="address.city" placeholder="City / Area" icon={MapPin} error={errors["address.city"]} payload={payload} setField={setField} readOnly={Boolean(payload.address.googlePlaceId)} />
+                      <TextInput path="address.state" placeholder="State" icon={MapPin} error={errors["address.state"]} payload={payload} setField={setField} readOnly={Boolean(payload.address.googlePlaceId)} />
+                      <TextInput path="address.postalCode" placeholder="Postal / Zip Code" icon={MapPin} payload={payload} setField={setField} readOnly={Boolean(payload.address.googlePlaceId)} />
+                    </div>
+                    {!payload.address.googlePlaceId && (
+                      <p className="mt-4 text-[11px] leading-relaxed text-amber-700 dark:text-amber-400">A manually entered address can be submitted, but Super Admin must confirm its Google pickup point before the restaurant can be approved.</p>
                     )}
-
-                    {/* Dynamic City Selection */}
-                    {!useCustomState && (
-                      <InputWrap label="City" icon={MapPin} error={errors["address.city"]}>
-                        <div className="relative">
-                          <select
-                            value={selectedCityId}
-                            onChange={(e) => handleCityChange(e.target.value)}
-                            disabled={!selectedStateId}
-                            className="w-full bg-zinc-50 dark:bg-zinc-800/50  p-3.5 pl-11 pr-8 rounded-2xl outline-none focus:border-orange-500/50 focus:ring-4 focus:ring-orange-500/10 transition-all text-sm font-medium dark:text-white appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <option value="">
-                              {!selectedStateId ? 'Select state first' : 'Select City'}
-                            </option>
-                            {cities.map((city) => (
-                              <option key={city.cityId} value={city.cityId}>
-                                {city.name}
-                              </option>
-                            ))}
-                            <option value="__custom__">My city is not listed</option>
-                          </select>
-                          <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4 pointer-events-none" />
-                        </div>
-                      </InputWrap>
-                    )}
-
-                    {(useCustomState || useCustomCity) && (
-                      <TextInput
-                        path="address.city"
-                        placeholder="Type City"
-                        icon={MapPin}
-                        error={errors["address.city"]}
-                        payload={payload}
-                        setField={setField}
-                      />
-                    )}
-
-                    <TextInput path="address.street" placeholder="Street Address" icon={MapPin} error={errors["address.street"]} payload={payload} setField={setField} />
-
-                    {/* <TextInput path="address.postalCode" placeholder="Postal / Zip Code" icon={MapPin} error={errors["address.postalCode"]} payload={payload} setField={setField} /> */}
                   </div>
                 </div>
               )}

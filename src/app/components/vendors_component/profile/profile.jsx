@@ -30,7 +30,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { updateVendor } from "@/app/lib/vendorProfileApi";
 import { useQueryClient } from "@tanstack/react-query";
 import PermanentInstallButton from "@/app/components/PermanentInstallButton";
-import LocationSelector from "@/app/components/LocationSelector";
+import GoogleVendorAddressSearch from "@/app/components/GoogleVendorAddressSearch";
 import { useApi } from "@/app/context/ApiContext";
 import axios from "axios";
 import { Loader2 } from "lucide-react";
@@ -120,9 +120,7 @@ const InputGroup = ({ label, icon: Icon, ...props }) => (
 
 export default function VendorProfilePage({ vendor }) {
   const [basicInfo, setBasicInfo] = useState({ storeName: "", phone: "", email: "", storeDescription: "", password: "" });
-  const [address, setAddress] = useState({ street: "", city: "", state: "", postalCode: "" });
-  const [selectedStateId, setSelectedStateId] = useState("");
-  const [selectedCityId, setSelectedCityId] = useState("");
+  const [address, setAddress] = useState({ street: "", city: "", state: "", postalCode: "", formattedAddress: "", googlePlaceId: "", latitude: null, longitude: null });
   const [cuisineTypes, setCuisineTypes] = useState([]);
   const [openingHours, setOpeningHours] = useState({});
   const [deliverySettings, setDeliverySettings] = useState({
@@ -158,9 +156,12 @@ export default function VendorProfilePage({ vendor }) {
         city: vendor.address?.city || "",
         state: vendor.address?.state || "",
         postalCode: vendor.address?.postalCode || "",
+        formattedAddress: vendor.pickupFormattedAddress || vendor.address?.formattedAddress || "",
+        googlePlaceId: vendor.pickupPlaceId || vendor.address?.googlePlaceId || "",
+        latitude: vendor.pickupLatitude ?? vendor.address?.latitude ?? null,
+        longitude: vendor.pickupLongitude ?? vendor.address?.longitude ?? null,
+        coordinates: vendor.address?.coordinates,
       });
-      setSelectedStateId(vendor.stateId?._id || vendor.stateId || "");
-      setSelectedCityId(vendor.cityId?._id || vendor.cityId || "");
       setCuisineTypes(vendor.cuisineTypes || []);
       setOpeningHours(vendor.openingHours || {});
       setDeliverySettings({
@@ -224,8 +225,6 @@ export default function VendorProfilePage({ vendor }) {
       } else if (section === "address") {
         payload = {
           address: { ...data },
-          stateId: selectedStateId,
-          cityId: selectedCityId,
         };
       } else if (section === "cuisineTypes") {
         payload = { cuisineTypes: data };
@@ -318,17 +317,6 @@ export default function VendorProfilePage({ vendor }) {
     setOpeningHours({ ...openingHours, [day]: { ...openingHours[day], [key]: value } });
   };
 
-  const handleStateChange = (stateId, stateName) => {
-    setSelectedStateId(stateId);
-    setSelectedCityId("");
-    setAddress(prev => ({ ...prev, state: stateName, city: "" }));
-  };
-
-  const handleCityChange = (cityId, cityName) => {
-    setSelectedCityId(cityId);
-    setAddress(prev => ({ ...prev, city: cityName }));
-  };
-
   if (!vendor) return null;
 
   return (
@@ -374,7 +362,7 @@ export default function VendorProfilePage({ vendor }) {
                 </p>
               </div>
             <div className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border w-fit ${vendor.isActive ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-rose-50 text-rose-600 border-rose-200"}`}>
-                {vendor.isActive ? "Active" : "In Active"}
+                {(vendor.active ?? vendor.isActive) ? "Active" : "Inactive"}
               </div>
             </div>
 
@@ -438,21 +426,24 @@ export default function VendorProfilePage({ vendor }) {
           isOpen={openSections.address}
           onToggle={() => toggleSection('address')}
         >
-          <div className="grid grid-cols-1 gap-6">
-            <div>
-              <InputGroup label="Street Address" value={address.street} onChange={(e) => setAddress({ ...address, street: e.target.value })} icon={MapPin} />
-            </div>
-            <div>
-              <LocationSelector
-                selectedStateId={selectedStateId}
-                selectedCityId={selectedCityId}
-                onStateChange={handleStateChange}
-                onCityChange={handleCityChange}
-                required={true}
-              />
-            </div>
-            <div>
-              <InputGroup label="Postal Code" value={address.postalCode} onChange={(e) => setAddress({ ...address, postalCode: e.target.value })} />
+          <div className="space-y-5">
+            <GoogleVendorAddressSearch
+              baseUrl={baseUrl}
+              value={address.formattedAddress}
+              confirmed={Boolean(address.googlePlaceId)}
+              onSelect={(selectedAddress) => setAddress((current) => ({ ...current, ...selectedAddress }))}
+            />
+            <div className="rounded-xl border border-zinc-200 bg-zinc-50/70 p-4 dark:border-zinc-700 dark:bg-zinc-900/30">
+              <p className="mb-4 text-[10px] font-black uppercase tracking-widest text-zinc-400">{address.googlePlaceId ? "Confirmed address details" : "Manual fallback"}</p>
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  <InputGroup label="Street Address" value={address.street} disabled={Boolean(address.googlePlaceId)} onChange={(e) => setAddress({ ...address, street: e.target.value })} icon={MapPin} />
+                </div>
+                <InputGroup label="City / Area" value={address.city} disabled={Boolean(address.googlePlaceId)} onChange={(e) => setAddress({ ...address, city: e.target.value })} icon={MapPin} />
+                <InputGroup label="State" value={address.state} disabled={Boolean(address.googlePlaceId)} onChange={(e) => setAddress({ ...address, state: e.target.value })} icon={MapPin} />
+                <InputGroup label="Postal Code" value={address.postalCode} disabled={Boolean(address.googlePlaceId)} onChange={(e) => setAddress({ ...address, postalCode: e.target.value })} />
+              </div>
+              {!address.googlePlaceId && <p className="mt-4 text-[11px] text-amber-700 dark:text-amber-400">Search and select the business address above to activate accurate distance and delivery pricing.</p>}
             </div>
           </div>
           <div className="flex justify-end mt-4">
@@ -538,15 +529,24 @@ export default function VendorProfilePage({ vendor }) {
               <div key={day} className="border border-zinc-100 dark:border-zinc-800 bg-zinc-50/30 dark:bg-zinc-900/40 p-4 rounded-xl space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="capitalize font-black text-[11px] uppercase tracking-wider text-zinc-900 dark:text-white">{day}</span>
+                  <label className="flex cursor-pointer items-center gap-2 text-[9px] font-black uppercase tracking-wider text-zinc-500">
+                    <input
+                      type="checkbox"
+                      checked={!openingHours[day]?.closed}
+                      onChange={(e) => handleOpeningHoursChange(day, "closed", !e.target.checked)}
+                      className="h-4 w-4 accent-orange-600"
+                    />
+                    {openingHours[day]?.closed ? "Closed" : "Open"}
+                  </label>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest leading-none mb-1 d-block">Open</label>
-                    <input type="time" value={openingHours[day]?.open || ""} onChange={(e) => handleOpeningHoursChange(day, "open", e.target.value)} className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-md p-2 text-xs outline-none focus:border-orange-500 transition-all font-bold" />
+                    <input type="time" disabled={openingHours[day]?.closed} value={openingHours[day]?.open || ""} onChange={(e) => handleOpeningHoursChange(day, "open", e.target.value)} className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-md p-2 text-xs outline-none focus:border-orange-500 transition-all font-bold disabled:cursor-not-allowed disabled:opacity-50" />
                   </div>
                   <div>
                     <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest leading-none mb-1 d-block">Close</label>
-                    <input type="time" value={openingHours[day]?.close || ""} onChange={(e) => handleOpeningHoursChange(day, "close", e.target.value)} className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-md p-2 text-xs outline-none focus:border-orange-500 transition-all font-bold" />
+                    <input type="time" disabled={openingHours[day]?.closed} value={openingHours[day]?.close || ""} onChange={(e) => handleOpeningHoursChange(day, "close", e.target.value)} className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-md p-2 text-xs outline-none focus:border-orange-500 transition-all font-bold disabled:cursor-not-allowed disabled:opacity-50" />
                   </div>
                 </div>
               </div>

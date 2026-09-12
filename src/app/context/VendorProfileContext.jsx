@@ -5,6 +5,7 @@ import { useApi } from "./ApiContext";
 import { TokenManager } from "../lib/auth-token";
 import { useQuery } from "@tanstack/react-query";
 import { usePathname } from "next/navigation";
+import { normalizeVendorProfileMoney, refreshVendorAccessToken } from "../lib/vendorApi";
 
 const VendorProfileContext = createContext(undefined);
 
@@ -38,10 +39,17 @@ export const VendorProfileProvider = ({ children }) => {
         }
 
         try {
-            const res = await fetch(`${baseUrl}/vendors/get-vendor`, {
+            let res = await fetch(`${baseUrl}/vendors/get-vendor`, {
                 credentials: "include",
                 headers: headers,
             });
+
+            if (res.status === 401) {
+                try {
+                    const refreshedToken = await refreshVendorAccessToken();
+                    res = await fetch(`${baseUrl}/vendors/get-vendor`, { credentials: "include", headers: { ...headers, Authorization: `Bearer ${refreshedToken}` } });
+                } catch {}
+            }
 
             if (process.env.NODE_ENV === 'development') {
                 console.log('[VendorProfileContext] Response:', {
@@ -100,7 +108,7 @@ export const VendorProfileProvider = ({ children }) => {
             }
 
             const data = await res.json();
-            const vendorData = data.data || data.vendor || data;
+            const vendorData = normalizeVendorProfileMoney(data.data || data.vendor || data);
 
             if (process.env.NODE_ENV === 'development') {
                 console.log('[VendorProfileContext] Vendor loaded:', {
@@ -125,7 +133,7 @@ export const VendorProfileProvider = ({ children }) => {
             if (typeof window !== 'undefined') {
                 const cached = localStorage.getItem("melachow_vendor_cache");
                 try {
-                    return cached ? JSON.parse(cached) : undefined;
+                    return cached ? normalizeVendorProfileMoney(JSON.parse(cached)) : undefined;
                 } catch (e) {
                     return undefined;
                 }

@@ -58,6 +58,11 @@ const STATUS_META = {
     icon: PackageCheck,
     tone: "purple",
   },
+  rider_assigned: {
+    label: "Rider Assigned",
+    icon: Zap,
+    tone: "indigo",
+  },
   out_for_delivery: {
     label: "In Transit",
     icon: Zap,

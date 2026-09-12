@@ -84,7 +84,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
     try {
       const res = await getVendorOrders();
       const raw = res?.vendorOrders || res?.orders || res?.data || (Array.isArray(res) ? res : []);
-      const activeStatuses = ["pending", "accepted", "preparing", "ready", "ready_for_pickup"];
+      const activeStatuses = ["pending", "accepted", "preparing", "ready", "ready_for_pickup", "rider_assigned"];
       const activeCount = raw.filter(o => {
         const st = (o.orderStatus || o.status || "").toLowerCase();
         return activeStatuses.includes(st);

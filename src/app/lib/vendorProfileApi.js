@@ -1,5 +1,6 @@
 import axios from "axios";
 import { TokenManager } from "@/app/lib/auth-token";
+import { refreshVendorAccessToken } from "@/app/lib/vendorApi";
 
 const BASE_URL = "/api/vendors";
 // const BASE_URL = "https://grubdash-api.onrender.com/api/vendors";
@@ -26,14 +27,19 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response && error.response.status === 401) {
-      // Use metadata for reliable suppression of unauthorized events across axios versions
-      if (!error.config?.metadata?.suppressUnauthorized && typeof window !== "undefined") {
-        window.dispatchEvent(new Event("vendor:unauthorized"));
-      }
+  async (error) => {
+    const request = error.config;
+    if (error.response?.status !== 401 || !request || request._vendorAuthRetried) return Promise.reject(error);
+    request._vendorAuthRetried = true;
+    try {
+      const accessToken = await refreshVendorAccessToken();
+      request.headers = request.headers || {};
+      request.headers.Authorization = `Bearer ${accessToken}`;
+      return api(request);
+    } catch (refreshError) {
+      if (!request.metadata?.suppressUnauthorized && typeof window !== "undefined") window.dispatchEvent(new Event("vendor:unauthorized"));
+      return Promise.reject(refreshError);
     }
-    return Promise.reject(error);
   }
 );
 

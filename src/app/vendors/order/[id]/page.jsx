@@ -87,7 +87,7 @@ export default function VendorOrderDetailsPage() {
                 vendorOrderId = order._id;
             } else if (order._id?.$oid) {
                 vendorOrderId = order._id.$oid;
-            } else if (typeof id === 'string' && id.match(/^[0-9a-fA-F]{24}$/)) {
+            } else if (typeof id === 'string' && id.length > 0) {
                 // Last resort: use URL param only if it's a valid MongoDB ObjectId
                 console.warn('⚠️ Using URL param as vendorOrderId - order._id was unavailable');
                 vendorOrderId = id;
@@ -96,8 +96,8 @@ export default function VendorOrderDetailsPage() {
             }
 
             // Validate format locally before sending
-            if (!vendorOrderId.match(/^[0-9a-fA-F]{24}$/)) {
-                throw new Error(`Invalid MongoDB ObjectId format: ${vendorOrderId}`);
+            if (typeof vendorOrderId !== 'string' || vendorOrderId.length === 0) {
+                throw new Error('Invalid vendor order ID');
             }
 
             console.log(`📝 Updating order status:`, {
@@ -242,6 +242,7 @@ export default function VendorOrderDetailsPage() {
         'preparing': 2,
         'ready': 3,
         'ready_for_pickup': 3,
+        'rider_assigned': 3,
         'out_for_delivery': 4,
         'delivered': 5,
         'completed': 5
@@ -260,6 +261,8 @@ export default function VendorOrderDetailsPage() {
             case 'ready':
             case 'ready_for_pickup':
                 return { color: "bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400", icon: CheckCircle2, label: "Ready for Pickup" };
+            case 'rider_assigned':
+                return { color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-400", icon: Truck, label: "Rider Assigned — Awaiting Pickup" };
             case 'out_for_delivery':
                 return { color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-500/20 dark:text-cyan-400", icon: Truck, label: "Out for Delivery" };
             case 'delivered':
