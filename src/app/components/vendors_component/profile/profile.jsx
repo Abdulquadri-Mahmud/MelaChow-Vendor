@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
@@ -35,6 +35,7 @@ import { useApi } from "@/app/context/ApiContext";
 import axios from "axios";
 import { Loader2 } from "lucide-react";
 import { getVendorAlertSettings, playVendorAlertPreview, saveVendorAlertSettings } from "@/app/lib/vendorAlertSettings";
+import VendorLocationNotice from "@/app/components/vendors_component/location/VendorLocationNotice";
 
 const CLOUDINARY_PRESET = "GrubDash";
 const CLOUDINARY_HOST = "https://api.cloudinary.com/v1_1/dypn7gna0/image/upload";
@@ -128,7 +129,7 @@ export default function VendorProfilePage({ vendor }) {
   const [deliverySettings, setDeliverySettings] = useState({
     deliveryManagedBy: "admin",
     flatRateDeliveryFee: 0,
-    deliveryRadiusKm: 5
+    deliveryRadiusKm: 15
   });
   const [payoutDetails, setPayoutDetails] = useState({
     bankName: "",
@@ -166,7 +167,7 @@ export default function VendorProfilePage({ vendor }) {
       setDeliverySettings({
         deliveryManagedBy: vendor.deliveryManagedBy || "admin",
         flatRateDeliveryFee: vendor.flatRateDeliveryFee || 0,
-        deliveryRadiusKm: vendor.deliveryRadiusKm || 5
+        deliveryRadiusKm: vendor.deliveryRadiusKm || 15
       });
       setPayoutDetails({
         bankName: vendor.payoutDetails?.bankName || "",
@@ -266,7 +267,7 @@ export default function VendorProfilePage({ vendor }) {
       }
 
       toast.success(`${section.replace(/([A-Z])/g, ' $1').trim()} updated successfully!`, {
-        icon: '✅',
+        icon: 'âœ…',
         style: { borderRadius: '10px', background: '#333', color: '#fff' }
       });
     } catch (err) {
@@ -333,6 +334,7 @@ export default function VendorProfilePage({ vendor }) {
 
   return (
     <div className="max-w-7xl mx-auto space-y-4">
+      <VendorLocationNotice vendor={vendor} profile onSaved={() => queryClient.invalidateQueries({ queryKey: ["vendors"] })} />
 
       {/* Hero Banner */}
       <div className="relative rounded-md overflow-hidden bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-800 group">
@@ -381,13 +383,13 @@ export default function VendorProfilePage({ vendor }) {
             <div className="flex items-center gap-6 mt-5 pt-5 border-t border-zinc-100 dark:border-zinc-800/50">
               <div>
                 <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest leading-none mb-1.5">Total Sales</p>
-                <p className="text-xl font-black text-zinc-900 dark:text-white tracking-tight">₦{vendor.totalSales?.toLocaleString() ?? "0"}</p>
+                <p className="text-xl font-black text-zinc-900 dark:text-white tracking-tight">â‚¦{vendor.totalSales?.toLocaleString() ?? "0"}</p>
               </div>
               <div>
                 <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest leading-none mb-1.5">Rating</p>
                 <div className="flex items-center gap-1">
                   <span className="text-xl font-black text-zinc-900 dark:text-white tracking-tight">{vendor.ratings?.toFixed(1) ?? "New"}</span>
-                  <span className="text-orange-600">★</span>
+                  <span className="text-orange-600">â˜…</span>
                 </div>
               </div>
               <div>
@@ -617,4 +619,5 @@ export default function VendorProfilePage({ vendor }) {
     </div>
   );
 }
+
 

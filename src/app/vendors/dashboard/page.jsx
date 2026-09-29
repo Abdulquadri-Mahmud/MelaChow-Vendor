@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
@@ -25,6 +25,7 @@ import { useVendorStorage } from "@/app/hooks/vendorStorage";
 import { useVendorMenu } from "@/app/hooks/useMenu";
 import VendorDashboardSkeleton from "@/app/skeleton/VendorDashboardSkeleton";
 import VendorPromoStatus from "@/components/vendor/VendorPromoStatus";
+import VendorLocationNotice from "@/app/components/vendors_component/location/VendorLocationNotice";
 
 export default function VendorDashboard() {
   const [isLoading, setIsLoading] = useState(true);
@@ -308,13 +309,15 @@ export default function VendorDashboard() {
 
       <div className="space-y-4">
         
+        <VendorLocationNotice vendor={vendorData} onSaved={(updated) => { updateVendor(updated); refetchVendorProfile(); }} />
+
         <VendorPromoStatus />
 
         <div className="rounded-md border border-zinc-200 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-800 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-xs font-black uppercase tracking-wider">Store visibility</p>
             <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
-              {vendorData?.isLive ? "Live — customers can place orders" : vendorData?.liveReadiness?.isReady ? "Ready to go live" : "Add a priced, in-stock menu item to unlock Go Live"}
+              {vendorData?.isLive ? "Live â€” customers can place orders" : vendorData?.liveReadiness?.isReady ? "Ready to go live" : "Add a priced, in-stock menu item to unlock Go Live"}
             </p>
           </div>
           <button
@@ -323,7 +326,7 @@ export default function VendorDashboard() {
             disabled={isUpdatingLiveStatus || (!vendorData?.isLive && !vendorData?.liveReadiness?.isReady)}
             className={`h-10 rounded-md px-5 text-[10px] font-black uppercase tracking-widest text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${vendorData?.isLive ? "bg-zinc-700 hover:bg-zinc-800 dark:bg-zinc-600" : "bg-emerald-600 hover:bg-emerald-700"}`}
           >
-            {isUpdatingLiveStatus ? "Updating…" : vendorData?.isLive ? "Pause Store" : "Go Live"}
+            {isUpdatingLiveStatus ? "Updatingâ€¦" : vendorData?.isLive ? "Pause Store" : "Go Live"}
           </button>
         </div>
 
@@ -331,7 +334,7 @@ export default function VendorDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <MetricCard
             title="Total Sales"
-            value={`₦${totalSales.toLocaleString()}`}
+            value={`â‚¦${totalSales.toLocaleString()}`}
             trend="+12.4%" // Keep mock trend for now or calculate if history available
             sub="All time revenue"
           />
@@ -373,12 +376,12 @@ export default function VendorDashboard() {
             <div className="flex items-center gap-3 mt-4">
               <div>
                 <p className="text-[10px] uppercase text-zinc-500 font-black tracking-widest mb-0.5">Available Balance</p>
-                <p className="text-2xl font-black text-orange-500">₦{liveWalletBalance.toLocaleString()}</p>
+                <p className="text-2xl font-black text-orange-500">â‚¦{liveWalletBalance.toLocaleString()}</p>
               </div>
               <div className="h-8 w-px bg-zinc-200 dark:bg-white/10"></div>
               <div>
                 <p className="text-[10px] uppercase text-zinc-500 font-black tracking-widest mb-0.5">Pending</p>
-                <p className="text-2xl font-black text-zinc-400">₦{livePendingBalance.toLocaleString()}</p>
+                <p className="text-2xl font-black text-zinc-400">â‚¦{livePendingBalance.toLocaleString()}</p>
               </div>
             </div>
           </div>
@@ -456,7 +459,7 @@ export default function VendorDashboard() {
                       </linearGradient>
                     </defs>
                     <Tooltip
-                      formatter={(value) => [`₦${value.toLocaleString()}`, 'Revenue']}
+                      formatter={(value) => [`â‚¦${value.toLocaleString()}`, 'Revenue']}
                       contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px -2px rgba(0,0,0,0.1)', background: '#1E293B', color: 'white' }}
                     />
                     <Area
@@ -541,7 +544,7 @@ const OrderCard = ({ id, name, items, status, progress, color, bgColor, barColor
     <div className="flex justify-between items-start mb-2">
       <div>
         <p className="font-black text-xs text-zinc-900 dark:text-white leading-none">#{id}</p>
-        <p className="text-[11px] font-medium text-zinc-500 mt-1">{name} • {items}</p>
+        <p className="text-[11px] font-medium text-zinc-500 mt-1">{name} â€¢ {items}</p>
       </div>
       <span className={`text-[9px] font-black ${bgColor} ${color} px-1.5 py-0.5 rounded uppercase tracking-tighter`}>{status}</span>
     </div>
@@ -575,3 +578,4 @@ const TopItem = ({ name, sold, percent, image }) => (
     </div>
   </div>
 );
+
