@@ -8,7 +8,7 @@ import { useApi } from "@/app/context/ApiContext";
 import {
   User, Mail, Phone, Lock, Store, FileText, MapPin,
   Clock, CreditCard, ChevronRight, ChevronLeft, Upload,
-  CheckCircle2, AlertCircle, X, Loader2, ChevronDown, ShieldCheck, ExternalLink
+  CheckCircle2, AlertCircle, X, Loader2, ChevronDown, ShieldCheck, ExternalLink, LocateFixed
 } from "lucide-react";
 
 /**
@@ -137,6 +137,7 @@ export default function VendorRegisterPage() {
   const [useCustomCity, setUseCustomCity] = useState(false);
   const [isLoadingLocations, setIsLoadingLocations] = useState(false);
   const [locationError, setLocationError] = useState(null);
+  const [gpsBusy, setGpsBusy] = useState(false);
 
   const [previews, setPreviews] = useState({
     logo: null,
@@ -397,6 +398,44 @@ export default function VendorRegisterPage() {
     setErrors((e) => ({ ...e, [fileKey]: "" }));
   };
 
+
+  const captureRestaurantLocation = async () => {
+    setGpsBusy(true);
+    try {
+      const position = await new Promise((resolve, reject) => {
+        if (!navigator.geolocation) return reject(new Error("Location is unavailable on this device."));
+        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 });
+      });
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+      let location = {};
+      try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}&addressdetails=1`, { headers: { Accept: "application/json", "Accept-Language": "en" } });
+        if (response.ok) location = await response.json();
+      } catch {}
+      const osmAddress = location.address || {};
+      setPayload((current) => ({
+        ...current,
+        address: {
+          ...current.address,
+          street: location.display_name || current.address.street,
+          formattedAddress: location.display_name || current.address.street,
+          city: osmAddress.city || osmAddress.town || osmAddress.village || osmAddress.municipality || osmAddress.county || current.address.city,
+          state: osmAddress.state || osmAddress.region || current.address.state,
+          latitude,
+          longitude,
+          coordinates: { lat: latitude, lng: longitude, accuracy: position.coords.accuracy },
+          provider: "openstreetmap",
+          providerPlaceId: String(location.place_id || `gps:${latitude},${longitude}`),
+          locationSource: "device_gps",
+        },
+      }));
+    } catch (error) {
+      setErrors((current) => ({ ...current, "address.street": error?.code === 1 ? "Allow location access in your device settings" : error.message }));
+    } finally {
+      setGpsBusy(false);
+    }
+  };
   const validateStep = async (s = step) => {
     const e = {};
     if (s === 1) {
@@ -503,12 +542,7 @@ export default function VendorRegisterPage() {
         cuisineTypes: payload.cuisineTypes,
 
         // Step 3 - Address
-        address: {
-          street: payload.address.street,
-          city: payload.address.city,
-          state: payload.address.state,
-          postalCode: payload.address.postalCode,
-        },
+        address: { ...payload.address },
 
         // Step 4 - Operations
         openingHours: payload.openingHours,
@@ -726,95 +760,27 @@ export default function VendorRegisterPage() {
 
               {step === 4 && (
                 <div className="space-y-6">
-                  <StepHeader title="Business Location" desc="Where do we send the orders?" />
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Dynamic State Selection */}
-                    <InputWrap label="State" icon={MapPin} error={errors["address.state"]}>
-                      <div className="relative">
-                        {isLoadingLocations ? (
-                          <div className="w-full bg-zinc-50 dark:bg-zinc-800/50  p-3.5 pl-11 rounded-2xl flex items-center">
-                            <Loader2 className="w-4 h-4 animate-spin text-orange-500 mr-2" />
-                            <span className="text-sm text-zinc-400">Loading locations...</span>
-                          </div>
-                        ) : locationError ? (
-                          <div className="w-full bg-red-50 border border-red-200 p-3.5 pl-11 rounded-2xl flex items-center justify-between">
-                            <span className="text-sm text-red-600">{locationError}</span>
-                            <button
-                              onClick={fetchLocations}
-                              className="text-red-600 hover:text-red-700 text-sm font-medium"
-                            >
-                              Retry
-                            </button>
-                          </div>
-                        ) : (
-                          <select
-                            value={selectedStateId}
-                            onChange={(e) => handleStateChange(e.target.value)}
-                            className="w-full bg-zinc-50 dark:bg-zinc-800/50  p-3.5 pl-11 pr-8 rounded-2xl outline-none focus:border-orange-500/50 focus:ring-4 focus:ring-orange-500/10 transition-all text-sm font-medium dark:text-white appearance-none"
-                          >
-                            <option value="">Select State</option>
-                            {locations.map((location) => (
-                              <option key={location.stateId} value={location.stateId}>
-                                {location.state}
-                              </option>
-                            ))}
-                            <option value="__custom__">My state is not listed</option>
-                          </select>
-                        )}
-                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4 pointer-events-none" />
+                  <StepHeader title="Business Location" desc="Confirm your restaurant with phone GPS" />
+                  <button type="button" onClick={captureRestaurantLocation} disabled={gpsBusy} className={`flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-4 text-sm font-black transition disabled:opacity-60 ${Number.isFinite(Number(payload.address.latitude)) ? "bg-emerald-600 text-white" : "bg-zinc-900 text-white dark:bg-white dark:text-zinc-900"}`}>
+                    {gpsBusy ? <Loader2 size={18} className="animate-spin" /> : Number.isFinite(Number(payload.address.latitude)) ? <CheckCircle2 size={18} /> : <LocateFixed size={18} />}
+                    {gpsBusy ? "Finding restaurant..." : Number.isFinite(Number(payload.address.latitude)) ? "Restaurant location captured" : "Use restaurant GPS"}
+                  </button>
+
+                  {Number.isFinite(Number(payload.address.latitude)) && Number.isFinite(Number(payload.address.longitude)) && (
+                    <div className="flex items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 dark:border-emerald-500/25 dark:bg-emerald-500/10">
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-300">GPS coordinates</p>
+                        <p className="mt-0.5 font-mono text-[11px] font-bold text-zinc-700 dark:text-zinc-200">{Number(payload.address.latitude).toFixed(6)}, {Number(payload.address.longitude).toFixed(6)}</p>
                       </div>
-                    </InputWrap>
+                      {Number.isFinite(Number(payload.address.coordinates?.accuracy)) && <span className="rounded-full bg-white px-2.5 py-1 text-[9px] font-black text-emerald-700 dark:bg-zinc-800 dark:text-emerald-300">{Number(payload.address.coordinates.accuracy) >= 1000 ? `\u00B1${(Number(payload.address.coordinates.accuracy) / 1000).toFixed(Number(payload.address.coordinates.accuracy) >= 10000 ? 0 : 1)} km` : `\u00B1${Math.round(Number(payload.address.coordinates.accuracy))} m`}</span>}
+                    </div>
+                  )}
 
-                    {useCustomState && (
-                      <TextInput
-                        path="address.state"
-                        placeholder="Type State"
-                        icon={MapPin}
-                        error={errors["address.state"]}
-                        payload={payload}
-                        setField={setField}
-                      />
-                    )}
-
-                    {/* Dynamic City Selection */}
-                    {!useCustomState && (
-                      <InputWrap label="City" icon={MapPin} error={errors["address.city"]}>
-                        <div className="relative">
-                          <select
-                            value={selectedCityId}
-                            onChange={(e) => handleCityChange(e.target.value)}
-                            disabled={!selectedStateId}
-                            className="w-full bg-zinc-50 dark:bg-zinc-800/50  p-3.5 pl-11 pr-8 rounded-2xl outline-none focus:border-orange-500/50 focus:ring-4 focus:ring-orange-500/10 transition-all text-sm font-medium dark:text-white appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <option value="">
-                              {!selectedStateId ? 'Select state first' : 'Select City'}
-                            </option>
-                            {cities.map((city) => (
-                              <option key={city.cityId} value={city.cityId}>
-                                {city.name}
-                              </option>
-                            ))}
-                            <option value="__custom__">My city is not listed</option>
-                          </select>
-                          <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 w-4 h-4 pointer-events-none" />
-                        </div>
-                      </InputWrap>
-                    )}
-
-                    {(useCustomState || useCustomCity) && (
-                      <TextInput
-                        path="address.city"
-                        placeholder="Type City"
-                        icon={MapPin}
-                        error={errors["address.city"]}
-                        payload={payload}
-                        setField={setField}
-                      />
-                    )}
-
-                    <TextInput path="address.street" placeholder="Street Address" icon={MapPin} error={errors["address.street"]} payload={payload} setField={setField} />
-
-                    {/* <TextInput path="address.postalCode" placeholder="Postal / Zip Code" icon={MapPin} error={errors["address.postalCode"]} payload={payload} setField={setField} /> */}
+                  <div className="space-y-2">
+                    <label className="ml-1 text-[10px] font-black uppercase tracking-widest text-zinc-400">Restaurant address</label>
+                    <textarea value={payload.address.street} onChange={(event) => setField("address.street", event.target.value)} placeholder={Number.isFinite(Number(payload.address.latitude)) ? "Confirm or correct your street, entrance, or landmark" : "Use restaurant GPS to fill this address"} rows={3} className="w-full resize-none rounded-2xl bg-zinc-50 p-4 text-sm font-medium outline-none focus:ring-4 focus:ring-orange-500/10 dark:bg-zinc-800/50 dark:text-white" />
+                    {errors["address.street"] && <p className="ml-1 text-[9px] font-bold uppercase text-rose-500">{errors["address.street"]}</p>}
+                    {Number.isFinite(Number(payload.address.latitude)) && <p className="px-1 text-[11px] text-zinc-500">Editing this address keeps the captured restaurant coordinates.</p>}
                   </div>
                 </div>
               )}

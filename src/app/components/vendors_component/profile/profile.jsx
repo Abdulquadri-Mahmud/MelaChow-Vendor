@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
@@ -334,7 +334,6 @@ export default function VendorProfilePage({ vendor }) {
 
   return (
     <div className="max-w-7xl mx-auto space-y-4">
-      <VendorLocationNotice vendor={vendor} profile onSaved={() => queryClient.invalidateQueries({ queryKey: ["vendors"] })} />
 
       {/* Hero Banner */}
       <div className="relative rounded-md overflow-hidden bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-800 group">
@@ -440,28 +439,7 @@ export default function VendorProfilePage({ vendor }) {
           isOpen={openSections.address}
           onToggle={() => toggleSection('address')}
         >
-          <div className="grid grid-cols-1 gap-6">
-            <div>
-              <InputGroup label="Street Address" value={address.street} onChange={(e) => setAddress({ ...address, street: e.target.value })} icon={MapPin} />
-            </div>
-            <div>
-              <LocationSelector
-                selectedStateId={selectedStateId}
-                selectedCityId={selectedCityId}
-                onStateChange={handleStateChange}
-                onCityChange={handleCityChange}
-                required={true}
-              />
-            </div>
-            <div>
-              <InputGroup label="Postal Code" value={address.postalCode} onChange={(e) => setAddress({ ...address, postalCode: e.target.value })} />
-            </div>
-          </div>
-          <div className="flex justify-end mt-4">
-            <button onClick={() => updateSection("address", address)} disabled={loadingSection === "address"} className="flex items-center gap-2 bg-orange-600 text-white px-5 py-2.5 rounded-md font-black uppercase text-[10px] tracking-widest hover:bg-orange-700 transition-all  Active:scale-95 disabled:opacity-50">
-              {loadingSection === "address" ? "Saving..." : <><Save size={16} /> Update Location</>}
-            </button>
-          </div>
+          <VendorLocationNotice vendor={{ ...vendor, address }} profile always onSaved={() => queryClient.invalidateQueries({ queryKey: ["vendors"] })} />
         </Section>
 
         {/* Cuisine Types */}
