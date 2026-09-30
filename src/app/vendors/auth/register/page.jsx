@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useApi } from "@/app/context/ApiContext";
+import { capturePrecisePosition } from "@/app/lib/capturePreciseLocation";
 import {
   User, Mail, Phone, Lock, Store, FileText, MapPin,
   Clock, CreditCard, ChevronRight, ChevronLeft, Upload,
@@ -402,10 +403,7 @@ export default function VendorRegisterPage() {
   const captureRestaurantLocation = async () => {
     setGpsBusy(true);
     try {
-      const position = await new Promise((resolve, reject) => {
-        if (!navigator.geolocation) return reject(new Error("Location is unavailable on this device."));
-        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 });
-      });
+      const position = await capturePrecisePosition();
       const latitude = position.coords.latitude;
       const longitude = position.coords.longitude;
       let location = {};

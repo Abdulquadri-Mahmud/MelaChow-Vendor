@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { CheckCircle2, Loader2, LocateFixed, MapPin, Save } from "lucide-react";
 import toast from "react-hot-toast";
 import { updateVendor } from "@/app/lib/vendorProfileApi";
+import { capturePrecisePosition } from "@/app/lib/capturePreciseLocation";
 
 const vendorCoordinates = (vendor) => ({
   lat: Number(vendor?.pickupLatitude ?? vendor?.address?.latitude ?? vendor?.address?.coordinates?.lat),
@@ -68,10 +69,7 @@ export default function VendorLocationNotice({ vendor, profile = false, always =
   const captureLocation = async () => {
     setSaving(true);
     try {
-      const position = await new Promise((resolve, reject) => {
-        if (!navigator.geolocation) return reject(new Error("Location is unavailable on this device."));
-        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 });
-      });
+      const position = await capturePrecisePosition();
       const pin = { lat: position.coords.latitude, lng: position.coords.longitude, accuracy: position.coords.accuracy };
       setCoordinates(pin);
       let details = null;
