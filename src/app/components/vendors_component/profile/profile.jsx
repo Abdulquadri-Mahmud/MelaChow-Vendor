@@ -35,6 +35,7 @@ import { useApi } from "@/app/context/ApiContext";
 import axios from "axios";
 import { Loader2 } from "lucide-react";
 import { getVendorAlertSettings, playVendorAlertPreview, saveVendorAlertSettings } from "@/app/lib/vendorAlertSettings";
+import VendorLocationNotice from "@/app/components/vendors_component/location/VendorLocationNotice";
 
 const CLOUDINARY_PRESET = "GrubDash";
 const CLOUDINARY_HOST = "https://api.cloudinary.com/v1_1/dypn7gna0/image/upload";
@@ -128,7 +129,7 @@ export default function VendorProfilePage({ vendor }) {
   const [deliverySettings, setDeliverySettings] = useState({
     deliveryManagedBy: "admin",
     flatRateDeliveryFee: 0,
-    deliveryRadiusKm: 5
+    deliveryRadiusKm: 15
   });
   const [payoutDetails, setPayoutDetails] = useState({
     bankName: "",
@@ -166,7 +167,7 @@ export default function VendorProfilePage({ vendor }) {
       setDeliverySettings({
         deliveryManagedBy: vendor.deliveryManagedBy || "admin",
         flatRateDeliveryFee: vendor.flatRateDeliveryFee || 0,
-        deliveryRadiusKm: vendor.deliveryRadiusKm || 5
+        deliveryRadiusKm: vendor.deliveryRadiusKm || 15
       });
       setPayoutDetails({
         bankName: vendor.payoutDetails?.bankName || "",
@@ -266,7 +267,7 @@ export default function VendorProfilePage({ vendor }) {
       }
 
       toast.success(`${section.replace(/([A-Z])/g, ' $1').trim()} updated successfully!`, {
-        icon: '✅',
+        icon: 'âœ…',
         style: { borderRadius: '10px', background: '#333', color: '#fff' }
       });
     } catch (err) {
@@ -381,13 +382,13 @@ export default function VendorProfilePage({ vendor }) {
             <div className="flex items-center gap-6 mt-5 pt-5 border-t border-zinc-100 dark:border-zinc-800/50">
               <div>
                 <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest leading-none mb-1.5">Total Sales</p>
-                <p className="text-xl font-black text-zinc-900 dark:text-white tracking-tight">₦{vendor.totalSales?.toLocaleString() ?? "0"}</p>
+                <p className="text-xl font-black text-zinc-900 dark:text-white tracking-tight">â‚¦{vendor.totalSales?.toLocaleString() ?? "0"}</p>
               </div>
               <div>
                 <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest leading-none mb-1.5">Rating</p>
                 <div className="flex items-center gap-1">
                   <span className="text-xl font-black text-zinc-900 dark:text-white tracking-tight">{vendor.ratings?.toFixed(1) ?? "New"}</span>
-                  <span className="text-orange-600">★</span>
+                  <span className="text-orange-600">â˜…</span>
                 </div>
               </div>
               <div>
@@ -438,28 +439,7 @@ export default function VendorProfilePage({ vendor }) {
           isOpen={openSections.address}
           onToggle={() => toggleSection('address')}
         >
-          <div className="grid grid-cols-1 gap-6">
-            <div>
-              <InputGroup label="Street Address" value={address.street} onChange={(e) => setAddress({ ...address, street: e.target.value })} icon={MapPin} />
-            </div>
-            <div>
-              <LocationSelector
-                selectedStateId={selectedStateId}
-                selectedCityId={selectedCityId}
-                onStateChange={handleStateChange}
-                onCityChange={handleCityChange}
-                required={true}
-              />
-            </div>
-            <div>
-              <InputGroup label="Postal Code" value={address.postalCode} onChange={(e) => setAddress({ ...address, postalCode: e.target.value })} />
-            </div>
-          </div>
-          <div className="flex justify-end mt-4">
-            <button onClick={() => updateSection("address", address)} disabled={loadingSection === "address"} className="flex items-center gap-2 bg-orange-600 text-white px-5 py-2.5 rounded-md font-black uppercase text-[10px] tracking-widest hover:bg-orange-700 transition-all  Active:scale-95 disabled:opacity-50">
-              {loadingSection === "address" ? "Saving..." : <><Save size={16} /> Update Location</>}
-            </button>
-          </div>
+          <VendorLocationNotice vendor={{ ...vendor, address }} profile always onSaved={() => queryClient.invalidateQueries({ queryKey: ["vendors"] })} />
         </Section>
 
         {/* Cuisine Types */}
@@ -617,4 +597,5 @@ export default function VendorProfilePage({ vendor }) {
     </div>
   );
 }
+
 
