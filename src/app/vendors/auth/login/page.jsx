@@ -193,7 +193,7 @@ export default function VendorLoginPage() {
 
         <div className="mt-4 pt-4 border-t border-zinc-50 dark:border-zinc-800 text-center space-y-4">
           <p className="text-[11px] font-bold text-zinc-500 uppercase tracking-tight">
-            Don't have a vendor account?{" "}
+            Don&apos;t have a vendor account?{" "}
             <Link
               href="/vendors/auth/register"
               className="text-orange-600 hover:text-orange-700 transition font-black tracking-widest italic"
