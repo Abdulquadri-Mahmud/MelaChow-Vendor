@@ -38,7 +38,12 @@ export default function VendorLoginPage() {
         console.log('[VendorLogin] Sending request to:', endpoint);
       }
 
-      const res = await axios.post(endpoint, formData, {
+      const credentials = {
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password,
+      };
+
+      const res = await axios.post(endpoint, credentials, {
         withCredentials: true
       });
 
@@ -98,7 +103,7 @@ export default function VendorLoginPage() {
         // Guide: Brute force lock.
         setMessage("🚨 Security Lock: Too many attempts. Please wait 15 minutes.");
       } else if (status === 401) {
-        setMessage("Invalid credentials. Please check your email and password.");
+        setMessage(errorData?.message || "Invalid credentials. Please check your email and password.");
       } else {
         setMessage(errorData?.message || "Login failed. Please check your network.");
       }
