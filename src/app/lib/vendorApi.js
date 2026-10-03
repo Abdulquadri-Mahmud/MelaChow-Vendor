@@ -204,3 +204,5 @@ export const respondToRemakeRequest = async (vendorOrderId, decision) => {
 };
 
 export default API;
+
+export const requestVendorPickupCode = async (orderId) => (await API.post(`/vendors/orders/${orderId}/pickup-code`, {})).data;

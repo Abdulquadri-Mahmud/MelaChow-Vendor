@@ -34,6 +34,8 @@ export default function VendorOrderDetailsPage() {
     const { id } = useParams();
     const router = useRouter();
     const [order, setOrder] = useState(null);
+    const [pickupCode, setPickupCode] = useState(null);
+    const [pickupCodeBusy, setPickupCodeBusy] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [isUpdating, setIsUpdating] = useState(false);
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
@@ -59,6 +61,16 @@ export default function VendorOrderDetailsPage() {
         fetchOrder();
     }, [id]);
 
+    const showPickupCode = async () => {
+        setPickupCodeBusy(true);
+        setErrorMessage(null);
+        try {
+            const response = await requestVendorPickupCode(id);
+            setPickupCode(response.data || response);
+        } catch (error) {
+            setErrorMessage(error.response?.data?.message || error.message || "Could not get the pickup code.");
+        } finally { setPickupCodeBusy(false); }
+    };
     // Debug: Log order data structure for ID troubleshooting
     useEffect(() => {
         if (order) {
@@ -515,6 +527,12 @@ export default function VendorOrderDetailsPage() {
                         )}
                     </div>
 
+                    {["ready_for_pickup", "ready", "rider_assigned"].includes(order.orderStatus) && <section className="mt-5 rounded-xl border border-orange-200 bg-orange-50 p-4">
+                        <h3 className="text-sm font-black text-orange-900">Rider pickup code</h3>
+                        <p className="mt-1 text-xs text-orange-800">Share this code with the assigned rider only when handing over the package.</p>
+                        {pickupCode && <div className="mt-3"><p className="text-2xl font-black tracking-[.35em] text-orange-950">{pickupCode.pickupCode}</p><p className="mt-1 text-xs text-orange-800">Valid until {new Date(pickupCode.expiresAt).toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"})}</p></div>}
+                        <button type="button" onClick={showPickupCode} disabled={pickupCodeBusy} className="mt-3 rounded-lg bg-orange-600 px-4 py-2 text-xs font-black text-white disabled:opacity-50">{pickupCodeBusy ? "Getting code…" : pickupCode ? "Refresh pickup code" : "Show pickup code"}</button>
+                    </section>}
                     {/* Progress Timeline */}
                     <div className="mt-6 pt-6 border-t border-zinc-50 dark:border-zinc-800/50">
                         {isPlatformDelivery && (order.orderStatus === 'ready_for_pickup' || order.orderStatus === 'ready') && (
