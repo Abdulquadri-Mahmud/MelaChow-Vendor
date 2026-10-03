@@ -1,12 +1,10 @@
 "use client";
+import { publishMenuItem } from '@/app/lib/publishMenuItem.mjs';
+import * as menuApi from '@/app/lib/menuApi';
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import {
-    createMenuItem,
-    addPortion,
-    addChoiceGroup,
-    addChoiceOption,
     updateMenuItem,
     toggleMenuItemAvailability,
     toggleMenuItemStock,
@@ -80,103 +78,7 @@ export const useCreateMenuItem = (vendorId) => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({ item, portions, choice_groups }) => {
-            // ── Step 1: Create the base item ──────────────────────────────
-            const itemPayload = {
-                platform_category_id: item.platform_category_id,
-                vendor_section_id: item.vendor_section_id || null,
-                name: item.name.trim(),
-                description: item.description?.trim() || undefined,
-                image_url: item.image_url || undefined,
-                item_type: item.item_type,
-                dietary_type: item.dietary_type || "mixed",
-                prep_time_minutes: item.prep_time_minutes,
-                tags: item.tags,
-            };
-
-            const itemRes = await createMenuItem(vendorId, itemPayload);
-            // Handle both { item: { _id } } and { data: { _id } } response shapes
-            const itemId = itemRes?.item?._id
-                || itemRes?.data?._id
-                || itemRes?._id;
-
-            if (!itemId) {
-                throw new Error("Food was created but ID was not returned. Check API response shape.");
-            }
-
-            // ── Step 2: Add portions sequentially ────────────────────────
-            // Each call is awaited individually — order matters for sort_order
-            for (const p of portions) {
-                await addPortion(vendorId, itemId, {
-                    label: p.label,
-                    price: p.price_naira * 100,  // ← KOBO CONVERSION
-                    is_default: p.is_default,
-                    max_quantity: p.max_quantity || null,
-                    track_stock: p.track_stock === true,
-                    stock_quantity: p.track_stock ? Math.max(0, Number(p.stock_quantity) || 0) : 0,
-                    low_stock_threshold: Math.max(0, Number(p.low_stock_threshold) || 0),
-                    sort_order: p.sort_order,
-                });
-            }
-
-            // ── Steps 3 & 4: Add choice groups and their options ──────────
-            for (const g of choice_groups) {
-                // Step 3: create the group, capture the REAL _id
-                const groupRes = await addChoiceGroup(vendorId, itemId, {
-                    source_template_id: g.source_template_id || null,
-                    name: g.name,
-                    min_selections: g.min_selections,
-                    max_selections: g.max_selections,
-                    is_required: g.is_required,
-                    sort_order: g.sort_order,
-                });
-
-                // Handle various response shapes to extract the real MongoDB _id
-                // Backend typically returns { success: true, group: { _id, ... } }
-                const realGroupId = groupRes?.group?._id
-                    || groupRes?.choiceGroup?._id
-                    || groupRes?.data?._id
-                    || groupRes?._id;
-
-                if (!realGroupId) {
-                    console.error("[publish] Choice group created but _id not found in response:", groupRes);
-                    continue; // Skip options for this group rather than crashing
-                }
-
-                // Step 4: create each option using the real group _id
-                for (let i = 0; i < g.options.length; i++) {
-                    const o = g.options[i];
-                    const optionPayload = {
-                        source_template_option_id: o.source_template_option_id || null,
-                        label: o.label,
-                        price_modifier: Math.round((Number(o.price_modifier_naira) || 0) * 100), // kobo
-                        price_modifier_naira: Number(o.price_modifier_naira) || 0, // naira
-                        image_url: o.image_url || null,
-                        image: o.image_url || null, // alternative key
-                        is_available: o.is_available ?? true,
-                        track_stock: o.track_stock === true,
-                        stock_quantity: o.track_stock ? Math.max(0, Number(o.stock_quantity) || 0) : 0,
-                        low_stock_threshold: Math.max(0, Number(o.low_stock_threshold) || 0),
-                        sort_order: i,
-                    };
-
-                    console.log(`[publish] AddOption to ${realGroupId}:`, optionPayload);
-
-                    try {
-                        await addChoiceOption(realGroupId, optionPayload);
-                    } catch (optionErr) {
-                        // Surface the error — don't swallow it completely
-                        console.error(
-                            `[publish] Failed to save option "${o.label}" in group "${g.name}":`,
-                            optionErr?.response?.data || optionErr.message
-                        );
-                        // We continue saving other options even if one fails
-                    }
-                }
-            }
-
-            return itemId;
-        },
+        mutationFn: (draft) => publishMenuItem(menuApi, vendorId, draft),
 
         onSuccess: () => {
             toast.success("Food is live on your menu! 🎉");

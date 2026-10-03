@@ -1,308 +1,277 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  ChefHat,
+  ImageIcon,
+  Loader2,
+  Send,
+  ShieldCheck,
+} from "lucide-react";
 import { useCreateFoodStore } from "@/app/context/CreateFoodStore";
-import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ChevronRight, Rocket, Loader2, Info } from "lucide-react";
-import BackButton from "@/app/components/BackButton";
-import toast from "react-hot-toast";
+import { validateMenuDraft } from "@/app/lib/menuDraft.mjs";
+import MenuBasics from "@/app/components/create-food/wizard/MenuBasics";
+import MenuCategories from "@/app/components/create-food/wizard/MenuCategories";
+import MenuPricing from "@/app/components/create-food/wizard/MenuPricing";
+import MenuChoices from "@/app/components/create-food/wizard/MenuChoices";
+import MenuReview from "@/app/components/create-food/wizard/MenuReview";
+import "./create-menu.css";
 
-// Steps
-import Step1BasicInfo from "@/app/components/create-food/wizard/Step1BasicInfo";
-import Step2Categories from "@/app/components/create-food/wizard/Step2Categories";
-import Step3Price from "@/app/components/create-food/wizard/Step3Price";
-import Step5Review from "@/app/components/create-food/wizard/Step5Review";
-
-const STEPS = [
-  { id: 1, title: "Basic Info", short: "Basics" },
-  { id: 2, title: "Category", short: "Category" },
-  { id: 3, title: "Price", short: "Price" },
-  { id: 4, title: "Review", short: "Done" },
+const steps = [
+  {
+    title: "The basics",
+    short: "Basics",
+    detail: "A good menu starts with a great first impression.",
+    tip: "Use the name customers recognise. A clear photo and a short description help them decide.",
+  },
+  {
+    title: "Help customers find it",
+    short: "Category",
+    detail: "Choose the best category, then organise your own menu.",
+    tip: "Choose the most specific category. Your store section is optional and only groups items on your menu.",
+  },
+  {
+    title: "Set your price",
+    short: "Pricing",
+    detail:
+      "Start with one price. Add sizes or stock tracking if you need them.",
+    tip: "Enter prices in naira. If you sell different sizes, each one can have its own price and stock.",
+  },
+  {
+    title: "Make it their own",
+    short: "Choices",
+    detail: "Optional extras, proteins, toppings, or customer preferences.",
+    tip: "A choice group is a question, like “Choose your protein”. Add the options customers can select and any extra price.",
+  },
+  {
+    title: "Ready for your menu?",
+    short: "Review",
+    detail: "Check the details your customers will see before publishing.",
+    tip: "Check prices, available options, and selection rules before putting this item on your menu.",
+  },
 ];
 
 export default function CreateFoodWizardPage() {
   const store = useCreateFoodStore();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-
+  const [error, setError] = useState("");
+  const heading = useRef(null);
   useEffect(() => {
-    setMounted(true);
-
-    const handleBeforeUnload = (e) => {
-      if (store.isDirty) {
-        e.preventDefault();
-        e.returnValue = "";
+    const frame = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+  useEffect(() => {
+    const warn = (event) => {
+      if (store.isDirty && !store.isSubmitting) {
+        event.preventDefault();
+        event.returnValue = "";
       }
     };
-
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [store.isDirty]);
-
-  if (!mounted) return null; // Avoid hydration mismatch
-
-  // Navigation blocks
-  const handleNext = () => store.setStep(Math.min(STEPS.length, store.currentStep + 1));
-  const handleBack = () => store.setStep(Math.max(1, store.currentStep - 1));
-  const handleJump = (stepId) => {
-    if (stepId < store.currentStep) store.setStep(stepId);
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [store.isDirty, store.isSubmitting]);
+  const step = Math.min(5, Math.max(1, store.currentStep || 1));
+  const go = (next) => {
+    setError("");
+    store.setStep(next);
+    requestAnimationFrame(() => {
+      heading.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+      heading.current?.focus({ preventScroll: true });
+    });
   };
-
-  const validateStep = () => {
-    if (store.currentStep === 1) {
-      if (!store.name.trim() || store.name.length < 2) {
-        toast.error("Please enter a food name (min 2 characters)");
-        return false;
-      }
-      if (!store.item_type) {
-        toast.error("Please select a food type");
-        return false;
-      }
-    }
-    if (store.currentStep === 2) {
-      if (!store.platform_category_id) {
-        toast.error("Please pick a specific type of food");
-        return false;
-      }
-    }
-    if (store.currentStep === 3) {
-      if (!store.portions.some((portion) => Number(portion.price_naira) > 0)) {
-        toast.error("Enter a price before continuing");
-        return false;
-      }
-    }
-    return true;
+  const next = () => {
+    const message = validateMenuDraft(store, step);
+    if (message) setError(message);
+    else go(step + 1);
   };
-
-  const handleNextWithValidation = () => {
-    if (validateStep()) handleNext();
-  };
-
-  const getNextLabel = () => {
-    switch (store.currentStep) {
-      case 1: return "Assign Categories";
-      case 2: return "Set Price";
-      case 3: return "Review Food";
-      case 4: return store.isSubmitting ? "Publishing..." : "Publish Live";
-      default: return "Continue";
-    }
-  };
-
-  const isLastStep = store.currentStep === STEPS.length;
-  
-  // Get primary price for preview
-  const defaultPortion = store.portions.find(p => p.is_default) || store.portions[0];
-  const previewPrice = defaultPortion?.price_naira || 0;
-
+  const primary =
+    store.portions.find((portion) => portion.is_default) || store.portions[0];
+  if (!mounted)
+    return (
+      <div className="menu-builder menu-loading" role="status">
+        <Loader2 className="animate-spin" /> Opening your menu draft…
+      </div>
+    );
   return (
-    <div className="flex flex-col min-h-screen bg-zinc-50 dark:bg-zinc-950 transition-colors relative">
-      <div className="flex-1 lg:max-w-6xl mx-auto w-full p-3 lg:p-0 pb-10">
-        
-        {/* Header Strip */}
-        <div className="mb-6 bg-linear-to-br from-zinc-900 via-zinc-900 to-zinc-800 md:p-3 p-3 rounded border border-white/5 shadow-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-3 relative overflow-hidden group">
-          {/* Brand Accent Glow */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-orange-600/10 blur-[100px] -mr-32 -mt-32 transition-opacity group-hover:opacity-100 opacity-50" />
-          
-          <div className="relative z-10">
-            <div className="flex gap-3 items-center mb-3">
-                <BackButton label="" className="h-10 w-10 flex items-center justify-center rounded bg-white/5 text-zinc-400 hover:text-orange-500 hover:bg-white/10 transition-all border border-white/5" />
-                <div>
-                  <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight uppercase leading-none">
-                  {store._id ? 'Edit Dish' : 'Add New Dish'}
-                  </h1>
-                </div>
-            </div>
-            <p className="text-[11px] md:text-xs font-bold text-zinc-400 max-w-xl leading-relaxed uppercase tracking-wider opacity-80">
-                Tell us about your next great dish! Add a name, photo, and price.
-            </p>
+    <div className={`menu-builder ${step === 5 ? "is-review" : ""}`}>
+      <header className="menu-hero">
+        <div className="menu-hero-top">
+          <button
+            type="button"
+            className="menu-back-link"
+            onClick={() => router.back()}
+            disabled={store.isSubmitting}
+          >
+            <ArrowLeft size={18} /> Back to menu
+          </button>
+          <span className="menu-draft-badge">
+            <ShieldCheck size={15} />{" "}
+            {store.isDirty ? "Draft saved on this device" : "New menu item"}
+          </span>
+        </div>
+        <div className="menu-hero-title">
+          <span className="menu-hero-icon">
+            <ChefHat size={26} />
+          </span>
+          <div>
+            <p className="menu-eyebrow">Your next customer favourite</p>
+            <h1>Add to your menu</h1>
+            <p>A few simple steps. A dish that’s ready to order.</p>
           </div>
-
-          {store.isDirty && (
-            <div className="relative z-10 shrink-0 self-end md:self-center">
-              <div className="flex items-center gap-3 px-3 py-3 rounded bg-white/5 border border-white/10 backdrop-blur-md shadow-inner">
-                <div className="relative">
-                  <span className="flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-500 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500 shadow-[0_0_10px_rgba(249,115,22,0.8)]"></span>
-                  </span>
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white">
-                  Draft Saved
+        </div>
+      </header>
+      <nav className="menu-steps" aria-label="Menu creation steps">
+        <ol>
+          {steps.map((item, index) => (
+            <li key={item.short}>
+              <button
+                type="button"
+                disabled={index + 1 > step || store.isSubmitting}
+                aria-current={step === index + 1 ? "step" : undefined}
+                onClick={() => go(index + 1)}
+                className={index + 1 < step ? "is-complete" : ""}
+              >
+                <span>
+                  {index + 1 < step ? <Check size={17} /> : index + 1}
                 </span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Wizard Progress Bar */}
-        <div className="mb-10 px-3 md:px-3 max-w-3xl mx-auto">
-          <div className="flex items-center justify-between relative">
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-0.5 bg-zinc-200 dark:bg-zinc-800 rounded-full z-0" />
-            <div
-              className="absolute left-0 top-1/2 -translate-y-1/2 h-0.5 bg-orange-600 rounded-full z-0 transition-all duration-700 ease-out"
-              style={{ width: `${((store.currentStep - 1) / (STEPS.length - 1)) * 100}%` }}
+                <strong>{item.short}</strong>
+              </button>
+            </li>
+          ))}
+        </ol>
+      </nav>
+      <div className="menu-workspace">
+        <section className="menu-form-panel" aria-labelledby="menu-step-title">
+          <div className="menu-step-heading">
+            <span className="menu-eyebrow">
+              Step {step} of 5{step === 4 ? " · Optional" : ""}
+            </span>
+            <h2 id="menu-step-title" tabIndex={-1} ref={heading}>
+              {steps[step - 1].title}
+            </h2>
+            <p>{steps[step - 1].detail}</p>
+          </div>
+          {step === 1 && <MenuBasics />}
+          {step === 2 && <MenuCategories />}
+          {step === 3 && <MenuPricing />}
+          {step === 4 && <MenuChoices />}
+          {step === 5 && (
+            <MenuReview
+              onSetStep={go}
+              onComplete={() => {
+                store.resetForm();
+                router.push("/vendors/my-foods");
+              }}
             />
-            {STEPS.map((step) => {
-              const isPast = step.id < store.currentStep;
-              const isCurrent = step.id === store.currentStep;
-              const isFuture = step.id > store.currentStep;
-
-              return (
-                <button
-                  key={step.id}
-                  disabled={isFuture}
-                  onClick={() => handleJump(step.id)}
-                  className={`relative z-10 flex flex-col items-center group ${isFuture ? "cursor-not-allowed" : "cursor-pointer"}`}
-                >
-                  <div className={`w-8 h-8 md:w-9 md:h-9 rounded flex items-center justify-center font-black text-[10px] md:text-sm transition-all duration-500 border ${
-                    isPast ? "bg-orange-600 border-orange-600 text-white" :
-                    isCurrent ? "bg-white dark:bg-zinc-900 border-orange-600 text-orange-600 dark:text-orange-500" :
-                    "bg-zinc-50 dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 text-zinc-400 dark:text-zinc-500"
-                  }`}>
-                    {isPast ? "✓" : step.id}
-                  </div>
-                  <span className={`absolute -bottom-6 text-[9px] font-black uppercase tracking-widest whitespace-nowrap transition-all duration-300 ${
-                    isCurrent ? "text-orange-600 dark:text-orange-500 opacity-100 translate-y-0" : 
-                    isPast ? "text-zinc-600 dark:text-zinc-300 opacity-0 md:opacity-100" : 
-                    "text-zinc-400 dark:text-zinc-600 opacity-0 -translate-y-1"
-                  }`}>
-                    {step.title}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* CONTENT AREA */}
-        <div className={`transition-all duration-500 ${isLastStep ? 'max-w-4xl mx-auto' : 'grid grid-cols-1 lg:grid-cols-12 gap-3'}`}>
-          
-          {/* Main Form Content */}
-          <div className={`${isLastStep ? 'col-span-full' : 'lg:col-span-8'} space-y-3`}>
-            <div className="bg-white dark:bg-zinc-900/70 backdrop-blur-xl rounded p-3 border border-zinc-200 dark:border-zinc-800 min-h-125 relative overflow-hidden transition-all shadow-xl shadow-black/5 [&_.p-4]:p-3 [&_.p-5]:p-3 [&_.p-6]:p-3 [&_.p-8]:p-3 [&_.px-4]:px-3 [&_.px-5]:px-3 [&_.px-6]:px-3 [&_.px-8]:px-3 [&_.py-4]:py-3 [&_.py-5]:py-3 [&_.py-6]:py-3 [&_.py-8]:py-3 [&_.rounded-2xl]:rounded [&_.rounded-3xl]:rounded">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={store.currentStep}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="h-full"
-                >
-                  {store.currentStep === 1 && <Step1BasicInfo onNext={handleNext} />}
-                  {store.currentStep === 2 && <Step2Categories />}
-                  {store.currentStep === 3 && <Step3Price />}
-                  {store.currentStep === 4 && (
-                    <Step5Review 
-                      onBack={handleBack} 
-                      onSetStep={(s) => store.setStep(s)} 
-                      onComplete={() => {
-                        store.resetForm();
-                        if (typeof window !== "undefined") {
-                          sessionStorage.removeItem("gd_create_food_wizard");
-                        }
-                        router.push("/vendors/my-foods");
-                      }} 
-                    />
-                  )}
-                </motion.div>
-              </AnimatePresence>
-            </div>
-          </div>
-
-          {/* Right Column: Live Preview / Tips (Hidden on Review Step) */}
-          {!isLastStep && (
-            <div className="lg:col-span-4 space-y-3">
-              <div className="sticky top-6 space-y-3">
-                
-                {/* Contextual Tips */}
-                <div className="bg-orange-500/5 dark:bg-orange-950/10 border border-orange-500/10 rounded p-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-8 h-8 rounded bg-orange-600 flex items-center justify-center text-white shadow-lg shadow-orange-600/20">
-                          <Info size={16} />
-                      </div>
-                      <h3 className="text-[10px] font-black text-zinc-900 dark:text-white uppercase tracking-widest">
-                        Pro Tip
-                      </h3>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-[11px] text-zinc-600 dark:text-zinc-400 font-medium leading-relaxed">
-                          Clear names and great photos perform 40% better than generic ones.
-                      </p>
-                    </div>
-                </div>
-
-                {/* Live Preview Card Mockup */}
-                <div className="bg-white dark:bg-zinc-900 rounded border border-zinc-100 dark:border-zinc-800 p-3">
-                    <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                      Live Preview
-                    </h3>
-                    <div className="rounded bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 p-3 aspect-video flex flex-col justify-end relative overflow-hidden ring-1 ring-zinc-100">
-                    {store.image_url ? (
-                        <img src={store.image_url} alt="Preview" className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000" />
-                    ) : (
-                        <div className="absolute inset-0 bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center uppercase tracking-widest text-[9px] font-black text-zinc-300">
-                          Waiting...
-                        </div>
-                    )}
-                    <div className="absolute inset-0 bg-linear-to-t from-zinc-950/80 via-zinc-950/10 to-transparent" />
-                    <div className="relative z-10">
-                        <h4 className="text-lg font-black text-white uppercase truncate tracking-tight">
-                        {store.name || "UNNAMED DISH"}
-                        </h4>
-                        <div className="mt-2 flex items-center justify-between">
-                          <span className="text-xl font-black text-orange-500 tabular-nums">
-                              ₦{Number(previewPrice || 0).toLocaleString()}
-                          </span>
-                        </div>
-                    </div>
-                    </div>
-                </div>
-                </div>
-            </div>
           )}
-
+          {error && (
+            <p className="menu-error" role="alert">
+              {error}
+            </p>
+          )}
+        </section>
+        <aside className="menu-preview-column">
+          <div className="menu-preview">
+            <div className="menu-preview-heading">
+              <span className="menu-eyebrow">Customer preview</span>
+              <span className="menu-preview-dot" /> Live
+            </div>
+            <div className="menu-preview-image">
+              {store.image_url ? (
+                <img src={store.image_url} alt={store.name || "Menu item"} />
+              ) : (
+                <div>
+                  <ImageIcon size={32} />
+                  <span>Your delicious photo goes here</span>
+                </div>
+              )}
+            </div>
+            <div className="menu-preview-body">
+              <span className="menu-chip">
+                {store.platform_category_label || "Your category"}
+              </span>
+              <h3>{store.name || "Your menu item"}</h3>
+              <p>
+                {store.description ||
+                  "A short description helps customers find their new favourite."}
+              </p>
+              <div className="menu-preview-price">
+                <strong>
+                  {Number(primary?.price_naira) > 0
+                    ? `₦${Number(primary.price_naira).toLocaleString("en-NG")}`
+                    : "Add your price"}
+                </strong>
+                {store.prep_time_minutes && (
+                  <span>{store.prep_time_minutes} min prep</span>
+                )}
+              </div>
+              {store.choice_groups.length > 0 && (
+                <div className="menu-preview-choices">
+                  {store.choice_groups.length} customisation
+                  {store.choice_groups.length === 1 ? "" : "s"} available
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="menu-tip">
+            <ChefHat size={21} />
+            <div>
+              <strong>A little help</strong>
+              <p>{steps[step - 1].tip}</p>
+            </div>
+          </div>
+        </aside>
+      </div>
+      <footer className="menu-footer">
+        <span className="menu-footer-progress">
+          {step === 4
+            ? "No extras? You can skip this step."
+            : `Step ${step} of 5 · ${steps[step - 1].short}`}
+        </span>
+        <div>
+          {step > 1 && (
+            <button
+              type="button"
+              className="menu-button secondary"
+              onClick={() => go(step - 1)}
+              disabled={store.isSubmitting}
+            >
+              <ArrowLeft size={17} /> Back
+            </button>
+          )}
+          <button
+            type="button"
+            className="menu-button primary"
+            onClick={
+              step === 5
+                ? () => document.getElementById("publish-food-btn")?.click()
+                : next
+            }
+            disabled={store.isSubmitting}
+          >
+            {store.isSubmitting ? (
+              <Loader2 size={18} className="animate-spin" />
+            ) : step === 5 ? (
+              <Send size={17} />
+            ) : null}
+            {store.isSubmitting
+              ? "Publishing…"
+              : step === 5
+                ? "Publish menu item"
+                : step === 4 && !store.choice_groups.length
+                  ? "Skip to review"
+                  : step === 4
+                    ? "Review item"
+                    : "Continue"}
+            {step < 5 && <ArrowRight size={17} />}
+          </button>
         </div>
-      </div>
-
-      {/* STICKY FOOTER */}
-      <div className="sticky bottom-0 z-40 w-full p-3 lg:p-3 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl border-t border-zinc-100 dark:border-zinc-800 mt-auto">
-        <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
-            <div className="flex-1">
-               {store.currentStep > 1 && (
-                  <button 
-                    onClick={handleBack} 
-                    disabled={store.isSubmitting}
-                    className="h-11 px-3 flex items-center text-zinc-600 dark:text-zinc-300 hover:text-orange-600 font-black uppercase tracking-widest gap-2 active:scale-95 text-[10px] transition-all border border-zinc-200 dark:border-zinc-800 rounded bg-white dark:bg-zinc-900"
-                  >
-                    <ArrowLeft size={14} strokeWidth={3} /> 
-                    <span className="hidden sm:inline">Back</span>
-                  </button>
-               )}
-            </div>
-
-            <div className="flex-none flex items-center gap-3">
-               <div className="hidden sm:flex flex-col items-end">
-                  <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest leading-none mb-0.5">Step {store.currentStep} of {STEPS.length}</span>
-                  <span className="text-[11px] font-black text-zinc-950 dark:text-white uppercase tracking-widest italic">{STEPS[store.currentStep-1].title}</span>
-               </div>
-
-               <button 
-                  onClick={store.currentStep === STEPS.length ? () => document.getElementById('publish-food-btn')?.click() : handleNextWithValidation} 
-                  disabled={store.isSubmitting}
-                  className={`h-11 px-3 rounded font-black uppercase tracking-widest text-[10px] transition-all active:scale-95 flex items-center gap-3 disabled:opacity-50 shadow-lg ${
-                    store.currentStep === STEPS.length 
-                    ? "bg-zinc-950 dark:bg-white text-white dark:text-zinc-950" 
-                    : "bg-orange-600 text-white hover:bg-orange-700"
-                  }`}
-               >
-                  {store.isSubmitting ? <Loader2 size={16} className="animate-spin" /> : store.currentStep === STEPS.length ? <Rocket size={16} /> : null}
-                  <span>{getNextLabel()}</span>
-                  {store.currentStep < STEPS.length && <ChevronRight size={16} strokeWidth={3} />}
-               </button>
-            </div>
-         </div>
-      </div>
+      </footer>
     </div>
   );
 }
