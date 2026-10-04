@@ -1,4 +1,5 @@
 "use client";
+import "@/app/components/vendor-workspace/vendor-workspace.css";
 
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
@@ -23,6 +24,7 @@ import {
   CheckCircle2,
   Plus,
   Bell,
+  Star,
   Volume2,
   Vibrate
 } from "lucide-react";
@@ -71,17 +73,18 @@ const uploadToCloudinary = async (file) => {
 const Section = ({ title, icon: Icon, children, isOpen, onToggle, loading }) => (
   <motion.div
     initial={false}
-    className="bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-800 overflow-hidden rounded-md"
+    className="bg-white  border border-zinc-100  overflow-hidden rounded-xl"
   >
     <button
       onClick={onToggle}
-      className="w-full flex items-center justify-between p-4 bg-white dark:bg-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900 transition-colors"
+      aria-expanded={!!isOpen}
+      className="w-full flex items-center justify-between p-4 bg-white  hover:bg-zinc-50  transition-colors"
     >
       <div className="flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-md bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center text-orange-600 dark:text-orange-400">
+        <div className="w-8 h-8 rounded-xl bg-orange-50  flex items-center justify-center text-orange-600 ">
           <Icon size={16} />
         </div>
-        <h3 className="font-black text-zinc-900 dark:text-white text-base tracking-tight uppercase leading-none">{title}</h3>
+        <h3 className="font-semibold text-zinc-900  text-base tracking-tight normal-case leading-none">{title}</h3>
       </div>
       <div className={`text-gray-400 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}>
         <ChevronDown size={20} />
@@ -96,7 +99,7 @@ const Section = ({ title, icon: Icon, children, isOpen, onToggle, loading }) => 
           exit={{ height: 0, opacity: 0 }}
           transition={{ duration: 0.3, ease: "easeInOut" }}
         >
-          <div className="p-4 pt-0 border-t border-zinc-50 dark:border-zinc-800/50">
+          <div className="p-4 pt-0 border-t border-zinc-50 ">
             {children}
           </div>
         </motion.div>
@@ -106,17 +109,17 @@ const Section = ({ title, icon: Icon, children, isOpen, onToggle, loading }) => 
 );
 
 const InputGroup = ({ label, icon: Icon, ...props }) => (
-  <div className="space-y-2">
-    <label className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+  <label className="block space-y-2">
+    <span className="text-sm font-semibold text-zinc-500  normal-case tracking-normal flex items-center gap-2">
       {Icon && <Icon size={12} />} {label}
-    </label>
+    </span>
     <div className="relative group">
       <input
-        className={`w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white text-xs font-bold uppercase tracking-tight rounded-md focus:ring-1 focus:ring-orange-600 focus:border-orange-600 block p-3 transition-all outline-none ${props.disabled ? 'opacity-60 cursor-not-allowed' : 'hover:border-zinc-300 dark:hover:border-zinc-700'}`}
+        className={`w-full bg-zinc-50  border border-zinc-200  text-zinc-900  text-xs font-bold normal-case tracking-tight rounded-xl focus:ring-1 focus:ring-orange-600 focus:border-orange-600 block p-3 transition-all outline-none ${props.disabled ? 'opacity-60 cursor-not-allowed' : 'hover:border-zinc-300 '}`}
         {...props}
       />
     </div>
-  </div>
+  </label>
 );
 
 export default function VendorProfilePage({ vendor }) {
@@ -332,11 +335,27 @@ export default function VendorProfilePage({ vendor }) {
 
   if (!vendor) return null;
 
+  const successfulStatuses = new Set(["completed", "delivered"]);
+  const vendorOrders = Array.isArray(vendor.vendorOrders) ? vendor.vendorOrders : null;
+  const totalSales = vendorOrders
+    ? vendorOrders
+        .filter((order) => successfulStatuses.has(String(order.orderStatus || "").toLowerCase()))
+        .reduce((total, order) => {
+          const amount = Number(order.vendorTotal || 0);
+          return total + (order.moneyUnit === "kobo" ? amount / 100 : amount);
+        }, 0)
+    : Number(vendor.totalSales || 0) / (vendor.moneyUnit === "kobo" ? 100 : 1);
+  const formattedTotalSales = new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    maximumFractionDigits: 0,
+  }).format(totalSales);
+
   return (
-    <div className="max-w-7xl mx-auto space-y-4">
+    <div className="mc-workspace mc-profile max-w-7xl mx-auto space-y-4">
 
       {/* Hero Banner */}
-      <div className="relative rounded-md overflow-hidden bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-800 group">
+      <div className="mc-profile-hero relative rounded-xl overflow-hidden bg-white  border border-zinc-100  group">
         <div className="h-40 w-full relative overflow-hidden">
           {/* Background Image (Blurred Logo/Cover) */}
           <div className="absolute inset-0 bg-gray-900">
@@ -349,51 +368,51 @@ export default function VendorProfilePage({ vendor }) {
           <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(#fff 1px, transparent 1px)", backgroundSize: "20px 20px" }}></div>
           
           {/* Cover Update Button */}
-          <label className="absolute bottom-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur-md text-white px-4 py-2 rounded-md cursor-pointer transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest border border-white/30 group-hover:scale-105 active:scale-95">
+          <label className="absolute bottom-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur-md text-white px-4 py-2 rounded-xl cursor-pointer transition-all flex items-center gap-2 text-sm font-semibold normal-case tracking-normal border border-white/30 group-hover:scale-105 active:scale-95">
             <Camera size={14} /> Update Cover
             <input type="file" className="hidden" onChange={handleCoverChange} accept="image/*" />
           </label>
         </div>
         <div className="px-6 pb-6 flex flex-col md:flex-row gap-5 -mt-10 relative z-10">
           <div className="relative group">
-            <div className="w-24 h-24 rounded-md border-4 border-white dark:border-zinc-800 overflow-hidden bg-white dark:bg-zinc-800">
+            <div className="w-24 h-24 rounded-xl border-4 border-white  overflow-hidden bg-white ">
               <img src={logo || "/placeholder.jpg"} alt="Logo" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
             </div>
-            <label className="absolute bottom-1 right-1 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 p-1.5 rounded-md cursor-pointer hover:bg-orange-600 hover:text-white transition-colors">
+            <label className="absolute bottom-1 right-1 bg-zinc-900  text-white  p-1.5 rounded-xl cursor-pointer hover:bg-orange-600 hover:text-white transition-colors">
               <Camera size={14} />
               <input type="file" className="hidden" onChange={handleLogoChange} accept="image/*" />
             </label>
           </div>
 
-          <div className="flex-1 pt-14 md:pt-14">
+          <div className="flex-1 pt-2 md:pt-14">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <h1 className="text-3xl font-black text-gray-900 dark:text-gray-100 tracking-tight">{basicInfo.storeName || "My Store"}</h1>
+                <h1 className="text-3xl font-semibold text-gray-900  tracking-tight">{basicInfo.storeName || "My Store"}</h1>
                 <p className="text-gray-500 font-medium flex items-center gap-1 mt-1">
                   <MapPin size={14} className="text-orange-500" />
                   {address.city || "City"}, {address.state || "State"}
                 </p>
               </div>
-            <div className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border w-fit ${vendor.isActive ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-rose-50 text-rose-600 border-rose-200"}`}>
+            <div className={`px-2 py-1 rounded-xl text-xs font-semibold normal-case tracking-normal border w-fit ${vendor.isActive ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-rose-50 text-rose-600 border-rose-200"}`}>
                 {vendor.isActive ? "Active" : "In Active"}
               </div>
             </div>
 
-            <div className="flex items-center gap-6 mt-5 pt-5 border-t border-zinc-100 dark:border-zinc-800/50">
+            <div className="flex items-center gap-6 mt-5 pt-5 border-t border-zinc-100 ">
               <div>
-                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest leading-none mb-1.5">Total Sales</p>
-                <p className="text-xl font-black text-zinc-900 dark:text-white tracking-tight">â‚¦{vendor.totalSales?.toLocaleString() ?? "0"}</p>
+                <p className="text-sm font-semibold text-zinc-500 normal-case tracking-normal leading-none mb-1.5">Total Sales</p>
+                <p className="text-xl font-semibold text-zinc-900  tracking-tight">{formattedTotalSales}</p>
               </div>
               <div>
-                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest leading-none mb-1.5">Rating</p>
+                <p className="text-sm font-semibold text-zinc-500 normal-case tracking-normal leading-none mb-1.5">Rating</p>
                 <div className="flex items-center gap-1">
-                  <span className="text-xl font-black text-zinc-900 dark:text-white tracking-tight">{vendor.ratings?.toFixed(1) ?? "New"}</span>
-                  <span className="text-orange-600">â˜…</span>
+                  <span className="text-xl font-semibold text-zinc-900  tracking-tight">{Number(vendor.rating ?? vendor.ratings ?? 0) > 0 ? Number(vendor.rating ?? vendor.ratings).toFixed(1) : "New"}</span>
+                  <Star size={16} className="text-orange-600" fill="currentColor" aria-hidden="true" />
                 </div>
               </div>
               <div>
-                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest leading-none mb-1.5">Joined</p>
-                <p className="text-sm font-black text-zinc-900 dark:text-white tracking-tight">{vendor.createdAt ? new Date(vendor.createdAt).toLocaleDateString() : 'N/A'}</p>
+                <p className="text-sm font-semibold text-zinc-500 normal-case tracking-normal leading-none mb-1.5">Joined</p>
+                <p className="text-sm font-semibold text-zinc-900  tracking-tight">{vendor.createdAt ? new Date(vendor.createdAt).toLocaleDateString() : 'N/A'}</p>
               </div>
             </div>
           </div>
@@ -414,11 +433,11 @@ export default function VendorProfilePage({ vendor }) {
             <InputGroup label="Phone Number" name="phone" value={basicInfo.phone} onChange={(e) => setBasicInfo({ ...basicInfo, phone: e.target.value })} icon={Phone} />
             <InputGroup label="Email Address" value={basicInfo.email} disabled icon={Mail} />
             <div className="md:col-span-2 space-y-2">
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+              <label className="text-xs font-bold text-gray-400 normal-case tracking-normal flex items-center gap-2">
                 <FileText size={12} /> Description
               </label>
               <textarea
-                className="w-full bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white text-[11px] font-bold uppercase tracking-tight rounded-md focus:ring-1 focus:ring-orange-600 focus:border-orange-600 block p-3 transition-all outline-none h-24 resize-none hover:border-zinc-300 dark:hover:border-zinc-700"
+                className="w-full bg-zinc-50  border border-zinc-200  text-zinc-900  text-sm font-bold normal-case tracking-tight rounded-xl focus:ring-1 focus:ring-orange-600 focus:border-orange-600 block p-3 transition-all outline-none h-24 resize-none hover:border-zinc-300 "
                 value={basicInfo.storeDescription}
                 onChange={(e) => setBasicInfo({ ...basicInfo, storeDescription: e.target.value })}
               />
@@ -426,7 +445,7 @@ export default function VendorProfilePage({ vendor }) {
             <InputGroup label="New Password (Optional)" type="password" value={basicInfo.password} onChange={(e) => setBasicInfo({ ...basicInfo, password: e.target.value })} icon={Lock} placeholder="Leave blank to keep current" />
           </div>
           <div className="flex justify-end mt-4">
-            <button onClick={() => updateSection("basicInfo", basicInfo)} disabled={loadingSection === "basicInfo"} className="flex items-center gap-2 bg-orange-600 text-white px-5 py-2.5 rounded-md font-black uppercase text-[10px] tracking-widest hover:bg-orange-700 transition-all active:scale-95 disabled:opacity-50">
+            <button onClick={() => updateSection("basicInfo", basicInfo)} disabled={loadingSection === "basicInfo"} className="flex items-center gap-2 bg-orange-600 text-white px-5 py-2.5 rounded-xl font-semibold normal-case text-sm tracking-normal hover:bg-orange-700 transition-all active:scale-95 disabled:opacity-50">
               {loadingSection === "basicInfo" ? "Saving..." : <><Save size={16} /> Save Changes</>}
             </button>
           </div>
@@ -452,10 +471,10 @@ export default function VendorProfilePage({ vendor }) {
           <div className="space-y-6">
             <div className="flex flex-wrap gap-2 mb-6">
               {cuisineTypes.length === 0 && (
-                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest flex items-center px-2">No categories selected...</p>
+                <p className="text-sm text-zinc-500 font-bold normal-case tracking-normal flex items-center px-2">No categories selected...</p>
               )}
               {cuisineTypes.map((cuisine) => (
-                <div key={cuisine} className="flex items-center gap-2 bg-orange-600 text-white px-3 py-1.5 rounded-md font-black uppercase text-[10px] tracking-widest">
+                <div key={cuisine} className="flex items-center gap-2 bg-orange-600 text-white px-3 py-1.5 rounded-xl font-semibold normal-case text-sm tracking-normal">
                   {cuisine}
                   <button onClick={() => toggleCuisine(cuisine)} className="hover:text-orange-200 transition-colors">
                     <X size={12} />
@@ -468,30 +487,30 @@ export default function VendorProfilePage({ vendor }) {
               {isLoadingCategories ? (
                 <div className="flex flex-col items-center justify-center py-10 opacity-50">
                   <Loader2 className="animate-spin mb-2" />
-                  <p className="text-[10px] font-black uppercase tracking-widest">Loading categories...</p>
+                  <p className="text-sm font-semibold normal-case tracking-normal">Loading categories...</p>
                 </div>
               ) : (
-                <div className="grid lg:grid-cols-4 grid-cols-3 gap-3">
+                <div className="grid lg:grid-cols-4 grid-cols-2 gap-3">
                   {platformCategories.map((group) => {
                     const isSelected = cuisineTypes.includes(group.name);
                     return (
                       <button
                         key={group._id}
                         onClick={() => toggleCuisine(group.name)}
-                        className={`p-4 border rounded-xl text-[10px] font-black uppercase tracking-widest transition-all text-center flex flex-col items-center gap-2 ${
+                        className={`p-4 border rounded-xl text-sm font-semibold normal-case tracking-normal transition-all text-center flex flex-col items-center gap-2 ${
                           isSelected
                             ? "bg-orange-600 border-orange-600 text-white shadow-lg shadow-orange-600/20"
-                            : "bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:border-orange-500"
+                            : "bg-zinc-50  border-zinc-200  text-zinc-600  hover:border-orange-500"
                         } ${!group.isActive ? "opacity-50 grayscale" : ""}`}
                       >
-                        {group.image && <img src={group.image} className="w-12 h-12 p-1 object-contain bg-white rounded-full" />}
+                        {group.image && <img alt={group.name} src={group.image} className="w-12 h-12 p-1 object-contain bg-white rounded-full" />}
                         <span className="block">{group.name}</span>
                         {group.description && (
-                          <p className={`text-[8px] font-medium normal-case tracking-normal opacity-70 line-clamp-2 px-2 ${isSelected ? "text-orange-50" : "text-zinc-400"}`}>
+                          <p className={`text-xs font-medium normal-case tracking-normal opacity-70 line-clamp-2 px-2 ${isSelected ? "text-orange-50" : "text-zinc-500"}`}>
                             {group.description}
                           </p>
                         )}
-                        {!group.isActive && <span className="text-[7px] text-rose-500">(Inactive)</span>}
+                        {!group.isActive && <span className="text-xs text-rose-500">(Inactive)</span>}
                       </button>
                     );
                   })}
@@ -515,25 +534,25 @@ export default function VendorProfilePage({ vendor }) {
         >
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].map((day) => (
-              <div key={day} className="border border-zinc-100 dark:border-zinc-800 bg-zinc-50/30 dark:bg-zinc-900/40 p-4 rounded-xl space-y-3">
+              <div key={day} className="border border-zinc-100  bg-zinc-50/30  p-4 rounded-xl space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="capitalize font-black text-[11px] uppercase tracking-wider text-zinc-900 dark:text-white">{day}</span>
+                  <span className="capitalize font-semibold text-sm normal-case tracking-normal text-zinc-900 ">{day}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest leading-none mb-1 d-block">Open</label>
-                    <input type="time" value={openingHours[day]?.open || ""} onChange={(e) => handleOpeningHoursChange(day, "open", e.target.value)} className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-md p-2 text-xs outline-none focus:border-orange-500 transition-all font-bold" />
+                    <label className="text-sm font-semibold text-zinc-500 normal-case tracking-normal leading-none mb-1 d-block">Open</label>
+                    <input type="time" value={openingHours[day]?.open || ""} onChange={(e) => handleOpeningHoursChange(day, "open", e.target.value)} className="w-full bg-white  border border-zinc-200  text-zinc-900  rounded-xl p-2 text-xs outline-none focus:border-orange-500 transition-all font-bold" />
                   </div>
                   <div>
-                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest leading-none mb-1 d-block">Close</label>
-                    <input type="time" value={openingHours[day]?.close || ""} onChange={(e) => handleOpeningHoursChange(day, "close", e.target.value)} className="w-full bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-white rounded-md p-2 text-xs outline-none focus:border-orange-500 transition-all font-bold" />
+                    <label className="text-sm font-semibold text-zinc-500 normal-case tracking-normal leading-none mb-1 d-block">Close</label>
+                    <input type="time" value={openingHours[day]?.close || ""} onChange={(e) => handleOpeningHoursChange(day, "close", e.target.value)} className="w-full bg-white  border border-zinc-200  text-zinc-900  rounded-xl p-2 text-xs outline-none focus:border-orange-500 transition-all font-bold" />
                   </div>
                 </div>
               </div>
             ))}
           </div>
           <div className="flex justify-end mt-4">
-            <button onClick={() => updateSection("openingHours", openingHours)} disabled={loadingSection === "openingHours"} className="flex items-center gap-2 bg-orange-600 text-white px-5 py-2.5 rounded-md font-black uppercase text-[10px] tracking-widest hover:bg-orange-700 transition-all  Active:scale-95 disabled:opacity-50">
+            <button onClick={() => updateSection("openingHours", openingHours)} disabled={loadingSection === "openingHours"} className="flex items-center gap-2 bg-orange-600 text-white px-5 py-2.5 rounded-xl font-semibold normal-case text-sm tracking-normal hover:bg-orange-700 transition-all  Active:scale-95 disabled:opacity-50">
               {loadingSection === "openingHours" ? "Saving..." : <><Save size={16} /> Update Hours</>}
             </button>
           </div>
@@ -547,23 +566,23 @@ export default function VendorProfilePage({ vendor }) {
           onToggle={() => toggleSection('alerts')}
         >
           <div className="space-y-2">
-            <p className="text-xs font-bold leading-relaxed text-zinc-500 dark:text-zinc-400">Set how your order desk notifies you while new orders are awaiting acceptance.</p>
-            <button onClick={() => updateAlertSettings({ alarmEnabled: !alertSettings.alarmEnabled })} className="flex w-full items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-left dark:border-zinc-800 dark:bg-zinc-900/50">
+            <p className="text-xs font-bold leading-relaxed text-zinc-500 ">Choose how you receive new-order alerts on this device. Alerts are silent while the order desk is open.</p>
+            <button onClick={() => updateAlertSettings({ alarmEnabled: !alertSettings.alarmEnabled })} className="flex w-full items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-left  ">
               <Volume2 size={18} className="text-orange-600" />
-              <div className="flex-1"><p className="text-xs font-black uppercase tracking-wide text-zinc-900 dark:text-white">Loud order alarm</p><p className="mt-1 text-[11px] text-zinc-500">Repeats until the order is accepted.</p></div>
-              <span className={`relative h-6 w-11 rounded-full ${alertSettings.alarmEnabled ? "bg-orange-600" : "bg-zinc-300 dark:bg-zinc-700"}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-all ${alertSettings.alarmEnabled ? "left-6" : "left-1"}`} /></span>
+              <div className="flex-1"><p className="text-xs font-semibold normal-case tracking-wide text-zinc-900 ">Loud order alarm</p><p className="mt-1 text-sm text-zinc-500">Repeats until the order is accepted.</p></div>
+              <span className={`relative h-6 w-11 rounded-full ${alertSettings.alarmEnabled ? "bg-orange-600" : "bg-zinc-300 "}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-all ${alertSettings.alarmEnabled ? "left-6" : "left-1"}`} /></span>
             </button>
-            <button onClick={() => updateAlertSettings({ vibrationEnabled: !alertSettings.vibrationEnabled })} className="flex w-full items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-left dark:border-zinc-800 dark:bg-zinc-900/50">
+            <button onClick={() => updateAlertSettings({ vibrationEnabled: !alertSettings.vibrationEnabled })} className="flex w-full items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-left  ">
               <Vibrate size={18} className="text-orange-600" />
-              <div className="flex-1"><p className="text-xs font-black uppercase tracking-wide text-zinc-900 dark:text-white">Vibration</p><p className="mt-1 text-[11px] text-zinc-500">Used on devices that support vibration.</p></div>
-              <span className={`relative h-6 w-11 rounded-full ${alertSettings.vibrationEnabled ? "bg-orange-600" : "bg-zinc-300 dark:bg-zinc-700"}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-all ${alertSettings.vibrationEnabled ? "left-6" : "left-1"}`} /></span>
+              <div className="flex-1"><p className="text-xs font-semibold normal-case tracking-wide text-zinc-900 ">Vibration</p><p className="mt-1 text-sm text-zinc-500">Used on devices that support vibration.</p></div>
+              <span className={`relative h-6 w-11 rounded-full ${alertSettings.vibrationEnabled ? "bg-orange-600" : "bg-zinc-300 "}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-all ${alertSettings.vibrationEnabled ? "left-6" : "left-1"}`} /></span>
             </button>
-            <div className="flex items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-900/50">
+            <div className="flex items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 p-3  ">
               <Bell size={18} className="text-orange-600" />
-              <div className="flex-1"><p className="text-xs font-black uppercase tracking-wide text-zinc-900 dark:text-white">Repeat every</p><p className="mt-1 text-[11px] text-zinc-500">While pending orders remain.</p></div>
-              <select value={alertSettings.intervalSeconds} onChange={(event) => updateAlertSettings({ intervalSeconds: Number(event.target.value) })} className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-xs font-black text-zinc-800 outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"><option value={6}>6 sec</option><option value={10}>10 sec</option><option value={15}>15 sec</option></select>
+              <div className="flex-1"><p className="text-xs font-semibold normal-case tracking-wide text-zinc-900 ">Repeat every</p><p className="mt-1 text-sm text-zinc-500">While pending orders remain.</p></div>
+              <select value={alertSettings.intervalSeconds} onChange={(event) => updateAlertSettings({ intervalSeconds: Number(event.target.value) })} className="rounded-xl border border-zinc-200 bg-white px-2 py-1.5 text-xs font-semibold text-zinc-800 outline-none   "><option value={6}>6 sec</option><option value={10}>10 sec</option><option value={15}>15 sec</option></select>
             </div>
-            <div className="flex justify-end pt-2"><button onClick={() => { playVendorAlertPreview({ vibrationEnabled: alertSettings.vibrationEnabled }); toast.success("Alarm test started"); }} className="rounded-md bg-orange-600 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white">Test alarm</button></div>
+            <div className="flex justify-end pt-2"><button onClick={() => { playVendorAlertPreview({ vibrationEnabled: alertSettings.vibrationEnabled }); toast.success("Alarm test started"); }} className="rounded-xl bg-orange-600 px-4 py-2 text-sm font-semibold normal-case tracking-normal text-white">Test alarm</button></div>
           </div>
         </Section>
         {/* Payout Details */}
@@ -573,23 +592,23 @@ export default function VendorProfilePage({ vendor }) {
           isOpen={openSections.payoutDetails}
           onToggle={() => toggleSection('payoutDetails')}
         >
-          <div className="p-8 flex flex-col items-center justify-center text-center bg-zinc-50 dark:bg-zinc-900/40 border border-zinc-100 dark:border-zinc-800 rounded-xl">
+          <div className="p-8 flex flex-col items-center justify-center text-center bg-zinc-50  border border-zinc-100  rounded-xl">
             <div className="w-16 h-16 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-500 mb-4">
               <CreditCard size={32} />
             </div>
-            <h3 className="text-sm font-black text-zinc-900 dark:text-white uppercase tracking-tight mb-2">High Security Notice</h3>
-            <p className="text-[10px] text-zinc-500 max-w-sm font-black uppercase tracking-widest mb-6 leading-relaxed">
-              Financial details have been migrated to the secure Paystack verification system. Direct profile overrides are disabled to protect your revenue.
+            <h3 className="text-sm font-semibold text-zinc-900  normal-case tracking-tight mb-2">Payout details</h3>
+            <p className="text-sm text-zinc-500 max-w-sm font-semibold normal-case tracking-normal mb-6 leading-relaxed">
+              Bank details are managed through Paystack verification. Contact support if you need to update your payout account.
             </p>
-            <div className="bg-orange-600/80 text-white px-6 py-3 rounded-md text-[10px] font-black uppercase tracking-[0.15em]">
-              Payout Settings Locked
+            <div className="bg-orange-600/80 text-white px-6 py-3 rounded-xl text-sm font-semibold normal-case tracking-normal">
+              Managed through Paystack
             </div>
           </div>
         </Section>
 
         {/* PWA Install Section */}
         <div className="mt-8 mb-10">
-          <p className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-[0.2em] mb-4 text-center">Take your store on the go</p>
+          <p className="text-sm font-semibold text-zinc-500  normal-case tracking-normal mb-4 text-center">Take your store on the go</p>
           <PermanentInstallButton />
         </div>
 

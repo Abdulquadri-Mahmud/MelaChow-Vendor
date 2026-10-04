@@ -1,6 +1,6 @@
 .category-picker {
   font-size: 14px;
-  color: #172e35;
+  color: #18181b;
   margin-top: 14px;
 }
 .category-search {
@@ -8,14 +8,14 @@
   align-items: center;
   gap: 10px;
   background: #fff;
-  border: 1px solid #aebfba;
+  border: 1px solid #d1d5db;
   border-radius: 12px;
   padding: 0 13px;
-  color: #526a60;
+  color: #64748b;
 }
 .category-search:focus-within {
-  border-color: #c2410c;
-  box-shadow: 0 0 0 3px #c2410c20;
+  border-color: #f48525;
+  box-shadow: 0 0 0 3px #f4852520;
 }
 .category-search input {
   flex: 1;
@@ -25,11 +25,11 @@
   font-size: 16px;
   outline: none;
   background: transparent;
-  color: #172e35;
+  color: #18181b;
   border: 0;
 }
 .category-search input::placeholder {
-  color: #61746f;
+  color: #64748b;
 }
 .category-results {
   display: grid;
@@ -48,28 +48,28 @@
   gap: 15px;
   padding: 13px 14px;
   text-align: left;
-  background: #f0f4eb;
-  border: 1px solid #ced9c9;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 12px;
   cursor: pointer;
   min-height: 56px;
-  color: #172e35;
+  color: #18181b;
 }
 .category-option:hover {
-  background: #e8eee1;
+  background: #fff7ed;
 }
 .category-option.is-selected {
-  border-color: #39765b;
-  background: #dfeedd;
-  box-shadow: inset 0 0 0 1px #39765b;
+  border-color: #f48525;
+  background: #fff1e5;
+  box-shadow: inset 0 0 0 1px #f48525;
 }
 .category-option:focus-visible {
-  outline: 3px solid #c2410c;
+  outline: 3px solid #f48525;
   outline-offset: 1px;
 }
 .category-option small {
   display: block;
-  color: #50646a;
+  color: #64748b;
   font-size: 11px;
   margin-bottom: 3px;
 }
@@ -84,14 +84,14 @@
   place-items: center;
   width: 22px;
   height: 22px;
-  border: 1px solid #8fa596;
+  border: 1px solid #d1d5db;
   background: #fff;
   border-radius: 50%;
   color: #fff;
 }
 .is-selected .category-check {
-  background: #39765b;
-  border-color: #39765b;
+  background: #f48525;
+  border-color: #f48525;
 }
 .category-state {
   display: flex;
@@ -101,9 +101,9 @@
   gap: 10px;
   padding: 28px 18px;
   font-size: 14px;
-  color: #50646a;
+  color: #64748b;
   text-align: center;
-  background: #f1f5ec;
+  background: #f8fafc;
   border-radius: 12px;
 }
 .category-state button {
@@ -113,9 +113,9 @@
   min-height: 44px;
   padding: 10px 15px;
   border-radius: 10px;
-  border: 1px solid #aebfba;
+  border: 1px solid #d1d5db;
   background: #fff;
-  color: #284646;
+  color: #27272a;
   font-weight: 650;
   cursor: pointer;
 }
@@ -132,9 +132,11 @@
   gap: 8px;
   padding: 12px;
   margin-top: 12px;
-  color: #2a5338;
+  color: #9a3b08;
   font-size: 14px;
   font-weight: 600;
-  background: #e2efe0;
+  background: #fff7ed;
   border-radius: 10px;
 }
+
+.is-selected .category-check { color: #351600; }

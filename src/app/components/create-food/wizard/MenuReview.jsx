@@ -8,7 +8,7 @@ import { useCreateMenuItem } from "@/app/hooks/useMenu";
 import { validateMenuDraft } from "@/app/lib/menuDraft.mjs";
 
 const money = (value) => `₦${Number(value || 0).toLocaleString("en-NG")}`;
-export default function MenuReview({ onComplete, onSetStep }) {
+export default function MenuReview({ onComplete, onSetStep, onSave }) {
   const store = useCreateFoodStore();
   const { vendorProfile } = useVendorProfile();
   const vendorId = vendorProfile?._id || vendorProfile?.id;
@@ -24,7 +24,8 @@ export default function MenuReview({ onComplete, onSetStep }) {
     setError("");
     store.setField("isSubmitting", true);
     try {
-      await mutation.mutateAsync({
+      if (onSave) await onSave();
+      else await mutation.mutateAsync({
         item: {
           platform_category_id: store.platform_category_id,
           vendor_section_id: store.vendor_section_id,
@@ -155,8 +156,7 @@ export default function MenuReview({ onComplete, onSetStep }) {
       <div className="menu-success-note">
         <CheckCircle2 size={24} />
         <p>
-          Happy with the details? Publish below to make this item available on
-          your menu.
+          {onSave ? "Review your changes, then save below. Removed portions and choices are only deleted when you save." : "Happy with the details? Publish below to make this item available on your menu."}
         </p>
       </div>
       {error && (

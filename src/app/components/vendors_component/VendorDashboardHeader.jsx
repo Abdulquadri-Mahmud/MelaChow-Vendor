@@ -2,8 +2,6 @@ import {
     Search as SearchIcon, 
     Bell, 
     Menu, 
-    Sun, 
-    Moon, 
     UtensilsCrossed,
     LayoutDashboard,
     Wallet,
@@ -310,7 +308,7 @@ function GlobalSearch({ items, router }) {
 }
 
 export default function VendorDashboardHeader({ vendor, onMenuClick }) {
-    const { theme, toggleTheme } = useTheme();
+    const { theme } = useTheme();
     const router = useRouter();
 
     return (
@@ -324,29 +322,20 @@ export default function VendorDashboardHeader({ vendor, onMenuClick }) {
           <Menu size={18} />
         </button>
 
-        <div className="flex flex-col">
+        {/* <div className="flex flex-col">
           <h1 className="text-lg font-extrabold text-zinc-900 dark:text-white leading-tight">
             {vendor?.storeName || "Vendor Dashboard"}
           </h1>
           <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
             Welcome back, {vendor?.name?.split(" ")[0] || "Partner"}
           </p>
-        </div>
+        </div> */}
 
         <GlobalSearch items={navigationItems} router={router} />
       </div>
 
       <div className="flex items-center gap-2">
         <TodayHoursControl vendor={vendor} />
-
-        {/* Theme Toggle */}
-        <button
-          onClick={toggleTheme}
-          className="p-2.5 bg-white dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 rounded-md hover:border-orange-500/30 hover:text-orange-500 transition-all font-bold"
-          title={theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
-        >
-          {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
-        </button>
 
         {/* <div className="h-6 w-px bg-zinc-200 dark:bg-zinc-700 mx-1 hidden md:block"></div> */}
 

@@ -1,4 +1,5 @@
 ﻿"use client";
+import IncomingOrders from "@/app/components/order/IncomingOrders";
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
@@ -26,6 +27,12 @@ import { useVendorMenu } from "@/app/hooks/useMenu";
 import VendorDashboardSkeleton from "@/app/skeleton/VendorDashboardSkeleton";
 import VendorPromoStatus from "@/components/vendor/VendorPromoStatus";
 import VendorLocationNotice from "@/app/components/vendors_component/location/VendorLocationNotice";
+
+const formatNaira = (value) => new Intl.NumberFormat("en-NG", {
+  style: "currency",
+  currency: "NGN",
+  maximumFractionDigits: 0,
+}).format(Number(value || 0));
 
 export default function VendorDashboard() {
   const [isLoading, setIsLoading] = useState(true);
@@ -228,7 +235,7 @@ export default function VendorDashboard() {
 
         const itemsSummary = itemNames?.length > 0
           ? `${itemNames[0]}${itemNames.length > 1 ? ` +${itemNames.length - 1}` : ''}`
-          : `${order.items?.length || 0} items`;
+          : `${order.items?.length || 0} item${order.items?.length === 1 ? '' : 's'}`;
 
         const actualOrderId = order._id?.$oid || order._id || "";
         const orderId = order.userOrderId?.orderId || actualOrderId.toString().slice(-6).toUpperCase();
@@ -282,7 +289,7 @@ export default function VendorDashboard() {
 
   }, [vendorData, foods]);
 
-  if (isLoading) return <VendorDashboardSkeleton />;
+  if (isLoading) return <div className="space-y-4"><IncomingOrders /><VendorDashboardSkeleton /></div>;
 
   // Default values to prevent crash if calculations return null (shouldn't happen if !isLoading)
   const {
@@ -308,6 +315,7 @@ export default function VendorDashboard() {
     <div className="font-sans text-zinc-900 dark:text-white min-h-screen bg-zinc-50 dark:bg-zinc-900">
 
       <div className="space-y-4">
+        <IncomingOrders />
         
         <VendorLocationNotice vendor={vendorData} onSaved={(updated) => { updateVendor(updated); refetchVendorProfile(); }} />
 
@@ -317,7 +325,7 @@ export default function VendorDashboard() {
           <div>
             <p className="text-xs font-black uppercase tracking-wider">Store visibility</p>
             <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400">
-              {vendorData?.isLive ? "Live â€” customers can place orders" : vendorData?.liveReadiness?.isReady ? "Ready to go live" : "Add a priced, in-stock menu item to unlock Go Live"}
+              {vendorData?.isLive ? "Live” customers can place orders" : vendorData?.liveReadiness?.isReady ? "Ready to go live" : "Add a priced, in-stock menu item to unlock Go Live"}
             </p>
           </div>
           <button
@@ -334,7 +342,7 @@ export default function VendorDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <MetricCard
             title="Total Sales"
-            value={`â‚¦${totalSales.toLocaleString()}`}
+            value={formatNaira(totalSales)}
             trend="+12.4%" // Keep mock trend for now or calculate if history available
             sub="All time revenue"
           />
@@ -376,12 +384,12 @@ export default function VendorDashboard() {
             <div className="flex items-center gap-3 mt-4">
               <div>
                 <p className="text-[10px] uppercase text-zinc-500 font-black tracking-widest mb-0.5">Available Balance</p>
-                <p className="text-2xl font-black text-orange-500">â‚¦{liveWalletBalance.toLocaleString()}</p>
+                <p className="text-2xl font-black text-orange-500">{formatNaira(liveWalletBalance)}</p>
               </div>
               <div className="h-8 w-px bg-zinc-200 dark:bg-white/10"></div>
               <div>
                 <p className="text-[10px] uppercase text-zinc-500 font-black tracking-widest mb-0.5">Pending</p>
-                <p className="text-2xl font-black text-zinc-400">â‚¦{livePendingBalance.toLocaleString()}</p>
+                <p className="text-2xl font-black text-zinc-400">{formatNaira(livePendingBalance)}</p>
               </div>
             </div>
           </div>
@@ -459,7 +467,7 @@ export default function VendorDashboard() {
                       </linearGradient>
                     </defs>
                     <Tooltip
-                      formatter={(value) => [`â‚¦${value.toLocaleString()}`, 'Revenue']}
+                      formatter={(value) => [formatNaira(value), 'Revenue']}
                       contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px -2px rgba(0,0,0,0.1)', background: '#1E293B', color: 'white' }}
                     />
                     <Area
@@ -544,12 +552,12 @@ const OrderCard = ({ id, name, items, status, progress, color, bgColor, barColor
     <div className="flex justify-between items-start mb-2">
       <div>
         <p className="font-black text-xs text-zinc-900 dark:text-white leading-none">#{id}</p>
-        <p className="text-[11px] font-medium text-zinc-500 mt-1">{name} â€¢ {items}</p>
+        <p className="text-[11px] font-medium text-zinc-500 mt-1">{name} <span aria-hidden="true">&middot;</span> {items}</p>
       </div>
       <span className={`text-[9px] font-black ${bgColor} ${color} px-1.5 py-0.5 rounded uppercase tracking-tighter`}>{status}</span>
     </div>
     <div className="space-y-1.5">
-      <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-zinc-400 leading-none">
+      <div className="flex justify-between gap-2 text-[9px] font-black uppercase tracking-widest text-zinc-400 leading-none">
         <span>Status</span>
         <span>{progress}%</span>
       </div>

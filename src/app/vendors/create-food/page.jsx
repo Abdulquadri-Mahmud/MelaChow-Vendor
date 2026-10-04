@@ -55,7 +55,7 @@ const steps = [
   },
 ];
 
-export default function CreateFoodWizardPage() {
+export default function CreateFoodWizardPage({ editMode = false, onSave, onFinished } = {}) {
   const store = useCreateFoodStore();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
@@ -111,7 +111,7 @@ export default function CreateFoodWizardPage() {
           </button>
           <span className="menu-draft-badge">
             <ShieldCheck size={15} />{" "}
-            {store.isDirty ? "Draft saved on this device" : "New menu item"}
+            {editMode ? "Changes saved when you finish" : store.isDirty ? "Draft saved on this device" : "New menu item"}
           </span>
         </div>
         <div className="menu-hero-title">
@@ -120,18 +120,18 @@ export default function CreateFoodWizardPage() {
           </span>
           <div>
             <p className="menu-eyebrow">Your next customer favourite</p>
-            <h1>Add to your menu</h1>
-            <p>A few simple steps. A dish that’s ready to order.</p>
+            <h1>{editMode ? "Edit your menu item" : "Add to your menu"}</h1>
+            <p>{editMode ? "Update the details, portions, and choices. Review before saving." : "A few simple steps. A dish that’s ready to order."}</p>
           </div>
         </div>
       </header>
-      <nav className="menu-steps" aria-label="Menu creation steps">
+      <nav className="menu-steps" aria-label={editMode ? "Menu editing steps" : "Menu creation steps"}>
         <ol>
           {steps.map((item, index) => (
             <li key={item.short}>
               <button
                 type="button"
-                disabled={index + 1 > step || store.isSubmitting}
+                disabled={(!editMode && index + 1 > step) || store.isSubmitting}
                 aria-current={step === index + 1 ? "step" : undefined}
                 onClick={() => go(index + 1)}
                 className={index + 1 < step ? "is-complete" : ""}
@@ -162,10 +162,11 @@ export default function CreateFoodWizardPage() {
           {step === 4 && <MenuChoices />}
           {step === 5 && (
             <MenuReview
+              onSave={onSave}
               onSetStep={go}
               onComplete={() => {
                 store.resetForm();
-                router.push("/vendors/my-foods");
+                if (onFinished) onFinished(); else router.push("/vendors/my-foods");
               }}
             />
           )}
@@ -260,9 +261,9 @@ export default function CreateFoodWizardPage() {
               <Send size={17} />
             ) : null}
             {store.isSubmitting
-              ? "Publishing…"
+              ? (editMode ? "Saving…" : "Publishing…")
               : step === 5
-                ? "Publish menu item"
+                ? (editMode ? "Save menu changes" : "Publish menu item")
                 : step === 4 && !store.choice_groups.length
                   ? "Skip to review"
                   : step === 4

@@ -104,9 +104,15 @@ export const getVendorOrderById = async (orderId) => {
   return response.data;
 };
 
+export const isValidOrderId = (value) =>
+  typeof value === "string" && (
+    /^[0-9a-fA-F]{24}$/.test(value) ||
+    /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(value)
+  );
+
 export const updateOrderStatus = async (vendorOrderId, status) => {
   // ✅ Validate vendorOrderId format (MongoDB ObjectId = 24 hex characters)
-  if (!vendorOrderId || !vendorOrderId.match(/^[0-9a-fA-F]{24}$/)) {
+  if (!isValidOrderId(vendorOrderId)) {
     console.error('❌ Invalid vendorOrderId format:', vendorOrderId);
     throw new Error('Invalid order ID format. Please refresh the page and try again.');
   }
@@ -129,7 +135,7 @@ export const updateOrderStatus = async (vendorOrderId, status) => {
 
 export const completeOrder = async (vendorOrderId) => {
   // ✅ Validate vendorOrderId format
-  if (!vendorOrderId || !vendorOrderId.match(/^[0-9a-fA-F]{24}$/)) {
+  if (!isValidOrderId(vendorOrderId)) {
     console.error('❌ Invalid vendorOrderId format for completion:', vendorOrderId);
     throw new Error('Invalid order ID format.');
   }
@@ -204,5 +210,4 @@ export const respondToRemakeRequest = async (vendorOrderId, decision) => {
 };
 
 export default API;
-
 export const requestVendorPickupCode = async (orderId) => (await API.post(`/vendors/orders/${orderId}/pickup-code`, {})).data;

@@ -183,7 +183,8 @@ export const SocketProvider = ({ children }) => {
 
                     const alertSettings = getVendorAlertSettings();
 
-                    if (alertSettings.alarmEnabled) {
+                    const onOrderDesk = /^\/vendors\/orders?(\/|$)|^\/native\/vendor-orders?(\/|$)/.test(window.location.pathname);
+                    if (alertSettings.alarmEnabled && !onOrderDesk) {
 
                         playVendorNewOrderAlert({ vibrationEnabled: alertSettings.vibrationEnabled });
 

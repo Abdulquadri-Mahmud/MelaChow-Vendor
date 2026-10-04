@@ -1,4 +1,5 @@
 'use client';
+import "@/app/components/vendor-workspace/vendor-workspace.css";
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useNotificationManager } from '@/app/hooks/useNotificationManager';
@@ -79,9 +80,9 @@ function RemakeResponsePanel({ notification, onResponded }) {
 
     if (isDecided) {
         return (
-            <div className="mt-3 p-3 rounded bg-green-50 dark:bg-green-500/10 border border-green-200 dark:border-green-500/30 flex items-center gap-2">
+            <div className="mt-3 p-3 rounded bg-green-50  border border-green-200  flex items-center gap-2">
                 <CheckCircle2 size={13} className="text-green-600 shrink-0" />
-                <p className="text-[9px] font-black text-green-700 dark:text-green-400 uppercase tracking-widest">
+                <p className="text-xs font-semibold text-green-700  normal-case tracking-normal">
                     {decision === 'yes' ? 'Response sent — Start preparing!' : 'Declined — Admin notified.'}
                 </p>
             </div>
@@ -90,9 +91,9 @@ function RemakeResponsePanel({ notification, onResponded }) {
 
     if (isExpired) {
         return (
-            <div className="mt-3 p-3 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center gap-2">
-                <Timer size={13} className="text-zinc-400 shrink-0" />
-                <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">
+            <div className="mt-3 p-3 rounded bg-zinc-100  border border-zinc-200  flex items-center gap-2">
+                <Timer size={13} className="text-zinc-500 shrink-0" />
+                <p className="text-xs font-semibold text-zinc-500 normal-case tracking-normal">
                     Response window expired — Escalated to admin.
                 </p>
             </div>
@@ -101,21 +102,21 @@ function RemakeResponsePanel({ notification, onResponded }) {
 
     return (
         <div
-            className="mt-3 p-3 rounded bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 space-y-2.5"
+            className="mt-3 p-3 rounded bg-amber-50  border border-amber-200  space-y-2.5"
             onClick={(e) => e.stopPropagation()}
         >
             {/* Timer row */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                     <Timer size={11} className="text-amber-600" />
-                    <p className="text-[9px] font-black text-amber-700 dark:text-amber-400 uppercase tracking-widest">
+                    <p className="text-xs font-semibold text-amber-700  normal-case tracking-normal">
                         Can you remake this order?
                     </p>
                 </div>
-                <span className={`text-[10px] font-black tabular-nums px-2 py-0.5 rounded ${
+                <span className={`text-sm font-semibold tabular-nums px-2 py-0.5 rounded ${
                     secondsLeft < 120
-                        ? 'bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400'
-                        : 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400'
+                        ? 'bg-red-100  text-red-600 '
+                        : 'bg-amber-100  text-amber-700 '
                 }`}>
                     {mins}:{secs}
                 </span>
@@ -126,7 +127,7 @@ function RemakeResponsePanel({ notification, onResponded }) {
                 <button
                     onClick={() => handleDecision('yes')}
                     disabled={loading}
-                    className="flex-1 h-8 rounded bg-green-600 hover:bg-green-700 text-white text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-50"
+                    className="flex-1 h-8 rounded bg-green-600 hover:bg-green-700 text-white text-xs font-semibold normal-case tracking-normal flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-50"
                 >
                     {loading ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle2 size={11} />}
                     YES, Remake
@@ -134,10 +135,10 @@ function RemakeResponsePanel({ notification, onResponded }) {
                 <button
                     onClick={() => handleDecision('no')}
                     disabled={loading}
-                    className="flex-1 h-8 rounded border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-50 hover:bg-red-100 dark:hover:bg-red-500/20"
+                    className="flex-1 h-8 rounded border border-red-200  bg-red-50  text-red-600  text-xs font-semibold normal-case tracking-normal flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-50 hover:bg-red-100 "
                 >
                     <XCircle size={11} />
-                    NO, Can't
+                    No, I can’t
                 </button>
             </div>
         </div>
@@ -191,7 +192,7 @@ export default function VendorNotificationsPage() {
         }
 
         // Always show unread notifications at the top of their respective groups
-        return filtered.sort((a, b) => {
+        return [...filtered].sort((a, b) => {
             if (a.read === b.read) return 0;
             return a.read ? 1 : -1;
         });
@@ -202,7 +203,8 @@ export default function VendorNotificationsPage() {
         if (!filteredNotifications || filteredNotifications.length === 0) return {};
 
         return filteredNotifications.reduce((groups, notification) => {
-            const date = parseISO(notification.createdAt);
+            const date = parseISO(notification.createdAt || '');
+            if(Number.isNaN(date.getTime())) { (groups['Earlier'] ||= []).push(notification); return groups; }
             let groupKey = 'Earlier';
 
             if (isToday(date)) groupKey = 'Today';
@@ -257,41 +259,41 @@ export default function VendorNotificationsPage() {
 
     // Premium Skeleton Loader
     const SkeletonItem = () => (
-        <div className="bg-white dark:bg-zinc-900/50 border border-zinc-100 dark:border-zinc-800 rounded-3xl p-5 animate-pulse flex gap-4">
-            <div className="w-12 h-12 bg-zinc-100 dark:bg-zinc-800 rounded-2xl flex-shrink-0" />
+        <div className="bg-white  border border-zinc-100  rounded-3xl p-5 animate-pulse flex gap-4">
+            <div className="w-12 h-12 bg-zinc-100  rounded-2xl flex-shrink-0" />
             <div className="flex-1 space-y-3">
-                <div className="h-4 bg-zinc-100 dark:bg-zinc-800 rounded-full w-1/3" />
-                <div className="h-3 bg-zinc-100 dark:bg-zinc-800 rounded-full w-2/3" />
-                <div className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full w-1/4" />
+                <div className="h-4 bg-zinc-100  rounded-full w-1/3" />
+                <div className="h-3 bg-zinc-100  rounded-full w-2/3" />
+                <div className="h-2 bg-zinc-100  rounded-full w-1/4" />
             </div>
         </div>
     );
 
     return (
-        <div className="min-h-screen bg-white dark:bg-zinc-950 transition-colors duration-300 p-4">
+        <div className="mc-workspace mc-notifications min-h-screen bg-white  transition-colors duration-300 p-4">
             <div className="max-w-5xl mx-auto space-y-4">
 
                 {/* 1. Header & Navigation */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="mc-page-hero flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => router.back()}
-                            className="p-2 bg-white dark:bg-zinc-900 text-zinc-400 border border-zinc-100 dark:border-zinc-800 rounded-md hover:text-orange-600 transition-all active:scale-95 group"
+                            className="p-2 bg-white  text-zinc-500 border border-zinc-100  rounded-xl hover:text-orange-600 transition-all active:scale-95 group"
                             title="Go Back"
                         >
                             <ChevronLeft size={18} className="transition-transform group-hover:-translate-x-1" />
                         </button>
                         <div className="space-y-0.5">
-                            <h1 className="text-2xl font-black text-zinc-900 dark:text-white uppercase tracking-tight flex items-center gap-3">
-                                Inbox
+                            <h1 className="text-2xl font-semibold text-zinc-900  normal-case tracking-tight flex items-center gap-3">
+                                Notifications
                                 {unreadCount > 0 && (
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-orange-600 text-white text-[10px] font-black uppercase tracking-widest">
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-xl bg-orange-600 text-white text-sm font-semibold normal-case tracking-normal">
                                         {unreadCount} New
                                     </span>
                                 )}
                             </h1>
-                            <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 mt-0.5 uppercase tracking-widest">
-                                Manage store alerts and incoming order logs.
+                            <p className="text-sm font-bold text-zinc-500  mt-0.5 normal-case tracking-normal">
+                                Your order updates and store messages, in one place.
                             </p>
                         </div>
                     </div>
@@ -299,7 +301,7 @@ export default function VendorNotificationsPage() {
                     <div className="flex items-center gap-2">
                         <button
                             onClick={refreshNotifications}
-                            className="p-2.5 bg-white dark:bg-zinc-900 text-zinc-400 border border-zinc-100 dark:border-zinc-800 rounded-md hover:text-orange-600 transition-all active:scale-95 group"
+                            className="p-2.5 bg-white  text-zinc-500 border border-zinc-100  rounded-xl hover:text-orange-600 transition-all active:scale-95 group"
                             title="Refresh Inbox"
                         >
                             <RefreshCw size={14} className={loading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-700'} />
@@ -309,13 +311,13 @@ export default function VendorNotificationsPage() {
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick={() => setIsClearModalOpen(true)}
-                                    className="px-4 py-2.5 bg-rose-50 dark:bg-rose-500/10 text-rose-600 rounded-md text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all active:scale-95 flex items-center gap-2"
+                                    className="px-4 py-2.5 bg-rose-50  text-rose-600 rounded-xl text-sm font-semibold normal-case tracking-normal hover:bg-rose-600 hover:text-white transition-all active:scale-95 flex items-center gap-2"
                                 >
                                     <Trash2 size={14} /> Clear All
                                 </button>
                                 <button
                                     onClick={markAllAsRead}
-                                    className="px-4 py-2.5 bg-orange-600 text-white rounded-md text-[10px] font-black uppercase tracking-widest hover:bg-orange-700 transition-all active:scale-95 flex items-center gap-2"
+                                    className="px-4 py-2.5 bg-orange-600 text-white rounded-xl text-sm font-semibold normal-case tracking-normal hover:bg-orange-700 transition-all active:scale-95 flex items-center gap-2"
                                 >
                                     <CheckCircle2 size={14} /> Mark All Read
                                 </button>
@@ -327,7 +329,7 @@ export default function VendorNotificationsPage() {
                 {/* 2. Stats Dashboard */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {[
-                        { label: 'Total Logs', value: total, color: 'indigo', icon: Bell },
+                        { label: 'All messages', value: total, color: 'indigo', icon: Bell },
                         { label: 'Unread', value: unreadCount, color: 'orange', icon: Clock },
                         { label: 'Orders', value: notifications.filter(n => n.type?.includes('order')).length, color: 'emerald', icon: ShoppingBag },
                         { label: 'System', value: notifications.filter(n => !n.type?.includes('order')).length, color: 'blue', icon: CheckCircle2 },
@@ -337,18 +339,18 @@ export default function VendorNotificationsPage() {
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: i * 0.05 }}
-                            className="bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 p-4 rounded-md hover:border-orange-500/30 transition-all"
+                            className="bg-white  border border-zinc-100  p-4 rounded-xl hover:border-orange-500/30 transition-all"
                         >
-                            <div className={`w-8 h-8 rounded-md mb-3 flex items-center justify-center ${
-                                stat.color === 'indigo' ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-500' :
-                                stat.color === 'orange' ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600' :
-                                stat.color === 'emerald' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-500' :
-                                'bg-blue-50 dark:bg-blue-500/10 text-blue-500'
+                            <div className={`w-8 h-8 rounded-xl mb-3 flex items-center justify-center ${
+                                stat.color === 'indigo' ? 'bg-indigo-50  text-indigo-500' :
+                                stat.color === 'orange' ? 'bg-orange-50  text-orange-600' :
+                                stat.color === 'emerald' ? 'bg-emerald-50  text-emerald-500' :
+                                'bg-blue-50  text-blue-500'
                             }`}>
                                 <stat.icon size={16} />
                             </div>
-                            <div className="text-xl font-black text-zinc-900 dark:text-white leading-none tracking-tight">{stat.value}</div>
-                            <div className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mt-1.5 leading-none">{stat.label}</div>
+                            <div className="text-xl font-semibold text-zinc-900  leading-none tracking-tight">{stat.value}</div>
+                            <div className="text-xs font-semibold text-zinc-500 normal-case tracking-normal mt-1.5 leading-none">{stat.label}</div>
                         </motion.div>
                     ))}
                 </div>
@@ -358,21 +360,21 @@ export default function VendorNotificationsPage() {
                     <motion.div
                         initial={{ opacity: 0, scale: 0.98 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="bg-orange-600 p-px rounded-md"
+                        className="bg-orange-600 p-px rounded-xl"
                     >
-                        <div className="bg-white dark:bg-zinc-950 rounded-[5px] p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div className="bg-white  rounded-[5px] p-4 flex flex-col md:flex-row items-center justify-between gap-4">
                             <div className="flex items-center gap-4 text-center md:text-left">
-                                <div className="w-12 h-12 bg-orange-50 dark:bg-orange-600/10 rounded-md flex items-center justify-center text-orange-600 flex-shrink-0">
+                                <div className="w-12 h-12 bg-orange-50  rounded-xl flex items-center justify-center text-orange-600 flex-shrink-0">
                                     <Bell size={24} />
                                 </div>
                                 <div className="space-y-0.5">
-                                    <h3 className="text-sm font-black text-zinc-900 dark:text-white uppercase tracking-tight">Instant Alerts</h3>
-                                    <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-widest leading-relaxed">Enable push notifications for real-time order logs.</p>
+                                    <h3 className="text-sm font-semibold text-zinc-900  normal-case tracking-tight">Stay up to date</h3>
+                                    <p className="text-sm font-bold text-zinc-500  normal-case tracking-normal leading-relaxed">Get notified when a new order or important update arrives.</p>
                                 </div>
                             </div>
                             <button
                                 onClick={subscribe}
-                                className="w-full md:w-auto px-6 py-2.5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 rounded-md text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-none"
+                                className="w-full md:w-auto px-6 py-2.5 bg-zinc-900  text-white  rounded-xl text-sm font-semibold normal-case tracking-normal transition-all active:scale-95 shadow-none"
                             >
                                 Enable Now
                             </button>
@@ -382,14 +384,14 @@ export default function VendorNotificationsPage() {
 
                 {/* 4. Filter & Search Tabs */}
                 <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                    <div className="flex p-1 bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-md w-full md:w-auto">
+                    <div className="flex p-1 bg-zinc-50  border border-zinc-100  rounded-xl w-full md:w-auto">
                         {['all', 'unread', 'read', 'orders', 'system'].map((tab) => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
-                                className={`flex-1 md:flex-none px-4 py-2 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab
+                                className={`flex-1 md:flex-none px-4 py-2 rounded-xl text-sm font-semibold normal-case tracking-normal transition-all ${activeTab === tab
                                     ? 'bg-orange-600 text-white shadow-none'
-                                    : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                                    : 'text-zinc-500 hover:text-zinc-900 '
                                     }`}
                             >
                                 {tab}
@@ -400,12 +402,12 @@ export default function VendorNotificationsPage() {
                     <div className="relative w-full md:w-72">
                         <input
                             type="text"
-                            placeholder="SEARCH LOGS..."
+                            placeholder="Search notifications…"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-md text-[10px] font-black uppercase tracking-widest outline-none focus:border-orange-600 transition-all dark:text-white"
+                            className="w-full pl-10 pr-4 py-2.5 bg-white  border border-zinc-100  rounded-xl text-sm font-semibold normal-case tracking-normal outline-none focus:border-orange-600 transition-all "
                         />
-                        <Bell className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400" size={14} />
+                        <Bell className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500" size={14} />
                     </div>
                 </div>
 
@@ -416,22 +418,22 @@ export default function VendorNotificationsPage() {
                             {[1, 2, 3, 4].map(i => <SkeletonItem key={i} />)}
                         </div>
                     ) : (Object.keys(groupedNotifications).length === 0) ? (
-                        <div className="py-12 bg-white dark:bg-zinc-900 rounded-md border border-zinc-100 dark:border-zinc-800 flex flex-col items-center text-center">
-                            <div className="w-16 h-16 bg-zinc-50 dark:bg-zinc-800 rounded-md flex items-center justify-center text-zinc-300 dark:text-zinc-700 mb-4 border border-zinc-100 dark:border-zinc-800">
+                        <div className="py-12 bg-white  rounded-xl border border-zinc-100  flex flex-col items-center text-center">
+                            <div className="w-16 h-16 bg-zinc-50  rounded-xl flex items-center justify-center text-zinc-300  mb-4 border border-zinc-100 ">
                                 <Bell size={24} />
                             </div>
-                            <h3 className="text-lg font-black text-zinc-900 dark:text-white uppercase tracking-tight">Peace and Quiet</h3>
-                            <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 mt-1.5 max-w-xs uppercase tracking-widest leading-relaxed">No notification logs found in this category.</p>
+                            <h3 className="text-lg font-semibold text-zinc-900  normal-case tracking-tight">You’re all caught up</h3>
+                            <p className="text-sm font-bold text-zinc-500  mt-1.5 max-w-xs normal-case tracking-normal leading-relaxed">No messages match this filter.</p>
                         </div>
                     ) : (
                         Object.entries(groupedNotifications).map(([group, items], groupIndex) => (
                             <div key={group} className="space-y-3">
                                 <div className="flex items-center gap-3 ml-1">
-                                    <div className="h-px flex-1 bg-zinc-100 dark:bg-zinc-800" />
-                                    <h2 className="text-[9px] font-black tracking-widest text-zinc-400 dark:text-zinc-500 uppercase flex items-center gap-1.5 whitespace-nowrap">
+                                    <div className="h-px flex-1 bg-zinc-100 " />
+                                    <h2 className="text-xs font-semibold tracking-normal text-zinc-500  normal-case flex items-center gap-1.5 whitespace-nowrap">
                                         <Calendar size={10} /> {group}
                                     </h2>
-                                    <div className="h-px flex-1 bg-zinc-100 dark:bg-zinc-800" />
+                                    <div className="h-px flex-1 bg-zinc-100 " />
                                 </div>
 
                                 <div className="grid gap-2.5">
@@ -444,10 +446,10 @@ export default function VendorNotificationsPage() {
                                                 animate={{ opacity: 1, x: 0 }}
                                                 exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
                                                 whileHover={{ y: -2 }}
-                                                className={`group relative flex items-center gap-4 bg-white dark:bg-zinc-900 border ${!notification.read
+                                                role="button" tabIndex={0} aria-label={notification.title || "Open notification"} onKeyDown={e => { if(e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); handleNotificationClick(notification); } }} className={`mc-notification-row group relative flex items-center gap-4 bg-white  border ${!notification.read
                                                     ? 'border-orange-500/30'
-                                                    : 'border-zinc-100 dark:border-zinc-800'
-                                                    } p-4 rounded-md transition-all cursor-pointer shadow-none active:scale-[0.99] overflow-hidden`}
+                                                    : 'border-zinc-100 '
+                                                    } p-4 rounded-xl transition-all cursor-pointer shadow-none active:scale-[0.99] overflow-hidden`}
                                                 onClick={() => handleNotificationClick(notification)}
                                             >
                                                 {/* Status Indicator Bar */}
@@ -456,9 +458,9 @@ export default function VendorNotificationsPage() {
                                                 )}
 
                                                 {/* Icon */}
-                                                <div className={`w-12 h-12 rounded-md flex-shrink-0 flex items-center justify-center transition-transform group-hover:scale-105 duration-500 ${!notification.read
-                                                    ? 'bg-orange-50 dark:bg-orange-600/10 text-orange-600'
-                                                    : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400'
+                                                <div className={`w-12 h-12 rounded-xl flex-shrink-0 flex items-center justify-center transition-transform group-hover:scale-105 duration-500 ${!notification.read
+                                                    ? 'bg-orange-50  text-orange-600'
+                                                    : 'bg-zinc-100  text-zinc-500'
                                                     }`}>
                                                     {getIcon(notification.type)}
                                                 </div>
@@ -466,15 +468,15 @@ export default function VendorNotificationsPage() {
                                                 {/* Main Content */}
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center justify-between gap-3 mb-1">
-                                                        <h4 className={`text-sm font-black truncate tracking-tight uppercase ${!notification.read ? 'text-zinc-900 dark:text-white' : 'text-zinc-400 dark:text-zinc-500'}`}>
+                                                        <h4 className={`text-sm font-semibold break-words tracking-tight normal-case ${!notification.read ? 'text-zinc-900 ' : 'text-zinc-500 '}`}>
                                                             {notification.title}
                                                         </h4>
-                                                        <span className="text-[9px] font-black uppercase text-zinc-400 whitespace-nowrap bg-zinc-50 dark:bg-zinc-800/50 px-2 py-1 rounded-md">
-                                                            {format(parseISO(notification.createdAt), 'h:mm aa')}
+                                                        <span className="text-xs font-semibold normal-case text-zinc-500 whitespace-nowrap bg-zinc-50  px-2 py-1 rounded-xl">
+                                                            {Number.isNaN(new Date(notification.createdAt).getTime()) ? 'Earlier' : format(new Date(notification.createdAt), 'h:mm aa')}
                                                         </span>
                                                     </div>
 
-                                                    <p className={`text-[10px] font-bold uppercase tracking-widest leading-relaxed mb-2 line-clamp-2 ${!notification.read ? 'text-zinc-600 dark:text-zinc-400' : 'text-zinc-400 dark:text-zinc-500'}`}>
+                                                    <p className={`text-sm font-bold normal-case tracking-normal leading-relaxed mb-2 line-clamp-2 ${!notification.read ? 'text-zinc-600 ' : 'text-zinc-500 '}`}>
                                                         {notification.body}
                                                     </p>
 
@@ -482,13 +484,13 @@ export default function VendorNotificationsPage() {
                                                     {(notification.customerName || notification.location) && (
                                                         <div className="flex flex-wrap gap-2">
                                                             {notification.customerName && (
-                                                                <div className="px-2 py-0.5 rounded-md bg-orange-50 dark:bg-orange-600/5 border border-orange-100 dark:border-orange-600/10 text-[8px] font-black text-orange-600 tracking-widest uppercase flex items-center gap-1.5 leading-none">
+                                                                <div className="px-2 py-0.5 rounded-xl bg-orange-50  border border-orange-100  text-xs font-semibold text-orange-600 tracking-normal normal-case flex items-center gap-1.5 leading-none">
                                                                     <div className="w-1 h-1 rounded-full bg-orange-600" />
                                                                     {notification.customerName}
                                                                 </div>
                                                             )}
                                                             {notification.location && (
-                                                                <div className="px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-500/5 border border-indigo-100 dark:border-indigo-500/10 text-[8px] font-black text-indigo-600 tracking-widest uppercase flex items-center gap-1.5 leading-none">
+                                                                <div className="px-2 py-0.5 rounded-xl bg-indigo-50  border border-indigo-100  text-xs font-semibold text-indigo-600 tracking-normal normal-case flex items-center gap-1.5 leading-none">
                                                                     <div className="w-1 h-1 rounded-full bg-indigo-500" />
                                                                     {notification.location}
                                                                 </div>
@@ -509,8 +511,8 @@ export default function VendorNotificationsPage() {
                                                 <div className="flex items-center gap-2 ml-2">
                                                     <button
                                                         onClick={(e) => handleDelete(e, notification._id)}
-                                                        className="p-2 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-md transition-all active:scale-90"
-                                                        title="Archive Log"
+                                                        className="p-2 text-zinc-500 hover:text-rose-600 hover:bg-rose-50  rounded-xl transition-all active:scale-90"
+                                                        title="Delete notification"
                                                     >
                                                         <Trash2 size={14} />
                                                     </button>
@@ -532,10 +534,10 @@ export default function VendorNotificationsPage() {
                             <button
                                 onClick={loadMore}
                                 disabled={loading}
-                                className="group relative px-8 py-3 bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 rounded-md font-black text-[10px] tracking-widest uppercase transition-all hover:scale-105 active:scale-95 disabled:opacity-50 overflow-hidden"
+                                className="group relative px-8 py-3 bg-zinc-900  text-white  rounded-xl font-semibold text-sm tracking-normal normal-case transition-all hover:scale-105 active:scale-95 disabled:opacity-50 overflow-hidden"
                             >
                                 <span className="relative z-10 flex items-center gap-2.5">
-                                    {loading ? <RefreshCw className="animate-spin" size={14} /> : 'Load More Logs'}
+                                    {loading ? <RefreshCw className="animate-spin" size={14} /> : 'Load more messages'}
                                 </span>
                             </button>
                         </div>

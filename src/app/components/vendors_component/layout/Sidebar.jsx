@@ -26,7 +26,6 @@ import {
   Loader2
 } from "lucide-react";
 import { useApi } from "@/app/context/ApiContext";
-import PermanentInstallButton from "@/app/components/PermanentInstallButton";
 import { useVendorStorage } from "@/app/hooks/vendorStorage";
 import { useSocket } from "@/app/context/SocketContext";
 import { getVendorOrders } from "@/app/lib/vendorApi";
@@ -331,8 +330,6 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
 
         {/* ── Footer ───────────────────────────────────────────────── */}
         <div className="shrink-0 border-t border-white/[0.06] px-3 pt-2 pb-4 space-y-2 bg-black/20">
-          {(open || isMobile) && <PermanentInstallButton />}
-
           <button
             onClick={() => setShowLogoutModal(true)}
             className={`
@@ -374,7 +371,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
                 </div>
                 <h3 className="text-base font-bold text-zinc-900 dark:text-white mb-1 uppercase tracking-tight">Sign out?</h3>
                 <p className="text-[11px] font-bold text-zinc-500 dark:text-zinc-400 max-w-[220px] mx-auto uppercase tracking-widest leading-relaxed">
-                  You'll need to log back in to access the vendor portal.
+                  You&apos;ll need to log back in to access the vendor portal.
                 </p>
                 <div className="mt-6 flex gap-2">
                   <button

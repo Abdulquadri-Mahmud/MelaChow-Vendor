@@ -44,3 +44,8 @@ next-env.d.ts
 *.MD
 *.markdown
 *.MARKDOWN
+
+/.native-build/
+/src-tauri/target/
+!.env.native.example
+*.apk

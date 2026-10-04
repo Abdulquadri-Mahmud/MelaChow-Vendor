@@ -33,7 +33,7 @@ const outfit = Outfit({
 const appUrl = process.env.NEXT_PUBLIC_VENDOR_URL || "https://vendors.melachow.com";
 
 export const viewport = {
-  themeColor: "#ea580c",
+  themeColor: "#ffffff",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,

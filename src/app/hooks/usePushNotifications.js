@@ -3,8 +3,13 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     subscribeUserToPush,
-    unsubscribeUserFromPush
+    unsubscribeUserFromPush,
+    nativePushTokenKey,
+    removeNativePushToken
 } from '../lib/push-notification-service';
+import { Capacitor } from '@capacitor/core';
+import { PushNotifications } from '@capacitor/push-notifications';
+import { requestNativePush } from '../lib/native-push-client';
 import toast from 'react-hot-toast';
 
 const SERVICE_WORKER_STATUS_TIMEOUT_MS = 8000;
@@ -56,6 +61,19 @@ export function usePushNotifications(role = 'user') {
     useEffect(() => {
         const checkSupport = async () => {
             setLoading(true);
+            if (Capacitor.isNativePlatform()) {
+                try {
+                    const status = await PushNotifications.checkPermissions();
+                    setIsSupported(true);
+                    setPermission(status.receive === 'granted' ? 'granted' : status.receive === 'denied' ? 'denied' : 'default');
+                    const token = localStorage.getItem(nativePushTokenKey(role));
+                    setSubscription(token ? { token } : null);
+                } catch (err) {
+                    setError(err.message || 'Failed to check notification status');
+                }
+                setLoading(false);
+                return;
+            }
             const pushSupported =
                 typeof window !== 'undefined' &&
                 'serviceWorker' in navigator &&
@@ -99,6 +117,14 @@ export function usePushNotifications(role = 'user') {
         setError(null);
 
         try {
+            if (Capacitor.isNativePlatform()) {
+                const token = await requestNativePush(role);
+                setPermission('granted');
+                setSubscription({ token });
+                localStorage.setItem(`${STORAGE_PREFIX}push_notifications_enabled`, 'true');
+                localStorage.setItem(`${STORAGE_PREFIX}push_prompt_dismissed`, 'true');
+                return true;
+            }
             if (!isSupported) {
                 throw new Error('Push notifications are not supported by this browser');
             }
@@ -134,6 +160,15 @@ export function usePushNotifications(role = 'user') {
         setError(null);
 
         try {
+            if (Capacitor.isNativePlatform()) {
+                const key = nativePushTokenKey(role);
+                const token = localStorage.getItem(key);
+                if (token) await removeNativePushToken(token, role);
+                localStorage.removeItem(key);
+                setSubscription(null);
+                localStorage.setItem(`${STORAGE_PREFIX}push_notifications_enabled`, 'false');
+                return true;
+            }
             await unsubscribeUserFromPush(role);
             setSubscription(null);
             localStorage.setItem(`${STORAGE_PREFIX}push_notifications_enabled`, 'false');
