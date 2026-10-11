@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { Clock, ReceiptText } from "lucide-react";
+import { Clock, PackageCheck, ReceiptText } from "lucide-react";
 import { useVendorProfile } from "@/app/context/VendorProfileContext";
 import {
   money,
@@ -10,6 +10,7 @@ import {
 } from "@/app/lib/orderReceipt.mjs";
 import OrderReceiptItems from "./OrderReceiptItems";
 import OrderActions from "./OrderActions";
+import PickupCodeControl from "./PickupCodeControl";
 import "./vendor-orders.css";
 
 export default function VendorOrderCard({ order, onRefresh }) {
@@ -61,6 +62,9 @@ export default function VendorOrderCard({ order, onRefresh }) {
           <strong>Customer note:</strong> {receipt.note}
         </p>
       )}
+      {receipt.packingGroups.length > 1 && (
+        <div className="order-packing-alert"><PackageCheck size={17} /> <span><strong>{receipt.packingGroups.length} separate packs</strong> · Label each person’s food before handoff.</span></div>
+      )}
       <OrderReceiptItems items={receipt.items} compact />
       <div className="order-card-total">
         <span>Items subtotal</span>
@@ -72,6 +76,9 @@ export default function VendorOrderCard({ order, onRefresh }) {
           vendor={vendorProfile}
           onChanged={onRefresh}
         />
+        {["ready_for_pickup", "rider_assigned"].includes(status) && vendorProfile?.deliveryManagedBy === "admin" && (
+          <PickupCodeControl orderId={receipt.id} compact />
+        )}
         <Link
           href={`/vendors/order/${receipt.id}`}
           className="order-receipt-link"

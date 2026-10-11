@@ -152,6 +152,17 @@ export function receiptItem(item, moneyUnit = "naira") {
       total != null && knownTotal != null ? rounded(total - knownTotal) : null,
   };
 }
+export function packingGroups(items) {
+  const labels = new Map();
+  const separated = items.some((item) => item.mealGroup);
+  for (const item of items) {
+    const label = separated ? item.mealGroup || "Person 1" : "Order items";
+    if (!labels.has(label)) labels.set(label, []);
+    labels.get(label).push(item);
+  }
+  return [...labels].sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
+    .map(([label, groupItems]) => ({ label, items: groupItems }));
+}
 export function orderReceipt(order) {
   const parent =
     order.userOrderId && typeof order.userOrderId === "object"
@@ -183,6 +194,7 @@ export function orderReceipt(order) {
     address: parent.deliveryAddress || order.deliveryAddress || null,
     note: order.customerNote || "",
     items,
+    packingGroups: packingGroups(items),
     itemsSubtotal,
     deliveryFee: firstAmount(
       deliveryEntry?.deliveryFee,

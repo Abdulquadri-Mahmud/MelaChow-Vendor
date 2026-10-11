@@ -1,4 +1,4 @@
-import { money } from "@/app/lib/orderReceipt.mjs";
+import { money, packingGroups } from "@/app/lib/orderReceipt.mjs";
 
 export default function OrderReceiptItems({ items, compact = false }) {
   if (!items.length)
@@ -9,13 +9,20 @@ export default function OrderReceiptItems({ items, compact = false }) {
     );
   return (
     <div className={`receipt-items ${compact ? "is-compact" : ""}`}>
-      {items.map((item, index) => (
-        <section key={index} className="receipt-item">
+      {packingGroups(items).map((pack) => (
+        <section key={pack.label} className="receipt-pack">
+          {pack.label !== "Order items" && (
+            <header className="receipt-pack-header">
+              <strong>{pack.label}</strong>
+              <span>Pack separately · {pack.items.length} {pack.items.length === 1 ? "item" : "items"}</span>
+            </header>
+          )}
+          {pack.items.map((item, index) => (
+        <section key={`${pack.label}-${index}`} className="receipt-item">
           <div className="receipt-item-heading">
             <h3>{item.name}</h3>
             {item.packs > 1 && <span>{item.packs} packs</span>}
           </div>
-          {item.mealGroup && <p className="receipt-person">{item.mealGroup}</p>}
           {item.packs > 1 && (
             <p className="receipt-pack-rule">
               Each pack: {item.portionsPerPack} × {item.portion}
@@ -73,6 +80,8 @@ export default function OrderReceiptItems({ items, compact = false }) {
             <span>Item total</span>
             <strong>{money(item.total)}</strong>
           </div>
+        </section>
+          ))}
         </section>
       ))}
     </div>

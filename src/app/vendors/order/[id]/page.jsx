@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { Capacitor, registerPlugin } from "@capacitor/core";
+import toast from "react-hot-toast";
 import {
   ArrowLeft,
   Printer,
@@ -9,13 +10,8 @@ import {
   MapPin,
   RefreshCw,
   Loader2,
-  PackageCheck,
-  Check,
 } from "lucide-react";
-import {
-  getVendorOrderById,
-  requestVendorPickupCode,
-} from "@/app/lib/vendorApi";
+import { getVendorOrderById } from "@/app/lib/vendorApi";
 import { useVendorProfile } from "@/app/context/VendorProfileContext";
 import {
   orderReceipt,
@@ -25,6 +21,7 @@ import {
 } from "@/app/lib/orderReceipt.mjs";
 import OrderReceiptItems from "@/app/components/order/OrderReceiptItems";
 import OrderActions from "@/app/components/order/OrderActions";
+import PickupCodeControl from "@/app/components/order/PickupCodeControl";
 import "@/app/components/order/vendor-orders.css";
 
 const addressText = (address) =>
@@ -37,6 +34,7 @@ const addressText = (address) =>
       ]
         .filter((value) => typeof value === "string" && value)
         .join(", ");
+const ReceiptPrinter = registerPlugin("ReceiptPrinter");
 export default function VendorOrderDetails() {
   const { id } = useParams(),
     router = useRouter();
@@ -60,23 +58,17 @@ export default function VendorOrderDetails() {
     refetchInterval: 30000,
     refetchOnWindowFocus: true,
   });
-  const [code, setCode] = useState(null),
-    [codeBusy, setCodeBusy] = useState(false),
-    [codeError, setCodeError] = useState("");
-  const showCode = async () => {
-    setCodeBusy(true);
-    setCodeError("");
-    try {
-      const result = await requestVendorPickupCode(id);
-      setCode(result.data || result);
-    } catch (error) {
-      setCodeError(
-        error.response?.data?.message ||
-          "The pickup code couldn’t load. Try again.",
-      );
-    } finally {
-      setCodeBusy(false);
+  const printReceipt = async () => {
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await ReceiptPrinter.print({ name: `MelaChow receipt ${order?.userOrderId?.orderId || id}` });
+      } catch (error) {
+        console.error("Could not open Android printing:", error);
+        toast.error("Could not open printing on this device.");
+      }
+      return;
     }
+    window.print();
   };
   if (isPending && !order)
     return (
@@ -146,7 +138,7 @@ export default function VendorOrderDetails() {
           <button
             type="button"
             className="order-button secondary"
-            onClick={() => window.print()}
+            onClick={printReceipt}
           >
             <Printer size={16} /> Print receipt
           </button>
@@ -156,6 +148,9 @@ export default function VendorOrderDetails() {
         <p className="order-error print-hidden" role="alert">
           The order couldn’t refresh. These are the last loaded details.
         </p>
+      )}
+      {ready && vendorProfile?.deliveryManagedBy === "admin" && (
+        <div className="order-pickup-top print-hidden"><PickupCodeControl orderId={receipt.id} /></div>
       )}
       <div className="order-details-grid">
         <article className="vendor-receipt print-receipt">
@@ -197,6 +192,7 @@ export default function VendorOrderDetails() {
             </dl>
           </header>
           <div className="receipt-body">
+            {receipt.packingGroups.length > 1 && <p className="order-packing-alert"><strong>{receipt.packingGroups.length} separate packs.</strong> Pack and label each person’s items individually.</p>}
             <h2>What the customer ordered</h2>
             <p className="receipt-help">
               Quantities below show the total to prepare across all packs.
@@ -296,47 +292,6 @@ export default function VendorOrderDetails() {
               showCancel
             />
           </section>
-          {ready && (
-            <section className="order-pickup-panel">
-              <PackageCheck size={22} />
-              <h2>Rider pickup code</h2>
-              <p>
-                Share the code with the assigned rider when handing over the
-                package.
-              </p>
-              {code && (
-                <div className="order-pickup-code" aria-live="polite">
-                  <strong>{code.pickupCode}</strong>
-                  <small>
-                    {code.expiresAt &&
-                      `Valid until ${new Date(code.expiresAt).toLocaleTimeString("en-NG", { hour: "2-digit", minute: "2-digit", timeZone: "Africa/Lagos" })}`}
-                  </small>
-                </div>
-              )}
-              <button
-                type="button"
-                className="order-button secondary"
-                disabled={codeBusy}
-                onClick={showCode}
-              >
-                {codeBusy ? (
-                  <Loader2 size={18} className="animate-spin" />
-                ) : (
-                  <Check size={16} />
-                )}
-                {codeBusy
-                  ? "Loading code…"
-                  : code
-                    ? "Refresh pickup code"
-                    : "Show pickup code"}
-              </button>
-              {codeError && (
-                <p className="order-error" role="alert">
-                  {codeError}
-                </p>
-              )}
-            </section>
-          )}
           <section className="order-contact-panel">
             <h2>Customer & delivery</h2>
             <h3>{receipt.customer}</h3>
