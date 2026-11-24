@@ -4,7 +4,11 @@ import { useState } from "react";
 import { KeyRound, Loader2 } from "lucide-react";
 import { requestVendorPickupCode } from "@/app/lib/vendorApi";
 
-export default function PickupCodeControl({ orderId, compact = false }) {
+export default function PickupCodeControl({
+  orderId,
+  orderReference,
+  compact = false,
+}) {
   const [code, setCode] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -24,12 +28,18 @@ export default function PickupCodeControl({ orderId, compact = false }) {
   };
 
   return (
-    <section className={`order-pickup-panel ${compact ? "is-compact" : ""}`} aria-label="Rider pickup code">
+    <section
+      className={`order-pickup-panel ${compact ? "is-compact" : ""}`}
+      aria-label={`Rider pickup code for ${orderReference || "this order"}`}
+    >
       <div className="order-pickup-intro">
         <KeyRound size={compact ? 18 : 21} />
         <div>
           <h2>Rider pickup code</h2>
-          {!compact && <p>Show this code to the rider when you hand over the packed order.</p>}
+          <p>
+            For order <strong>{orderReference || "this order"}</strong>. Match
+            this reference with the rider’s delivery before sharing the code.
+          </p>
         </div>
       </div>
       {code?.pickupCode && (

@@ -150,7 +150,12 @@ export default function VendorOrderDetails() {
         </p>
       )}
       {ready && vendorProfile?.deliveryManagedBy === "admin" && (
-        <div className="order-pickup-top print-hidden"><PickupCodeControl orderId={receipt.id} /></div>
+        <div className="order-pickup-top print-hidden">
+          <PickupCodeControl
+            orderId={receipt.id}
+            orderReference={`${receipt.code}:${String(receipt.id || "").slice(0, 8)}`}
+          />
+        </div>
       )}
       <div className="order-details-grid">
         <article className="vendor-receipt print-receipt">

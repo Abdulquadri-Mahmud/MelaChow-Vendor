@@ -728,6 +728,17 @@
 .order-pickup-panel > svg {
   color: #9a3b08;
 }
+.order-pickup-intro p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.order-pickup-intro p strong {
+  color: #9a3b08;
+  font-weight: 700;
+}
 .order-pickup-panel .order-button {
   width: 100%;
   margin-top: 14px;

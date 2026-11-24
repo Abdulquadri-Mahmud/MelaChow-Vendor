@@ -77,7 +77,11 @@ export default function VendorOrderCard({ order, onRefresh }) {
           onChanged={onRefresh}
         />
         {["ready_for_pickup", "rider_assigned"].includes(status) && vendorProfile?.deliveryManagedBy === "admin" && (
-          <PickupCodeControl orderId={receipt.id} compact />
+          <PickupCodeControl
+            orderId={receipt.id}
+            orderReference={`${receipt.code}:${String(receipt.id || "").slice(0, 8)}`}
+            compact
+          />
         )}
         <Link
           href={`/vendors/order/${receipt.id}`}
