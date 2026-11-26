@@ -10,16 +10,13 @@ export default function SplashScreen({ connectionLost = false, onRetry }) {
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return undefined;
 
-    Promise.all([SystemBars.hide(), StatusBar.hide()]).catch(() => {});
-    return () => {
-      Promise.all([
+    Promise.all([
         SystemBars.show(),
         SystemBars.setStyle({ bar: SystemBarType.StatusBar, style: SystemBarsStyle.Light }),
         SystemBars.setStyle({ bar: SystemBarType.NavigationBar, style: SystemBarsStyle.Light }),
         StatusBar.show(),
         StatusBar.setBackgroundColor({ color: "#ffffff" }),
-      ]).catch(() => {});
-    };
+    ]).catch((error) => console.warn("Could not keep startup system bars visible:", error));
   }, []);
 
   return (
