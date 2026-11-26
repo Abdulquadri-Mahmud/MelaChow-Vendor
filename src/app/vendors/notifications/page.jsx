@@ -1,557 +1,707 @@
-'use client';
-import "@/app/components/vendor-workspace/vendor-workspace.css";
+"use client";
 
-import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { useNotificationManager } from '@/app/hooks/useNotificationManager';
-import { useVendorProfile } from '@/app/context/VendorProfileContext';
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
+import { format, isToday, isYesterday, parseISO } from "date-fns";
+import { toast } from "react-hot-toast";
 import {
-    Bell,
-    CheckCircle2,
-    Clock,
-    ShoppingBag,
-    XCircle,
-    ChevronRight,
-    Trash2,
-    Calendar,
-    ChevronLeft,
-    RefreshCw,
-    AlertTriangle,
-    Loader2,
-    Timer,
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { format, isToday, isYesterday, parseISO } from 'date-fns';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { toast } from 'react-hot-toast';
-import ClearNotificationsModal from '@/app/components/notifications/ClearNotificationsModal';
-import { respondToRemakeRequest } from '@/app/lib/vendorApi';
+  AlertTriangle,
+  Bell,
+  BellRing,
+  Calendar,
+  CheckCircle2,
+  ChevronRight,
+  Clock,
+  Loader2,
+  RefreshCw,
+  Search,
+  ShoppingBag,
+  Timer,
+  Trash2,
+  X,
+  XCircle,
+} from "lucide-react";
 
+import { useNotificationManager } from "@/app/hooks/useNotificationManager";
+import { useVendorProfile } from "@/app/context/VendorProfileContext";
+import ClearNotificationsModal from "@/app/components/notifications/ClearNotificationsModal";
+import { respondToRemakeRequest } from "@/app/lib/vendorApi";
 
-// ── Remake Response Panel ─────────────────────────────────────────────────────
-/**
- * Self-contained panel rendered inside an `order_remake_request` notification card.
- * Shows a 15-minute countdown timer and YES / NO action buttons.
- * Disables gracefully once the window expires or a decision is made.
- */
+const FILTER_TABS = [
+  { id: "all", label: "All" },
+  { id: "unread", label: "Unread" },
+  { id: "orders", label: "Orders" },
+  { id: "system", label: "System" },
+  { id: "read", label: "Read" },
+];
+
 function RemakeResponsePanel({ notification, onResponded }) {
-    const WINDOW_MS = notification?.remakeWindow || 15 * 60 * 1000; // 15 min default
-    const sentAt = notification?.createdAt ? new Date(notification.createdAt).getTime() : Date.now();
-    const expiresAt = sentAt + WINDOW_MS;
+  const WINDOW_MS = notification?.remakeWindow || 15 * 60 * 1000;
+  const sentAt = notification?.createdAt
+    ? new Date(notification.createdAt).getTime()
+    : Date.now();
+  const expiresAt = sentAt + WINDOW_MS;
 
-    const [secondsLeft, setSecondsLeft] = useState(() => Math.max(0, Math.floor((expiresAt - Date.now()) / 1000)));
-    const [decision, setDecision] = useState(null); // null | 'yes' | 'no'
-    const [loading, setLoading] = useState(false);
-    const intervalRef = useRef(null);
+  const [secondsLeft, setSecondsLeft] = useState(() =>
+    Math.max(0, Math.floor((expiresAt - Date.now()) / 1000))
+  );
+  const [decision, setDecision] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const intervalRef = useRef(null);
 
-    useEffect(() => {
-        intervalRef.current = setInterval(() => {
-            const remaining = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
-            setSecondsLeft(remaining);
-            if (remaining === 0) clearInterval(intervalRef.current);
-        }, 1000);
-        return () => clearInterval(intervalRef.current);
-    }, [expiresAt]);
+  useEffect(() => {
+    intervalRef.current = setInterval(() => {
+      const remaining = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+      setSecondsLeft(remaining);
+      if (remaining === 0) clearInterval(intervalRef.current);
+    }, 1000);
+    return () => clearInterval(intervalRef.current);
+  }, [expiresAt]);
 
-    const isExpired = secondsLeft === 0;
-    const isDecided = !!decision;
+  const isExpired = secondsLeft === 0;
+  const isDecided = Boolean(decision);
+  const mins = String(Math.floor(secondsLeft / 60)).padStart(2, "0");
+  const secs = String(secondsLeft % 60).padStart(2, "0");
 
-    const mins = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
-    const secs = String(secondsLeft % 60).padStart(2, '0');
-
-    const handleDecision = async (choice) => {
-        const vendorOrderId = notification?.orderDatabaseId || notification?.orderId;
-        if (!vendorOrderId) {
-            toast.error('Order reference missing. Please contact support.');
-            return;
-        }
-        setLoading(true);
-        try {
-            const res = await respondToRemakeRequest(vendorOrderId, choice);
-            setDecision(choice);
-            toast.success(res?.message || (choice === 'yes' ? 'Confirmed! Start preparing.' : 'Admin has been notified.'));
-            onResponded?.();
-        } catch (err) {
-            toast.error(err?.response?.data?.message || 'Failed to submit response.');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    if (isDecided) {
-        return (
-            <div className="mt-3 p-3 rounded bg-green-50  border border-green-200  flex items-center gap-2">
-                <CheckCircle2 size={13} className="text-green-600 shrink-0" />
-                <p className="text-xs font-semibold text-green-700  normal-case tracking-normal">
-                    {decision === 'yes' ? 'Response sent — Start preparing!' : 'Declined — Admin notified.'}
-                </p>
-            </div>
-        );
+  const handleDecision = async (choice) => {
+    const vendorOrderId = notification?.orderDatabaseId || notification?.orderId;
+    if (!vendorOrderId) {
+      toast.error("Order reference missing. Please contact support.");
+      return;
     }
-
-    if (isExpired) {
-        return (
-            <div className="mt-3 p-3 rounded bg-zinc-100  border border-zinc-200  flex items-center gap-2">
-                <Timer size={13} className="text-zinc-500 shrink-0" />
-                <p className="text-xs font-semibold text-zinc-500 normal-case tracking-normal">
-                    Response window expired — Escalated to admin.
-                </p>
-            </div>
-        );
+    setLoading(true);
+    try {
+      const res = await respondToRemakeRequest(vendorOrderId, choice);
+      setDecision(choice);
+      toast.success(
+        res?.message ||
+          (choice === "yes"
+            ? "Confirmed — start preparing the remake."
+            : "Declined — admin has been notified.")
+      );
+      onResponded?.();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to submit response.");
+    } finally {
+      setLoading(false);
     }
+  };
 
+  if (isDecided) {
     return (
-        <div
-            className="mt-3 p-3 rounded bg-amber-50  border border-amber-200  space-y-2.5"
-            onClick={(e) => e.stopPropagation()}
-        >
-            {/* Timer row */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                    <Timer size={11} className="text-amber-600" />
-                    <p className="text-xs font-semibold text-amber-700  normal-case tracking-normal">
-                        Can you remake this order?
-                    </p>
-                </div>
-                <span className={`text-sm font-semibold tabular-nums px-2 py-0.5 rounded ${
-                    secondsLeft < 120
-                        ? 'bg-red-100  text-red-600 '
-                        : 'bg-amber-100  text-amber-700 '
-                }`}>
-                    {mins}:{secs}
-                </span>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-2">
-                <button
-                    onClick={() => handleDecision('yes')}
-                    disabled={loading}
-                    className="flex-1 h-8 rounded bg-green-600 hover:bg-green-700 text-white text-xs font-semibold normal-case tracking-normal flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-50"
-                >
-                    {loading ? <Loader2 size={11} className="animate-spin" /> : <CheckCircle2 size={11} />}
-                    YES, Remake
-                </button>
-                <button
-                    onClick={() => handleDecision('no')}
-                    disabled={loading}
-                    className="flex-1 h-8 rounded border border-red-200  bg-red-50  text-red-600  text-xs font-semibold normal-case tracking-normal flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-50 hover:bg-red-100 "
-                >
-                    <XCircle size={11} />
-                    No, I can’t
-                </button>
-            </div>
-        </div>
+      <div className="mt-3 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2.5 text-xs font-semibold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300">
+        <CheckCircle2 size={14} className="shrink-0" />
+        <span>
+          {decision === "yes"
+            ? "Response sent — start preparing!"
+            : "Declined — admin has been notified."}
+        </span>
+      </div>
     );
+  }
+
+  if (isExpired) {
+    return (
+      <div className="mt-3 flex items-center gap-2 rounded-xl border border-zinc-200 bg-zinc-100 px-3.5 py-2.5 text-xs font-semibold text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400">
+        <Timer size={14} className="shrink-0" />
+        <span>Response window expired — escalated to admin.</span>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="mt-3 space-y-3 rounded-xl border border-amber-200 bg-amber-50/90 p-3.5 dark:border-amber-500/30 dark:bg-amber-500/10"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5 text-xs font-bold text-amber-800 dark:text-amber-300">
+          <Timer size={14} />
+          <span>Can you remake this order?</span>
+        </div>
+        <span
+          className={`rounded-lg px-2.5 py-0.5 text-xs font-bold tabular-nums ${
+            secondsLeft < 120
+              ? "bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300"
+              : "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-200"
+          }`}
+        >
+          {mins}:{secs}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2.5">
+        <button
+          type="button"
+          onClick={() => handleDecision("yes")}
+          disabled={loading}
+          className="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+        >
+          {loading ? (
+            <Loader2 size={14} className="animate-spin" />
+          ) : (
+            <CheckCircle2 size={14} />
+          )}
+          <span>Yes, Remake</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => handleDecision("no")}
+          disabled={loading}
+          className="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-white px-4 py-2 text-xs font-semibold text-rose-700 transition hover:bg-rose-50 disabled:opacity-50 dark:border-rose-500/30 dark:bg-zinc-900 dark:text-rose-300 dark:hover:bg-rose-500/15"
+        >
+          <XCircle size={14} />
+          <span>No, Can&apos;t Remake</span>
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default function VendorNotificationsPage() {
-    const { vendorProfile } = useVendorProfile();
-    const router = useRouter();
-    const [activeTab, setActiveTab] = useState('all');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [isClearModalOpen, setIsClearModalOpen] = useState(false);
+  const { vendorProfile } = useVendorProfile();
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isClearModalOpen, setIsClearModalOpen] = useState(false);
 
-    const {
-        notifications,
-        loading,
-        hasMore,
-        loadMore,
-        refreshNotifications,
-        markAsRead,
-        markAllAsRead,
-        deleteNotification,
-        clearAll,
-        unreadCount,
-        total,
-        isPushEnabled,
-        isPushSupported,
-        subscribe
-    } = useNotificationManager({ restaurantId: vendorProfile?._id, role: 'vendor' });
+  const {
+    notifications,
+    loading,
+    hasMore,
+    loadMore,
+    refreshNotifications,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    clearAll,
+    unreadCount,
+    total,
+    isPushEnabled,
+    subscribe,
+  } = useNotificationManager({
+    restaurantId: vendorProfile?._id,
+    role: "vendor",
+  });
 
-    // Premium Filtering Logic
-    const filteredNotifications = useMemo(() => {
-        let filtered = notifications;
+  const orderCount = useMemo(
+    () =>
+      notifications.filter(
+        (n) =>
+          n.type?.includes("order") ||
+          n.type === "new_order" ||
+          n.type === "vendor_new_order"
+      ).length,
+    [notifications]
+  );
 
-        if (activeTab === 'orders') {
-            filtered = notifications.filter(n => n.type?.includes('order') || n.type === 'new_order' || n.type === 'vendor_new_order');
-        } else if (activeTab === 'system') {
-            filtered = notifications.filter(n => !n.type?.includes('order') && n.type !== 'new_order' && n.type !== 'vendor_new_order');
-        } else if (activeTab === 'unread') {
-            filtered = notifications.filter(n => !n.read);
-        } else if (activeTab === 'read') {
-            filtered = notifications.filter(n => n.read);
-        }
+  const systemCount = notifications.length - orderCount;
 
-        if (searchQuery) {
-            filtered = filtered.filter(n =>
-                n.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                n.body?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                n.customerName?.toLowerCase().includes(searchQuery.toLowerCase())
-            );
-        }
+  const filteredNotifications = useMemo(() => {
+    let list = notifications;
+    if (activeTab === "orders") {
+      list = notifications.filter(
+        (n) =>
+          n.type?.includes("order") ||
+          n.type === "new_order" ||
+          n.type === "vendor_new_order"
+      );
+    } else if (activeTab === "system") {
+      list = notifications.filter(
+        (n) =>
+          !n.type?.includes("order") &&
+          n.type !== "new_order" &&
+          n.type !== "vendor_new_order"
+      );
+    } else if (activeTab === "unread") {
+      list = notifications.filter((n) => !n.read);
+    } else if (activeTab === "read") {
+      list = notifications.filter((n) => n.read);
+    }
 
-        // Always show unread notifications at the top of their respective groups
-        return [...filtered].sort((a, b) => {
-            if (a.read === b.read) return 0;
-            return a.read ? 1 : -1;
-        });
-    }, [notifications, activeTab, searchQuery]);
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      list = list.filter(
+        (n) =>
+          n.title?.toLowerCase().includes(q) ||
+          n.body?.toLowerCase().includes(q) ||
+          n.customerName?.toLowerCase().includes(q)
+      );
+    }
 
-    // Grouping Logic
-    const groupedNotifications = useMemo(() => {
-        if (!filteredNotifications || filteredNotifications.length === 0) return {};
+    return [...list].sort((a, b) => {
+      if (a.read === b.read) return 0;
+      return a.read ? 1 : -1;
+    });
+  }, [notifications, activeTab, searchQuery]);
 
-        return filteredNotifications.reduce((groups, notification) => {
-            const date = parseISO(notification.createdAt || '');
-            if(Number.isNaN(date.getTime())) { (groups['Earlier'] ||= []).push(notification); return groups; }
-            let groupKey = 'Earlier';
+  const groupedNotifications = useMemo(() => {
+    if (!filteredNotifications.length) return {};
+    return filteredNotifications.reduce((groups, notification) => {
+      const date = parseISO(notification.createdAt || "");
+      if (Number.isNaN(date.getTime())) {
+        (groups.Earlier ||= []).push(notification);
+        return groups;
+      }
+      const key = isToday(date)
+        ? "Today"
+        : isYesterday(date)
+          ? "Yesterday"
+          : format(date, "MMMM d, yyyy");
+      (groups[key] ||= []).push(notification);
+      return groups;
+    }, {});
+  }, [filteredNotifications]);
 
-            if (isToday(date)) groupKey = 'Today';
-            else if (isYesterday(date)) groupKey = 'Yesterday';
-            else groupKey = format(date, 'MMMM d, yyyy');
+  const getIconMeta = (type) => {
+    switch (type) {
+      case "order_placed":
+      case "new_order":
+      case "vendor_new_order":
+        return {
+          icon: ShoppingBag,
+          cls: "bg-orange-50 text-orange-600 dark:bg-orange-500/15 dark:text-orange-400",
+        };
+      case "order_cancelled":
+        return {
+          icon: XCircle,
+          cls: "bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400",
+        };
+      case "order_ready":
+      case "order_completed":
+        return {
+          icon: CheckCircle2,
+          cls: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400",
+        };
+      case "order_remake_request":
+        return {
+          icon: AlertTriangle,
+          cls: "bg-amber-50 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400",
+        };
+      default:
+        return {
+          icon: Bell,
+          cls: "bg-sky-50 text-sky-600 dark:bg-sky-500/15 dark:text-sky-400",
+        };
+    }
+  };
 
-            if (!groups[groupKey]) groups[groupKey] = [];
-            groups[groupKey].push(notification);
-            return groups;
-        }, {});
-    }, [filteredNotifications]);
+  const handleNotificationClick = async (notification) => {
+    if (!notification.read) await markAsRead(notification._id);
+    if (notification.url) {
+      const sanitizedUrl = notification.url.replace(
+        "/vendors/orders/",
+        "/vendors/order/"
+      );
+      router.push(sanitizedUrl);
+    } else if (notification.orderId) {
+      router.push(
+        `/vendors/order/${notification.orderDatabaseId || notification.orderId}`
+      );
+    }
+  };
 
-    const getIcon = (type) => {
-        switch (type) {
-            case 'order_placed':
-            case 'new_order':
-            case 'vendor_new_order':
-                return <ShoppingBag className="text-orange-500" size={22} />;
-            case 'order_cancelled':
-                return <XCircle className="text-red-500" size={22} />;
-            case 'order_ready':
-            case 'order_completed':
-                return <CheckCircle2 className="text-emerald-500" size={22} />;
-            case 'order_remake_request':
-                return <AlertTriangle className="text-amber-500" size={22} />;
-            default:
-                return <Bell className="text-indigo-500" size={22} />;
-        }
-    };
+  const handleDelete = async (e, id) => {
+    e.stopPropagation();
+    try {
+      await deleteNotification(id);
+      toast.success("Notification removed");
+    } catch {
+      toast.error("Failed to remove notification");
+    }
+  };
 
-    const handleNotificationClick = async (notification) => {
-        if (!notification.read) await markAsRead(notification._id);
-        
-        if (notification.url) {
-            // ✅ SANITIZER: Prevent 404 by correcting legacy plural URLs
-            const sanitizedUrl = notification.url.replace('/vendors/orders/', '/vendors/order/');
-            router.push(sanitizedUrl);
-        } else if (notification.orderId) {
-            router.push(`/vendors/order/${notification.orderDatabaseId || notification.orderId}`);
-        }
-    };
+  return (
+    <div className="mx-auto max-w-[1200px] pb-10 font-sans text-zinc-900 dark:text-zinc-100">
+      <div className="space-y-5">
+        {/* ── 1. HEADER CARD ── */}
+        <section className="overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="relative flex flex-col gap-4 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
+            <div
+              className="pointer-events-none absolute inset-y-0 right-0 w-1/2 opacity-40 dark:opacity-20"
+              style={{
+                background:
+                  "radial-gradient(ellipse at top right, rgba(249,115,22,0.14), transparent 68%)",
+              }}
+            />
 
-    const handleDelete = async (e, id) => {
-        e.stopPropagation();
-        try {
-            await deleteNotification(id);
-            toast.success('Notification archived');
-        } catch (error) {
-            toast.error('Failed to remove notification');
-        }
-    };
-
-    // Premium Skeleton Loader
-    const SkeletonItem = () => (
-        <div className="bg-white  border border-zinc-100  rounded-3xl p-5 animate-pulse flex gap-4">
-            <div className="w-12 h-12 bg-zinc-100  rounded-2xl flex-shrink-0" />
-            <div className="flex-1 space-y-3">
-                <div className="h-4 bg-zinc-100  rounded-full w-1/3" />
-                <div className="h-3 bg-zinc-100  rounded-full w-2/3" />
-                <div className="h-2 bg-zinc-100  rounded-full w-1/4" />
-            </div>
-        </div>
-    );
-
-    return (
-        <div className="mc-workspace mc-notifications min-h-screen bg-white  transition-colors duration-300 p-4">
-            <div className="max-w-5xl mx-auto space-y-4">
-
-                {/* 1. Header & Navigation */}
-                <div className="mc-page-hero flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={() => router.back()}
-                            className="p-2 bg-white  text-zinc-500 border border-zinc-100  rounded-xl hover:text-orange-600 transition-all active:scale-95 group"
-                            title="Go Back"
-                        >
-                            <ChevronLeft size={18} className="transition-transform group-hover:-translate-x-1" />
-                        </button>
-                        <div className="space-y-0.5">
-                            <h1 className="text-2xl font-semibold text-zinc-900  normal-case tracking-tight flex items-center gap-3">
-                                Notifications
-                                {unreadCount > 0 && (
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-xl bg-orange-600 text-white text-sm font-semibold normal-case tracking-normal">
-                                        {unreadCount} New
-                                    </span>
-                                )}
-                            </h1>
-                            <p className="text-sm font-bold text-zinc-500  mt-0.5 normal-case tracking-normal">
-                                Your order updates and store messages, in one place.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={refreshNotifications}
-                            className="p-2.5 bg-white  text-zinc-500 border border-zinc-100  rounded-xl hover:text-orange-600 transition-all active:scale-95 group"
-                            title="Refresh Inbox"
-                        >
-                            <RefreshCw size={14} className={loading ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-700'} />
-                        </button>
-
-                        {notifications.length > 0 && (
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => setIsClearModalOpen(true)}
-                                    className="px-4 py-2.5 bg-rose-50  text-rose-600 rounded-xl text-sm font-semibold normal-case tracking-normal hover:bg-rose-600 hover:text-white transition-all active:scale-95 flex items-center gap-2"
-                                >
-                                    <Trash2 size={14} /> Clear All
-                                </button>
-                                <button
-                                    onClick={markAllAsRead}
-                                    className="px-4 py-2.5 bg-orange-600 text-white rounded-xl text-sm font-semibold normal-case tracking-normal hover:bg-orange-700 transition-all active:scale-95 flex items-center gap-2"
-                                >
-                                    <CheckCircle2 size={14} /> Mark All Read
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* 2. Stats Dashboard */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {[
-                        { label: 'All messages', value: total, color: 'indigo', icon: Bell },
-                        { label: 'Unread', value: unreadCount, color: 'orange', icon: Clock },
-                        { label: 'Orders', value: notifications.filter(n => n.type?.includes('order')).length, color: 'emerald', icon: ShoppingBag },
-                        { label: 'System', value: notifications.filter(n => !n.type?.includes('order')).length, color: 'blue', icon: CheckCircle2 },
-                    ].map((stat, i) => (
-                        <motion.div
-                            key={i}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.05 }}
-                            className="bg-white  border border-zinc-100  p-4 rounded-xl hover:border-orange-500/30 transition-all"
-                        >
-                            <div className={`w-8 h-8 rounded-xl mb-3 flex items-center justify-center ${
-                                stat.color === 'indigo' ? 'bg-indigo-50  text-indigo-500' :
-                                stat.color === 'orange' ? 'bg-orange-50  text-orange-600' :
-                                stat.color === 'emerald' ? 'bg-emerald-50  text-emerald-500' :
-                                'bg-blue-50  text-blue-500'
-                            }`}>
-                                <stat.icon size={16} />
-                            </div>
-                            <div className="text-xl font-semibold text-zinc-900  leading-none tracking-tight">{stat.value}</div>
-                            <div className="text-xs font-semibold text-zinc-500 normal-case tracking-normal mt-1.5 leading-none">{stat.label}</div>
-                        </motion.div>
-                    ))}
-                </div>
-
-                {/* 3. Push Toggle Section */}
-                {!isPushEnabled && (
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.98 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="bg-orange-600 p-px rounded-xl"
-                    >
-                        <div className="bg-white  rounded-[5px] p-4 flex flex-col md:flex-row items-center justify-between gap-4">
-                            <div className="flex items-center gap-4 text-center md:text-left">
-                                <div className="w-12 h-12 bg-orange-50  rounded-xl flex items-center justify-center text-orange-600 flex-shrink-0">
-                                    <Bell size={24} />
-                                </div>
-                                <div className="space-y-0.5">
-                                    <h3 className="text-sm font-semibold text-zinc-900  normal-case tracking-tight">Stay up to date</h3>
-                                    <p className="text-sm font-bold text-zinc-500  normal-case tracking-normal leading-relaxed">Get notified when a new order or important update arrives.</p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={subscribe}
-                                className="w-full md:w-auto px-6 py-2.5 bg-zinc-900  text-white  rounded-xl text-sm font-semibold normal-case tracking-normal transition-all active:scale-95 shadow-none"
-                            >
-                                Enable Now
-                            </button>
-                        </div>
-                    </motion.div>
+            <div className="relative space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-3xl">
+                  Notifications
+                </h1>
+                {unreadCount > 0 && (
+                  <span className="inline-flex items-center rounded-full bg-orange-600 px-2.5 py-0.5 text-xs font-bold tabular-nums text-white">
+                    {unreadCount} unread
+                  </span>
                 )}
-
-                {/* 4. Filter & Search Tabs */}
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                    <div className="flex p-1 bg-zinc-50  border border-zinc-100  rounded-xl w-full md:w-auto">
-                        {['all', 'unread', 'read', 'orders', 'system'].map((tab) => (
-                            <button
-                                key={tab}
-                                onClick={() => setActiveTab(tab)}
-                                className={`flex-1 md:flex-none px-4 py-2 rounded-xl text-sm font-semibold normal-case tracking-normal transition-all ${activeTab === tab
-                                    ? 'bg-orange-600 text-white shadow-none'
-                                    : 'text-zinc-500 hover:text-zinc-900 '
-                                    }`}
-                            >
-                                {tab}
-                            </button>
-                        ))}
-                    </div>
-
-                    <div className="relative w-full md:w-72">
-                        <input
-                            type="text"
-                            placeholder="Search notifications…"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 bg-white  border border-zinc-100  rounded-xl text-sm font-semibold normal-case tracking-normal outline-none focus:border-orange-600 transition-all "
-                        />
-                        <Bell className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500" size={14} />
-                    </div>
-                </div>
-
-                {/* 5. Notification List Implementation */}
-                <div className="space-y-4">
-                    {loading && notifications.length === 0 ? (
-                        <div className="grid gap-3">
-                            {[1, 2, 3, 4].map(i => <SkeletonItem key={i} />)}
-                        </div>
-                    ) : (Object.keys(groupedNotifications).length === 0) ? (
-                        <div className="py-12 bg-white  rounded-xl border border-zinc-100  flex flex-col items-center text-center">
-                            <div className="w-16 h-16 bg-zinc-50  rounded-xl flex items-center justify-center text-zinc-300  mb-4 border border-zinc-100 ">
-                                <Bell size={24} />
-                            </div>
-                            <h3 className="text-lg font-semibold text-zinc-900  normal-case tracking-tight">You’re all caught up</h3>
-                            <p className="text-sm font-bold text-zinc-500  mt-1.5 max-w-xs normal-case tracking-normal leading-relaxed">No messages match this filter.</p>
-                        </div>
-                    ) : (
-                        Object.entries(groupedNotifications).map(([group, items], groupIndex) => (
-                            <div key={group} className="space-y-3">
-                                <div className="flex items-center gap-3 ml-1">
-                                    <div className="h-px flex-1 bg-zinc-100 " />
-                                    <h2 className="text-xs font-semibold tracking-normal text-zinc-500  normal-case flex items-center gap-1.5 whitespace-nowrap">
-                                        <Calendar size={10} /> {group}
-                                    </h2>
-                                    <div className="h-px flex-1 bg-zinc-100 " />
-                                </div>
-
-                                <div className="grid gap-2.5">
-                                    <AnimatePresence mode="popLayout" initial={false}>
-                                        {items.map((notification, i) => (
-                                            <motion.div
-                                                key={notification._id}
-                                                layout
-                                                initial={{ opacity: 0, x: -20 }}
-                                                animate={{ opacity: 1, x: 0 }}
-                                                exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
-                                                whileHover={{ y: -2 }}
-                                                role="button" tabIndex={0} aria-label={notification.title || "Open notification"} onKeyDown={e => { if(e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); handleNotificationClick(notification); } }} className={`mc-notification-row group relative flex items-center gap-4 bg-white  border ${!notification.read
-                                                    ? 'border-orange-500/30'
-                                                    : 'border-zinc-100 '
-                                                    } p-4 rounded-xl transition-all cursor-pointer shadow-none active:scale-[0.99] overflow-hidden`}
-                                                onClick={() => handleNotificationClick(notification)}
-                                            >
-                                                {/* Status Indicator Bar */}
-                                                {!notification.read && (
-                                                    <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-orange-500" />
-                                                )}
-
-                                                {/* Icon */}
-                                                <div className={`w-12 h-12 rounded-xl flex-shrink-0 flex items-center justify-center transition-transform group-hover:scale-105 duration-500 ${!notification.read
-                                                    ? 'bg-orange-50  text-orange-600'
-                                                    : 'bg-zinc-100  text-zinc-500'
-                                                    }`}>
-                                                    {getIcon(notification.type)}
-                                                </div>
-
-                                                {/* Main Content */}
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center justify-between gap-3 mb-1">
-                                                        <h4 className={`text-sm font-semibold break-words tracking-tight normal-case ${!notification.read ? 'text-zinc-900 ' : 'text-zinc-500 '}`}>
-                                                            {notification.title}
-                                                        </h4>
-                                                        <span className="text-xs font-semibold normal-case text-zinc-500 whitespace-nowrap bg-zinc-50  px-2 py-1 rounded-xl">
-                                                            {Number.isNaN(new Date(notification.createdAt).getTime()) ? 'Earlier' : format(new Date(notification.createdAt), 'h:mm aa')}
-                                                        </span>
-                                                    </div>
-
-                                                    <p className={`text-sm font-bold normal-case tracking-normal leading-relaxed mb-2 line-clamp-2 ${!notification.read ? 'text-zinc-600 ' : 'text-zinc-500 '}`}>
-                                                        {notification.body}
-                                                    </p>
-
-                                                    {/* Contextual Badges */}
-                                                    {(notification.customerName || notification.location) && (
-                                                        <div className="flex flex-wrap gap-2">
-                                                            {notification.customerName && (
-                                                                <div className="px-2 py-0.5 rounded-xl bg-orange-50  border border-orange-100  text-xs font-semibold text-orange-600 tracking-normal normal-case flex items-center gap-1.5 leading-none">
-                                                                    <div className="w-1 h-1 rounded-full bg-orange-600" />
-                                                                    {notification.customerName}
-                                                                </div>
-                                                            )}
-                                                            {notification.location && (
-                                                                <div className="px-2 py-0.5 rounded-xl bg-indigo-50  border border-indigo-100  text-xs font-semibold text-indigo-600 tracking-normal normal-case flex items-center gap-1.5 leading-none">
-                                                                    <div className="w-1 h-1 rounded-full bg-indigo-500" />
-                                                                    {notification.location}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    )}
-
-                                                    {/* Remake Request inline response panel */}
-                                                    {notification.type === 'order_remake_request' && (
-                                                        <RemakeResponsePanel
-                                                            notification={notification}
-                                                            onResponded={() => markAsRead(notification._id)}
-                                                        />
-                                                    )}
-                                                </div>
-
-                                                {/* Action Panel */}
-                                                <div className="flex items-center gap-2 ml-2">
-                                                    <button
-                                                        onClick={(e) => handleDelete(e, notification._id)}
-                                                        className="p-2 text-zinc-500 hover:text-rose-600 hover:bg-rose-50  rounded-xl transition-all active:scale-90"
-                                                        title="Delete notification"
-                                                    >
-                                                        <Trash2 size={14} />
-                                                    </button>
-                                                    <div className={`transition-colors ${!notification.read ? 'text-orange-600' : 'text-zinc-300'}`}>
-                                                        <ChevronRight size={16} />
-                                                    </div>
-                                                </div>
-                                            </motion.div>
-                                        ))}
-                                    </AnimatePresence>
-                                </div>
-                            </div>
-                        ))
-                    )}
-
-                    {/* Infinite UX */}
-                    {hasMore && (
-                        <div className="flex justify-center pt-8">
-                            <button
-                                onClick={loadMore}
-                                disabled={loading}
-                                className="group relative px-8 py-3 bg-zinc-900  text-white  rounded-xl font-semibold text-sm tracking-normal normal-case transition-all hover:scale-105 active:scale-95 disabled:opacity-50 overflow-hidden"
-                            >
-                                <span className="relative z-10 flex items-center gap-2.5">
-                                    {loading ? <RefreshCw className="animate-spin" size={14} /> : 'Load more messages'}
-                                </span>
-                            </button>
-                        </div>
-                    )}
-                </div>
-
-                <ClearNotificationsModal
-                    isOpen={isClearModalOpen}
-                    onClose={() => setIsClearModalOpen(false)}
-                    onConfirm={clearAll}
-                    title="Empty Inbox?"
-                    message="Are you sure you want to clear all notification logs? This action is permanent."
-                />
+              </div>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                Real-time order alerts, remake requests, and store updates in
+                one organized inbox.
+              </p>
             </div>
+
+            <div className="relative flex flex-wrap items-center gap-2.5">
+              <button
+                type="button"
+                onClick={refreshNotifications}
+                disabled={loading}
+                className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-55 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+              >
+                <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
+                <span>Refresh</span>
+              </button>
+
+              {notifications.length > 0 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={markAllAsRead}
+                    disabled={unreadCount === 0}
+                    className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-700 disabled:opacity-45"
+                  >
+                    <CheckCircle2 size={15} />
+                    <span>Mark All Read</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsClearModalOpen(true)}
+                    className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300 dark:hover:bg-rose-500/25"
+                  >
+                    <Trash2 size={15} />
+                    <span>Clear All</span>
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* ── 2. STATS STRIP ── */}
+        <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            {
+              label: "Total Messages",
+              value: total || notifications.length,
+              icon: Bell,
+              cls: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300",
+            },
+            {
+              label: "Unread",
+              value: unreadCount,
+              icon: Clock,
+              cls: "bg-orange-50 text-orange-600 dark:bg-orange-500/15 dark:text-orange-400",
+            },
+            {
+              label: "Order Alerts",
+              value: orderCount,
+              icon: ShoppingBag,
+              cls: "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400",
+            },
+            {
+              label: "System Updates",
+              value: systemCount,
+              icon: CheckCircle2,
+              cls: "bg-sky-50 text-sky-600 dark:bg-sky-500/15 dark:text-sky-400",
+            },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              className="flex items-center gap-3.5 rounded-2xl border border-zinc-200/90 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+            >
+              <span
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${stat.cls}`}
+              >
+                <stat.icon size={18} />
+              </span>
+              <div className="min-w-0">
+                <p className="text-xl font-bold tabular-nums text-zinc-900 dark:text-white">
+                  {stat.value}
+                </p>
+                <p className="truncate text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                  {stat.label}
+                </p>
+              </div>
+            </div>
+          ))}
+        </section>
+
+        {/* ── 3. PUSH OPT-IN BANNER ── */}
+        {!isPushEnabled && (
+          <div className="flex flex-col gap-4 rounded-2xl border border-orange-200 bg-orange-50/80 p-5 dark:border-orange-500/30 dark:bg-orange-500/10 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3.5">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-600 text-white shadow-sm">
+                <BellRing size={20} />
+              </span>
+              <div>
+                <h2 className="text-sm font-bold text-zinc-900 dark:text-white">
+                  Enable instant push alerts
+                </h2>
+                <p className="mt-0.5 text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">
+                  Receive immediate notifications whenever a customer places an
+                  order or sends a remake request.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={subscribe}
+              className="inline-flex min-h-[42px] shrink-0 items-center justify-center rounded-xl bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-zinc-800 dark:bg-orange-600 dark:hover:bg-orange-500"
+            >
+              Enable Notifications
+            </button>
+          </div>
+        )}
+
+        {/* ── 4. FILTER & SEARCH BAR ── */}
+        <section className="flex flex-col gap-3 rounded-2xl border border-zinc-200/90 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-wrap gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 p-1 dark:border-zinc-700 dark:bg-zinc-950">
+            {FILTER_TABS.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setActiveTab(t.id)}
+                className={`rounded-lg px-3.5 py-2 text-xs font-semibold transition ${
+                  activeTab === t.id
+                    ? "bg-orange-600 text-white shadow-sm"
+                    : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="relative w-full md:w-72">
+            <Search
+              size={15}
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400"
+            />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search notifications..."
+              className="w-full rounded-xl border border-zinc-200 bg-zinc-50 py-2.5 pl-10 pr-9 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-orange-500 focus:bg-white dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:focus:bg-zinc-900"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                aria-label="Clear search"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+        </section>
+
+        {/* ── 5. GROUPED INBOX LIST ── */}
+        <div className="space-y-6">
+          {loading && notifications.length === 0 ? (
+            <div className="space-y-3">
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="flex items-start gap-4 rounded-2xl border border-zinc-200/90 bg-white p-5 animate-pulse dark:border-zinc-800 dark:bg-zinc-900"
+                >
+                  <div className="h-11 w-11 shrink-0 rounded-xl bg-zinc-200/80 dark:bg-zinc-800" />
+                  <div className="flex-1 space-y-2.5">
+                    <div className="h-4 w-1/3 rounded bg-zinc-200/80 dark:bg-zinc-800" />
+                    <div className="h-3.5 w-3/4 rounded bg-zinc-100 dark:bg-zinc-800/70" />
+                    <div className="h-3 w-1/4 rounded bg-zinc-100 dark:bg-zinc-800/70" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : Object.keys(groupedNotifications).length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-300 bg-white px-6 py-16 text-center dark:border-zinc-700 dark:bg-zinc-900">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-100 text-zinc-400 dark:bg-zinc-800">
+                <Bell size={22} />
+              </div>
+              <h3 className="mt-3 text-base font-bold text-zinc-900 dark:text-white">
+                You&apos;re all caught up
+              </h3>
+              <p className="mt-1 max-w-xs text-xs text-zinc-500 dark:text-zinc-400">
+                {searchQuery || activeTab !== "all"
+                  ? "No notifications match this filter."
+                  : "New order alerts and store updates will appear here."}
+              </p>
+              {(searchQuery || activeTab !== "all") && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setActiveTab("all");
+                  }}
+                  className="mt-4 rounded-xl border border-zinc-200 bg-white px-4 py-2 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+                >
+                  Show All Messages
+                </button>
+              )}
+            </div>
+          ) : (
+            Object.entries(groupedNotifications).map(([group, items]) => (
+              <section key={group} className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-zinc-500 dark:text-zinc-400">
+                    <Calendar size={13} />
+                    {group}
+                  </span>
+                  <div className="h-px flex-1 bg-zinc-200/80 dark:bg-zinc-800" />
+                </div>
+
+                <div className="space-y-2.5">
+                  <AnimatePresence mode="popLayout" initial={false}>
+                    {items.map((notification) => {
+                      const iconMeta = getIconMeta(notification.type);
+                      const Icon = iconMeta.icon;
+                      const createdDate = new Date(notification.createdAt);
+                      const timeStr = Number.isNaN(createdDate.getTime())
+                        ? "Earlier"
+                        : format(createdDate, "h:mm a");
+
+                      return (
+                        <motion.div
+                          key={notification._id}
+                          layout
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.98 }}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={notification.title || "Open notification"}
+                          onClick={() => handleNotificationClick(notification)}
+                          onKeyDown={(e) => {
+                            if (
+                              e.target === e.currentTarget &&
+                              (e.key === "Enter" || e.key === " ")
+                            ) {
+                              e.preventDefault();
+                              handleNotificationClick(notification);
+                            }
+                          }}
+                          className={`group relative flex cursor-pointer items-start gap-3.5 overflow-hidden rounded-2xl border p-4 shadow-sm transition sm:p-5 ${
+                            !notification.read
+                              ? "border-orange-200 bg-white hover:border-orange-300 dark:border-orange-500/35 dark:bg-zinc-900"
+                              : "border-zinc-200/80 bg-white/80 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900/70"
+                          }`}
+                        >
+                          {!notification.read && (
+                            <span className="absolute inset-y-0 left-0 w-1 bg-orange-500" />
+                          )}
+
+                          <span
+                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${iconMeta.cls}`}
+                          >
+                            <Icon size={18} />
+                          </span>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-start justify-between gap-2">
+                              <h3
+                                className={`text-sm font-bold leading-snug ${
+                                  !notification.read
+                                    ? "text-zinc-900 dark:text-white"
+                                    : "text-zinc-600 dark:text-zinc-300"
+                                }`}
+                              >
+                                {notification.title}
+                              </h3>
+                              <span className="shrink-0 rounded-lg bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+                                {timeStr}
+                              </span>
+                            </div>
+
+                            {notification.body && (
+                              <p className="mt-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+                                {notification.body}
+                              </p>
+                            )}
+
+                            {(notification.customerName ||
+                              notification.location) && (
+                              <div className="mt-2.5 flex flex-wrap gap-2">
+                                {notification.customerName && (
+                                  <span className="inline-flex items-center gap-1.5 rounded-full border border-orange-200 bg-orange-50 px-2.5 py-0.5 text-xs font-semibold text-orange-700 dark:border-orange-500/30 dark:bg-orange-500/15 dark:text-orange-300">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
+                                    {notification.customerName}
+                                  </span>
+                                )}
+                                {notification.location && (
+                                  <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-2.5 py-0.5 text-xs font-semibold text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/15 dark:text-sky-300">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-sky-500" />
+                                    {notification.location}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+
+                            {notification.type === "order_remake_request" && (
+                              <RemakeResponsePanel
+                                notification={notification}
+                                onResponded={() => markAsRead(notification._id)}
+                              />
+                            )}
+                          </div>
+
+                          <div className="flex shrink-0 items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={(e) => handleDelete(e, notification._id)}
+                              aria-label="Delete notification"
+                              title="Delete notification"
+                              className="flex h-9 w-9 items-center justify-center rounded-xl text-zinc-400 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/15 dark:hover:text-rose-400"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                            <ChevronRight
+                              size={16}
+                              className={`hidden sm:block ${
+                                !notification.read
+                                  ? "text-orange-500"
+                                  : "text-zinc-300 dark:text-zinc-700"
+                              }`}
+                            />
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </AnimatePresence>
+                </div>
+              </section>
+            ))
+          )}
+
+          {hasMore && (
+            <div className="flex justify-center pt-2">
+              <button
+                type="button"
+                onClick={loadMore}
+                disabled={loading}
+                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-6 py-2.5 text-sm font-semibold text-zinc-700 shadow-sm transition hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+              >
+                {loading ? (
+                  <RefreshCw size={15} className="animate-spin" />
+                ) : (
+                  "Load More Messages"
+                )}
+              </button>
+            </div>
+          )}
         </div>
-    );
+
+        <ClearNotificationsModal
+          isOpen={isClearModalOpen}
+          onClose={() => setIsClearModalOpen(false)}
+          onConfirm={clearAll}
+          title="Empty Inbox?"
+          message="Are you sure you want to clear all notification logs? This action is permanent."
+        />
+      </div>
+    </div>
+  );
 }

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
   BookOpen,
@@ -20,275 +20,244 @@ import {
   Tag,
   UtensilsCrossed,
   X,
-  Zap,
 } from "lucide-react";
 
 const FOOD_STEPS = [
   {
     number: "01",
     title: "Describe the dish",
-    text: "Add a clear name, useful description, strong photo, item type, dietary type, preparation time, and up to six search tags.",
-    example: "Smoky Party Jollof — Party-style jollof rice cooked in a rich pepper and tomato base.",
+    text: "Add a clear name, concise description, sharp photo, item type, dietary tag, prep time, and up to six search tags.",
+    example:
+      "Smoky Party Jollof — Party-style jollof rice cooked in a rich pepper and tomato base.",
   },
   {
     number: "02",
     title: "Place it correctly",
-    text: "Choose the closest MelaChow category, then optionally place it in your own section such as Rice Meals, Swallows, Soups, or Drinks.",
-    example: "Platform category: Rice · Menu section: Rice Meals",
+    text: "Pick the closest MelaChow category, then optionally organize it into your own store section like Rice Meals or Swallows.",
+    example: "Category: Rice · Section: Rice Meals",
   },
   {
     number: "03",
-    title: "Create portions",
-    text: "Every food needs at least one portion. Use names customers immediately understand and make the most popular size the primary option.",
+    title: "Create clear portions",
+    text: "Every dish needs at least one portion. Name sizes clearly and make your most popular size the default.",
     example: "Regular Pack — ₦2,500 · Large Pack — ₦3,800",
   },
   {
     number: "04",
-    title: "Offer useful choices",
-    text: "Add choice groups only when the customer needs to decide. Set required rules and selection limits carefully.",
+    title: "Add useful choices",
+    text: "Add choice groups only when the customer must decide (or wants extras). Set min/max limits accurately.",
     example: "Choose Protein: Chicken +₦1,500 · Beef +₦1,200 · Fish +₦1,400",
   },
   {
     number: "05",
-    title: "Review and publish",
-    text: "Check spelling, photo crop, prices, selection rules, and availability before publishing to your live menu.",
-    example: "Read the item once as if you were placing the order yourself.",
+    title: "Review & publish",
+    text: "Double-check spelling, photo crop, prices, and selection rules before publishing live.",
+    example: "Read the item once as if you were ordering it yourself.",
   },
 ];
 
 const COMBO_STEPS = [
   {
     number: "01",
-    title: "Give the bundle a purpose",
-    text: "Use a name that tells customers what the deal is. Add a photo, description, dietary type, preparation time, and searchable tags.",
-    example: "Lunch for Two — Jollof rice, two chicken portions, plantain, and two drinks.",
+    title: "Name the bundle clearly",
+    text: "Use a name that immediately communicates the deal, with a clear photo, description, prep time, and tags.",
+    example:
+      "Lunch for Two — Jollof rice, two chicken portions, plantain, and two drinks.",
   },
   {
     number: "02",
     title: "Choose its category",
-    text: "Select the closest platform category and, if useful, add it to a restaurant section such as Family Deals or Lunch Specials.",
-    example: "Platform category: Combo Deals · Menu section: Lunch Specials",
+    text: "Select the closest platform category and place it in a section like Family Deals or Lunch Specials.",
+    example: "Category: Combo Deals · Section: Lunch Specials",
   },
   {
     number: "03",
-    title: "Set one clear price",
-    text: "Enter the base combo price and list what is included. The deal should feel simpler and better-value than ordering each item separately.",
-    example: "Included: 2 jollof rice, 2 chicken, plantain, 2 drinks · Combo price: ₦12,500",
+    title: "Set one honest base price",
+    text: "List everything included in the base price so the bundle feels simpler and better value than buying separately.",
+    example: "2 jollof rice, 2 chicken, plantain, 2 drinks · ₦12,500",
   },
   {
     number: "04",
     title: "Add controlled upgrades",
-    text: "Let customers swap or upgrade parts of the combo with choice groups, without making the bundle difficult to understand.",
+    text: "Let diners swap or upgrade drinks/proteins without overwhelming them with too many choices.",
     example: "Choose Drinks: 2 Water (included) · 2 Malt +₦1,000",
   },
   {
     number: "05",
-    title: "Preview the complete deal",
-    text: "Confirm the name, included items, final base price, choices, and photo all describe the same bundle before publishing.",
-    example: "A customer should understand the entire deal in under ten seconds.",
+    title: "Preview the full deal",
+    text: "Confirm the photo, included items, and total price all tell the same clear story before going live.",
+    example: "A customer should understand the deal in under 10 seconds.",
   },
 ];
 
 const FOOD_EXAMPLES = [
   { name: "Smoky Party Jollof", type: "Food", section: "Rice Meals", price: "₦2,500", prep: "20 min", tags: ["rice", "smoky", "bestseller"] },
   { name: "White Rice & Stew", type: "Food", section: "Rice Meals", price: "₦2,200", prep: "15 min", tags: ["rice", "stew", "classic"] },
-  { name: "Amala & Ewedu", type: "Swallow", section: "Swallows", price: "₦2,800", prep: "15 min", tags: ["amala", "yoruba", "local"] },
-  { name: "Pounded Yam & Egusi", type: "Swallow", section: "Swallows", price: "₦3,500", prep: "20 min", tags: ["egusi", "swallow", "popular"] },
-  { name: "Ofada Rice & Ayamase", type: "Food", section: "Local Specials", price: "₦4,000", prep: "25 min", tags: ["ofada", "spicy", "local"] },
-  { name: "Peppered Chicken", type: "Protein", section: "Proteins", price: "₦1,800", prep: "12 min", tags: ["chicken", "peppered", "protein"] },
-  { name: "Moi Moi", type: "Side", section: "Sides", price: "₦900", prep: "10 min", tags: ["beans", "side", "steamed"] },
-  { name: "Zobo Drink", type: "Drink", section: "Drinks", price: "₦800", prep: "5 min", tags: ["zobo", "cold", "refreshing"] },
+  { name: "Amala & Ewedu", type: "Swallow", section: "Swallows", price: "₦2,800", prep: "15 min", tags: ["amala", "local"] },
+  { name: "Pounded Yam & Egusi", type: "Swallow", section: "Swallows", price: "₦3,500", prep: "20 min", tags: ["egusi", "swallow"] },
+  { name: "Ofada Rice & Ayamase", type: "Food", section: "Local Specials", price: "₦4,000", prep: "25 min", tags: ["ofada", "spicy"] },
+  { name: "Peppered Chicken", type: "Protein", section: "Proteins", price: "₦1,800", prep: "12 min", tags: ["chicken", "protein"] },
+  { name: "Moi Moi", type: "Side", section: "Sides", price: "₦900", prep: "10 min", tags: ["beans", "side"] },
+  { name: "Zobo Drink", type: "Drink", section: "Drinks", price: "₦800", prep: "5 min", tags: ["zobo", "cold"] },
 ];
 
 const COMBO_EXAMPLES = [
-  { name: "Solo Jollof Box", contents: "Jollof rice, chicken & plantain", price: "₦4,800", saving: "Quick lunch" },
-  { name: "White Rice Comfort Box", contents: "White rice, stew, beef & moi moi", price: "₦5,200", saving: "Complete meal" },
-  { name: "Swallow Lovers Deal", contents: "2 swallows, egusi, ewedu & assorted meat", price: "₦9,500", saving: "For two" },
-  { name: "Family Rice Feast", contents: "4 rice portions, 4 proteins, plantain & drinks", price: "₦22,000", saving: "Family size" },
-  { name: "Office Lunch Pack", contents: "10 rice packs, chicken & bottled water", price: "₦45,000", saving: "Group order" },
-  { name: "Grill Night Bundle", contents: "Grilled fish, yam chips, slaw & 2 drinks", price: "₦13,500", saving: "Dinner deal" },
+  { name: "Solo Jollof Box", contents: "Jollof rice, chicken & plantain", price: "₦4,800", tag: "Quick lunch" },
+  { name: "White Rice Comfort Box", contents: "White rice, stew, beef & moi moi", price: "₦5,200", tag: "Complete meal" },
+  { name: "Swallow Lovers Deal", contents: "2 swallows, egusi, ewedu & assorted meat", price: "₦9,500", tag: "For two" },
+  { name: "Family Rice Feast", contents: "4 rice portions, 4 proteins, plantain & drinks", price: "₦22,000", tag: "Family size" },
+  { name: "Office Lunch Pack", contents: "10 rice packs, chicken & bottled water", price: "₦45,000", tag: "Group order" },
+  { name: "Grill Night Bundle", contents: "Grilled fish, yam chips, slaw & 2 drinks", price: "₦13,500", tag: "Dinner deal" },
 ];
 
-const FAQS = [
+const QUALITY_CHECKS = [
+  "The name clearly identifies the dish or deal.",
+  "The description explains exactly what the customer receives.",
+  "The photo matches the real dish and portion size.",
+  "At least one valid portion or combo price is set.",
+  "Required choices have sensible minimum and maximum limits.",
+  "Preparation time is realistic during peak hours.",
+  "Spelling, tags, category, and availability are accurate.",
+];
+
+const GUIDE_FAQS = [
   {
     question: "What is the difference between a food item and a combo?",
-    answer: "A food item is one sellable dish with one or more portions. A combo is a complete deal sold at one base price, usually containing multiple dishes, proteins, sides, or drinks.",
+    answer:
+      "A food item is a single sellable dish with one or more portion sizes. A combo is a complete deal sold at one base price, combining multiple dishes, proteins, sides, or drinks.",
   },
   {
     question: "Should protein be included in the portion price?",
-    answer: "Either approach can work, but the listing must be clear. If the displayed price is rice only, say so and make protein a required choice. If protein is included, identify the included protein in the name or description.",
+    answer:
+      "Either works as long as it is obvious. If the base price is rice only, state that clearly and make protein a required choice. If protein is included, mention it in the title or description and price it at ₦0 in choices.",
   },
   {
     question: "How many choice groups should I add?",
-    answer: "Use only the groups needed to complete the order. Most items need zero to three groups. Too many decisions slow customers down and increase ordering mistakes.",
+    answer:
+      "Stick to 0–3 choice groups per dish. Asking only what the kitchen needs speeds up checkout and reduces order mistakes.",
   },
   {
     question: "Can I edit an item after publishing?",
-    answer: "Yes. Open My Foods or My Combos, select the item, and edit it. Recheck live prices and availability whenever ingredients or packaging costs change.",
+    answer:
+      "Yes. Open My Foods, click any dish, and update prices, portions, choices, or availability anytime.",
   },
 ];
-
-function StepCard({ step }) {
-  return (
-    <div className="group relative overflow-hidden rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-orange-200 hover:shadow-xl hover:shadow-orange-500/5 dark:border-white/8 dark:bg-zinc-900/70 dark:hover:border-orange-500/30">
-      <div className="absolute right-0 top-0 h-24 w-24 rounded-full bg-orange-500/5 blur-2xl transition-colors group-hover:bg-orange-500/10" />
-      <div className="relative flex gap-4">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-950 text-[11px] font-black text-white shadow-lg dark:bg-white dark:text-zinc-950">
-          {step.number}
-        </span>
-        <div>
-          <h3 className="text-sm font-black uppercase tracking-tight text-zinc-950 dark:text-white">{step.title}</h3>
-          <p className="mt-2 text-[12px] font-medium leading-6 text-zinc-600 dark:text-zinc-400">{step.text}</p>
-          <div className="mt-4 rounded-xl border border-orange-100 bg-orange-50/70 p-3 dark:border-orange-500/15 dark:bg-orange-500/5">
-            <p className="text-[9px] font-black uppercase tracking-[0.18em] text-orange-600">Example</p>
-            <p className="mt-1 text-[11px] font-bold leading-5 text-zinc-700 dark:text-zinc-300">{step.example}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function SectionHeading({ eyebrow, title, description }) {
-  return (
-    <div className="max-w-2xl">
-      <p className="text-[10px] font-black uppercase tracking-[0.24em] text-orange-600">{eyebrow}</p>
-      <h2 className="mt-2 text-2xl font-black tracking-tight text-zinc-950 md:text-3xl dark:text-white">{title}</h2>
-      <p className="mt-3 text-sm font-medium leading-7 text-zinc-600 dark:text-zinc-400">{description}</p>
-    </div>
-  );
-}
-
-function FaqItem({ item, open, onToggle }) {
-  return (
-    <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-white/8 dark:bg-zinc-900/70">
-      <button onClick={onToggle} className="flex w-full items-center justify-between gap-4 p-5 text-left">
-        <span className="text-[12px] font-black text-zinc-900 dark:text-white">{item.question}</span>
-        <ChevronDown size={17} className={`shrink-0 text-orange-500 transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}>
-            <p className="px-5 pb-5 text-[12px] font-medium leading-6 text-zinc-600 dark:text-zinc-400">{item.answer}</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
 
 export default function MenuGuidePage() {
   const [activeGuide, setActiveGuide] = useState("food");
   const [openFaq, setOpenFaq] = useState(0);
+  const [checkedItems, setCheckedItems] = useState({});
+
+  const toggleCheck = (idx) => {
+    setCheckedItems((prev) => ({ ...prev, [idx]: !prev[idx] }));
+  };
+  const checkedCount = Object.values(checkedItems).filter(Boolean).length;
 
   return (
-    <div className="min-h-screen bg-zinc-50 pb-16 text-zinc-950 dark:bg-zinc-950 dark:text-white">
-      <main className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-5 lg:px-6 lg:py-6">
-        <section className="relative overflow-hidden rounded-[28px] border border-white/10 bg-zinc-950 px-5 py-8 shadow-2xl sm:px-8 md:py-10 lg:px-12">
-          <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-orange-500/20 blur-[90px]" />
-          <div className="absolute -bottom-32 left-1/3 h-64 w-64 rounded-full bg-amber-400/10 blur-[100px]" />
-          <div className="absolute inset-0 opacity-[0.035]" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "22px 22px" }} />
+    <div className="mx-auto max-w-[1440px] pb-12 font-sans text-zinc-900 dark:text-zinc-100">
+      <div className="space-y-6">
+        {/* ── 1. HERO CARD ── */}
+        <section className="overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="relative grid gap-6 p-6 sm:p-8 lg:grid-cols-12 lg:items-center">
+            <div
+              className="pointer-events-none absolute inset-y-0 right-0 w-1/2 opacity-40 dark:opacity-20"
+              style={{
+                background:
+                  "radial-gradient(ellipse at top right, rgba(249,115,22,0.18), transparent 68%)",
+              }}
+            />
 
-          <div className="relative grid gap-8 lg:grid-cols-[1.15fr_.85fr] lg:items-end">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-orange-400/20 bg-orange-500/10 px-3 py-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-orange-300">
-                <Sparkles size={12} /> MelaChow Menu Academy
-              </div>
-              <h1 className="mt-5 max-w-3xl text-3xl font-black leading-[1.05] tracking-[-0.04em] text-white sm:text-4xl lg:text-5xl">
-                Build a menu customers can order from with confidence.
+            <div className="relative space-y-3 lg:col-span-7">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700 dark:border-orange-500/30 dark:bg-orange-500/15 dark:text-orange-300">
+                <Sparkles size={13} />
+                MelaChow Menu Academy
+              </span>
+              <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-3xl lg:text-4xl">
+                Build a menu customers order from with confidence.
               </h1>
-              <p className="mt-5 max-w-2xl text-sm font-medium leading-7 text-zinc-400">
-                Learn how to create clear food listings and valuable combo deals, with practical examples you can adapt for your restaurant.
+              <p className="max-w-xl text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+                Follow our structured 5-step playbook for pricing portions,
+                organizing choice groups, and photographing dishes so orders come
+                in accurately every time.
               </p>
-              <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-                <Link href="/vendors/create-food" className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-orange-600 px-5 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-orange-600/20 transition hover:bg-orange-500 active:scale-[0.98]">
-                  <Plus size={15} /> Create a food item
+              <div className="flex flex-wrap gap-3 pt-2">
+                <Link
+                  href="/vendors/create-food"
+                  className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-700"
+                >
+                  <Plus size={16} />
+                  <span>Create Food Item</span>
+                </Link>
+                <Link
+                  href="/vendors/options-library"
+                  className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-5 py-2.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                >
+                  <Layers3 size={16} />
+                  <span>Options Library</span>
                 </Link>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="relative grid grid-cols-2 gap-3 lg:col-span-5">
               {[
-                { value: "5", label: "Simple steps", icon: ListChecks },
-                { value: "14", label: "Real examples", icon: BookOpen },
-                { value: "1+", label: "Portion required", icon: Layers3 },
-                { value: "6", label: "Tags maximum", icon: Tag },
+                { value: "5", label: "Wizard Steps", icon: ListChecks },
+                { value: "14", label: "Real Examples", icon: BookOpen },
+                { value: "1+", label: "Portion Required", icon: Layers3 },
+                { value: "6 max", label: "Search Tags", icon: Tag },
               ].map((stat) => (
-                <div key={stat.label} className="rounded-2xl border border-white/10 bg-white/[0.055] p-4 backdrop-blur-md">
-                  <stat.icon size={16} className="text-orange-400" />
-                  <p className="mt-4 text-2xl font-black text-white">{stat.value}</p>
-                  <p className="mt-1 text-[9px] font-black uppercase tracking-widest text-zinc-500">{stat.label}</p>
+                <div
+                  key={stat.label}
+                  className="rounded-xl border border-zinc-200/80 bg-zinc-50/80 p-4 dark:border-zinc-800 dark:bg-zinc-950/50"
+                >
+                  <stat.icon size={16} className="text-orange-600 dark:text-orange-400" />
+                  <p className="mt-3 text-2xl font-bold tabular-nums text-zinc-900 dark:text-white">
+                    {stat.value}
+                  </p>
+                  <p className="mt-0.5 text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                    {stat.label}
+                  </p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        <section className="mt-6 grid gap-3 md:grid-cols-2">
-          <button
-            onClick={() => {
-              setActiveGuide("food");
-              document.getElementById("walkthrough")?.scrollIntoView({ behavior: "smooth", block: "start" });
-            }}
-            className="group rounded-3xl border border-zinc-200 bg-white p-5 text-left shadow-sm transition hover:border-orange-300 hover:shadow-xl hover:shadow-orange-500/5 dark:border-white/8 dark:bg-zinc-900/70 dark:hover:border-orange-500/30"
-          >
-            <div className="flex items-start justify-between gap-5">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-600 text-white shadow-lg shadow-orange-600/20">
-                <UtensilsCrossed size={19} />
-              </div>
-              <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[8px] font-black uppercase tracking-widest text-zinc-500 dark:bg-white/5">Individual listing</span>
+        {/* ── 2. STEP-BY-STEP WALKTHROUGH ── */}
+        <section className="rounded-2xl border border-zinc-200/90 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-orange-600 dark:text-orange-400">
+                Step-by-step walkthrough
+              </p>
+              <h2 className="mt-1 text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
+                Match the exact creation wizard flow
+              </h2>
             </div>
-            <h2 className="mt-5 text-lg font-black tracking-tight text-zinc-950 dark:text-white">Create a food item</h2>
-            <p className="mt-2 text-[12px] font-medium leading-6 text-zinc-600 dark:text-zinc-400">
-              Best for one dish, drink, protein, soup, swallow, side, or dessert. A food item can have several portion sizes.
-            </p>
-            <span className="mt-5 inline-flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-orange-600">
-              Read food guide <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
-            </span>
-          </button>
 
-          <button
-            onClick={() => {
-              setActiveGuide("combo");
-              document.getElementById("walkthrough")?.scrollIntoView({ behavior: "smooth", block: "start" });
-            }}
-            className="group rounded-3xl border border-zinc-200 bg-white p-5 text-left shadow-sm transition hover:border-amber-300 hover:shadow-xl hover:shadow-amber-500/5 dark:border-white/8 dark:bg-zinc-900/70 dark:hover:border-amber-500/30"
-          >
-            <div className="flex items-start justify-between gap-5">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-zinc-950 text-white shadow-lg dark:bg-white dark:text-zinc-950">
-                <Package size={19} />
-              </div>
-              <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-[8px] font-black uppercase tracking-widest text-zinc-500 dark:bg-white/5">Bundle deal</span>
-            </div>
-            <h2 className="mt-5 text-lg font-black tracking-tight text-zinc-950 dark:text-white">Create a combo item</h2>
-            <p className="mt-2 text-[12px] font-medium leading-6 text-zinc-600 dark:text-zinc-400">
-              Best for a complete meal deal, meal for two, family pack, office order, or any group of items sold at one base price.
-            </p>
-            <span className="mt-5 inline-flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-orange-600">
-              Read combo guide <ArrowRight size={13} className="transition-transform group-hover:translate-x-1" />
-            </span>
-          </button>
-        </section>
-
-        <section id="walkthrough" className="scroll-mt-5 py-16">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <SectionHeading
-              eyebrow="Step-by-step walkthrough"
-              title="Follow the same flow as the creation wizard."
-              description="Use this guide beside the form. Each step below explains what to enter and shows a strong example."
-            />
-            <div className="inline-flex w-full rounded-2xl border border-zinc-200 bg-white p-1.5 shadow-sm sm:w-auto dark:border-white/8 dark:bg-zinc-900">
+            <div className="inline-flex w-full rounded-xl border border-zinc-200 bg-zinc-50 p-1 dark:border-zinc-700 dark:bg-zinc-950 sm:w-auto">
               <button
+                type="button"
                 onClick={() => setActiveGuide("food")}
-                className={`flex h-11 flex-1 items-center justify-center gap-2 rounded-xl px-5 text-[9px] font-black uppercase tracking-widest transition sm:flex-none ${activeGuide === "food" ? "bg-orange-600 text-white shadow-lg shadow-orange-600/20" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white"}`}
+                className={`inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition sm:flex-none ${
+                  activeGuide === "food"
+                    ? "bg-orange-600 text-white shadow-sm"
+                    : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+                }`}
               >
-                <UtensilsCrossed size={14} /> Food item
+                <UtensilsCrossed size={14} />
+                <span>Food Item</span>
               </button>
               <button
+                type="button"
                 onClick={() => setActiveGuide("combo")}
-                className={`flex h-11 flex-1 items-center justify-center gap-2 rounded-xl px-5 text-[9px] font-black uppercase tracking-widest transition sm:flex-none ${activeGuide === "combo" ? "bg-zinc-950 text-white shadow-lg dark:bg-white dark:text-zinc-950" : "text-zinc-500 hover:text-zinc-900 dark:hover:text-white"}`}
+                className={`inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition sm:flex-none ${
+                  activeGuide === "combo"
+                    ? "bg-orange-600 text-white shadow-sm"
+                    : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
+                }`}
               >
-                <Package size={14} /> Combo
+                <Package size={14} />
+                <span>Combo Deal</span>
               </button>
             </div>
           </div>
@@ -296,243 +265,345 @@ export default function MenuGuidePage() {
           <AnimatePresence mode="wait">
             <motion.div
               key={activeGuide}
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              className="mt-8 grid gap-3 md:grid-cols-2 xl:grid-cols-5"
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.16 }}
+              className="mt-5 grid grid-cols-1 gap-3.5 md:grid-cols-2 xl:grid-cols-5"
             >
-              {(activeGuide === "food" ? FOOD_STEPS : COMBO_STEPS).map((step) => <StepCard key={step.number} step={step} />)}
+              {(activeGuide === "food" ? FOOD_STEPS : COMBO_STEPS).map((step) => (
+                <div
+                  key={step.number}
+                  className="flex flex-col justify-between rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-950/40"
+                >
+                  <div>
+                    <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-900 text-xs font-bold text-white dark:bg-orange-600">
+                      {step.number}
+                    </span>
+                    <h3 className="mt-3 text-sm font-bold text-zinc-900 dark:text-white">
+                      {step.title}
+                    </h3>
+                    <p className="mt-1.5 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+                      {step.text}
+                    </p>
+                  </div>
+                  <div className="mt-4 rounded-lg border border-orange-200/70 bg-orange-50/70 p-3 dark:border-orange-500/20 dark:bg-orange-500/10">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-orange-700 dark:text-orange-400">
+                      Example
+                    </p>
+                    <p className="mt-1 text-xs font-medium leading-relaxed text-zinc-700 dark:text-zinc-300">
+                      {step.example}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </motion.div>
           </AnimatePresence>
 
-          <div className="mt-5 flex flex-col items-start justify-between gap-4 rounded-2xl border border-orange-200 bg-orange-50 p-5 sm:flex-row sm:items-center dark:border-orange-500/20 dark:bg-orange-500/5">
+          <div className="mt-5 flex flex-col gap-3 rounded-xl border border-orange-200 bg-orange-50/70 p-4 dark:border-orange-500/25 dark:bg-orange-500/10 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
-              <Lightbulb className="mt-0.5 shrink-0 text-orange-600" size={19} />
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-widest text-zinc-900 dark:text-white">Ready to practise?</p>
-                <p className="mt-1 text-[11px] font-medium leading-5 text-zinc-600 dark:text-zinc-400">
-                  The wizard saves your progress while you work. You can review everything before publishing.
-                </p>
-              </div>
+              <Lightbulb size={18} className="mt-0.5 shrink-0 text-orange-600 dark:text-orange-400" />
+              <p className="text-xs leading-relaxed text-zinc-700 dark:text-zinc-300">
+                <strong className="font-bold text-zinc-900 dark:text-white">
+                  Drafts auto-save locally:
+                </strong>{" "}
+                the wizard saves your progress as you type, so you can review
+                everything before going live.
+              </p>
             </div>
             <Link
               href="/vendors/create-food"
-              className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-zinc-950 px-4 text-[9px] font-black uppercase tracking-widest text-white transition hover:bg-orange-600 dark:bg-white dark:text-zinc-950 dark:hover:bg-orange-500 dark:hover:text-white"
+              className="inline-flex min-h-[38px] shrink-0 items-center gap-1.5 rounded-xl bg-zinc-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-orange-600 dark:bg-white dark:text-zinc-900"
             >
-              Open food wizard <ArrowRight size={13} />
+              <span>Open Food Wizard</span>
+              <ArrowRight size={13} />
             </Link>
           </div>
         </section>
 
-        <section className="grid gap-5 lg:grid-cols-[.9fr_1.1fr]">
-          <div className="rounded-[28px] bg-zinc-950 p-6 text-white shadow-2xl sm:p-8">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-600 shadow-lg shadow-orange-600/25">
-              <Layers3 size={19} />
+        {/* ── 3. CHOICE GROUPS & INTERACTIVE QUALITY CHECKLIST ── */}
+        <section className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          {/* Choice Groups */}
+          <div className="rounded-2xl border border-zinc-200/90 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:p-6">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-orange-600 dark:bg-orange-500/15 dark:text-orange-400">
+                <Layers3 size={18} />
+              </span>
+              <div>
+                <h2 className="text-base font-bold text-zinc-900 dark:text-white">
+                  Choice Group Best Practices
+                </h2>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Ask only the questions your kitchen needs
+                </p>
+              </div>
             </div>
-            <p className="mt-6 text-[10px] font-black uppercase tracking-[0.22em] text-orange-400">Choice groups made simple</p>
-            <h2 className="mt-2 text-2xl font-black tracking-tight">Ask only the questions needed to prepare the order.</h2>
-            <p className="mt-4 text-[12px] font-medium leading-6 text-zinc-400">
-              A choice group contains a customer decision and its options. Mark it required only when the kitchen cannot complete the order without an answer.
-            </p>
 
-            <div className="mt-7 space-y-3">
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
               {[
-                ["Group name", "Choose Protein"],
-                ["Required", "Yes — customer must pick"],
-                ["Selection rule", "Minimum 1 · Maximum 1"],
-                ["Options", "Chicken +₦1,500 · Beef +₦1,200 · Fish +₦1,400"],
-              ].map(([label, value]) => (
-                <div key={label} className="rounded-2xl border border-white/8 bg-white/[0.045] p-4">
-                  <p className="text-[8px] font-black uppercase tracking-widest text-zinc-500">{label}</p>
-                  <p className="mt-1.5 text-[11px] font-bold leading-5 text-zinc-200">{value}</p>
+                { name: "Choose Protein", rule: "Required · Pick 1", options: "Chicken, beef, fish" },
+                { name: "Add Extras", rule: "Optional · Up to 3", options: "Plantain, moi moi, coleslaw" },
+                { name: "Choose Soup", rule: "Required · Pick 1", options: "Egusi, ewedu, ogbono" },
+                { name: "Choose Drinks", rule: "Required · Pick 2", options: "Water, malt, soft drink" },
+              ].map((g) => (
+                <div
+                  key={g.name}
+                  className="rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-3.5 dark:border-zinc-800 dark:bg-zinc-950/40"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-bold text-zinc-900 dark:text-white">
+                      {g.name}
+                    </p>
+                    <CheckCircle2 size={15} className="text-emerald-500" />
+                  </div>
+                  <p className="mt-1 text-xs font-semibold text-orange-600 dark:text-orange-400">
+                    {g.rule}
+                  </p>
+                  <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+                    {g.options}
+                  </p>
                 </div>
               ))}
+            </div>
+
+            <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-rose-200 bg-rose-50/80 p-3.5 text-xs text-rose-900 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
+              <X size={16} className="mt-0.5 shrink-0 text-rose-600" />
+              <p className="leading-relaxed">
+                <strong>Avoid duplicate charges:</strong> if chicken is already
+                included in the base price, set its choice modifier to{" "}
+                <strong>₦0</strong>.
+              </p>
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-zinc-200 bg-white p-6 shadow-sm sm:p-8 dark:border-white/8 dark:bg-zinc-900/70">
-            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-orange-600">Good group patterns</p>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {[
-                { name: "Choose Protein", rule: "Required · Pick 1", options: "Chicken, beef, fish" },
-                { name: "Add Extras", rule: "Optional · Pick up to 3", options: "Plantain, moi moi, coleslaw" },
-                { name: "Choose Soup", rule: "Required · Pick 1", options: "Egusi, ewedu, ogbono" },
-                { name: "Choose Drinks", rule: "Required · Pick 2", options: "Water, malt, soft drink" },
-              ].map((group) => (
-                <div key={group.name} className="rounded-2xl border border-zinc-200/80 bg-zinc-50 p-4 dark:border-white/8 dark:bg-zinc-950/60">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-[11px] font-black text-zinc-900 dark:text-white">{group.name}</p>
-                    <CheckCircle2 size={15} className="shrink-0 text-emerald-500" />
-                  </div>
-                  <p className="mt-2 text-[8px] font-black uppercase tracking-widest text-orange-600">{group.rule}</p>
-                  <p className="mt-3 text-[11px] font-medium leading-5 text-zinc-500">{group.options}</p>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 rounded-2xl border border-rose-100 bg-rose-50 p-4 dark:border-rose-500/15 dark:bg-rose-500/5">
-              <div className="flex gap-3">
-                <X size={17} className="mt-0.5 shrink-0 text-rose-500" />
+          {/* Interactive 60-Second Quality Check */}
+          <div className="rounded-2xl border border-zinc-200/90 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:p-6">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400">
+                  <ListChecks size={18} />
+                </span>
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-rose-600">Avoid duplicate charges</p>
-                  <p className="mt-1 text-[11px] font-medium leading-5 text-zinc-600 dark:text-zinc-400">
-                    Do not charge for an option twice. If chicken is already included in the base price, its modifier should be ₦0.
+                  <h2 className="text-base font-bold text-zinc-900 dark:text-white">
+                    60-Second Pre-Publish Checklist
+                  </h2>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    Tap each item as you verify your dish
                   </p>
                 </div>
               </div>
+              <span className="rounded-full bg-zinc-100 px-2.5 py-1 text-xs font-bold tabular-nums text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                {checkedCount}/{QUALITY_CHECKS.length}
+              </span>
+            </div>
+
+            <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-800">
+              <div
+                className="h-full rounded-full bg-emerald-500 transition-all duration-300"
+                style={{
+                  width: `${Math.round((checkedCount / QUALITY_CHECKS.length) * 100)}%`,
+                }}
+              />
+            </div>
+
+            <div className="mt-4 space-y-2">
+              {QUALITY_CHECKS.map((check, idx) => {
+                const done = Boolean(checkedItems[idx]);
+                return (
+                  <button
+                    key={check}
+                    type="button"
+                    onClick={() => toggleCheck(idx)}
+                    className={`flex w-full items-start gap-3 rounded-xl border px-3.5 py-2.5 text-left text-xs font-medium transition ${
+                      done
+                        ? "border-emerald-200 bg-emerald-50/70 text-emerald-900 line-through dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200"
+                        : "border-zinc-200/70 bg-zinc-50/70 text-zinc-700 hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-300"
+                    }`}
+                  >
+                    <span
+                      className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+                        done
+                          ? "border-emerald-600 bg-emerald-600 text-white"
+                          : "border-zinc-300 bg-white dark:border-zinc-600 dark:bg-zinc-900"
+                      }`}
+                    >
+                      {done && <Check size={11} />}
+                    </span>
+                    <span className="leading-relaxed">{check}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </section>
 
-        <section className="py-16">
-          <SectionHeading
-            eyebrow="Example library"
-            title="Adapt these examples to your kitchen."
-            description="Use the structure, not necessarily the exact price. Your own ingredient, packaging, portion, and operating costs should determine pricing."
-          />
-
-          <div className="mt-8">
-            <div className="flex items-center justify-between">
-              <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-tight text-zinc-950 dark:text-white">
-                <UtensilsCrossed size={16} className="text-orange-600" /> Food item examples
-              </h3>
-              <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">{FOOD_EXAMPLES.length} ideas</span>
-            </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {FOOD_EXAMPLES.map((item, index) => (
-                <div key={item.name} className="group overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl dark:border-white/8 dark:bg-zinc-900/70">
-                  <div className={`relative h-24 overflow-hidden bg-gradient-to-br ${index % 3 === 0 ? "from-orange-600 to-amber-400" : index % 3 === 1 ? "from-zinc-900 to-zinc-700" : "from-emerald-700 to-lime-500"}`}>
-                    <div className="absolute -right-5 -top-8 h-24 w-24 rounded-full border-[14px] border-white/10" />
-                    <UtensilsCrossed className="absolute bottom-4 left-4 text-white/90" size={22} />
-                    <span className="absolute right-3 top-3 rounded-full border border-white/15 bg-black/15 px-2 py-1 text-[7px] font-black uppercase tracking-widest text-white backdrop-blur">{item.type}</span>
-                  </div>
-                  <div className="p-4">
-                    <p className="text-[13px] font-black text-zinc-950 dark:text-white">{item.name}</p>
-                    <p className="mt-1 text-[9px] font-bold uppercase tracking-widest text-zinc-400">{item.section}</p>
-                    <div className="mt-4 flex items-end justify-between gap-3">
-                      <span className="text-lg font-black tabular-nums text-orange-600">{item.price}</span>
-                      <span className="flex items-center gap-1 text-[9px] font-bold text-zinc-500"><Clock3 size={11} /> {item.prep}</span>
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-1">
-                      {item.tags.map((tag) => <span key={tag} className="rounded-full bg-zinc-100 px-2 py-1 text-[7px] font-black uppercase tracking-wide text-zinc-500 dark:bg-white/5">{tag}</span>)}
-                    </div>
-                  </div>
-                </div>
-              ))}
+        {/* ── 4. PHOTO GUIDE & EXAMPLES ── */}
+        <section className="rounded-2xl border border-zinc-200/90 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:p-6">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-orange-600 dark:bg-orange-500/15 dark:text-orange-400">
+              <Camera size={18} />
+            </span>
+            <div>
+              <h2 className="text-base font-bold text-zinc-900 dark:text-white">
+                Food Photography Guide
+              </h2>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                Clear, honest photos convert significantly better
+              </p>
             </div>
           </div>
 
-          <div className="mt-10">
-            <div className="flex items-center justify-between">
-              <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-tight text-zinc-950 dark:text-white">
-                <Package size={16} className="text-orange-600" /> Combo examples
-              </h3>
-              <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">{COMBO_EXAMPLES.length} ideas</span>
+          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-500/25 dark:bg-emerald-500/10">
+              <p className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                <Check size={14} /> Do This
+              </p>
+              <ul className="mt-3 space-y-2 text-xs text-zinc-700 dark:text-zinc-300">
+                <li>• Shoot in bright, natural daylight near a window.</li>
+                <li>• Show the real portion size the customer receives.</li>
+                <li>• Keep the background clean and uncluttered.</li>
+                <li>• Use a sharp square or landscape photo.</li>
+              </ul>
             </div>
-            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {COMBO_EXAMPLES.map((combo) => (
-                <div key={combo.name} className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition hover:border-orange-200 hover:shadow-xl hover:shadow-orange-500/5 dark:border-white/8 dark:bg-zinc-900/70 dark:hover:border-orange-500/30">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-950 text-white dark:bg-white dark:text-zinc-950"><Package size={17} /></div>
-                    <span className="rounded-full bg-orange-50 px-2.5 py-1 text-[8px] font-black uppercase tracking-widest text-orange-600 dark:bg-orange-500/10">{combo.saving}</span>
-                  </div>
-                  <p className="mt-5 text-[14px] font-black text-zinc-950 dark:text-white">{combo.name}</p>
-                  <p className="mt-2 min-h-10 text-[11px] font-medium leading-5 text-zinc-500 dark:text-zinc-400">{combo.contents}</p>
-                  <div className="mt-5 border-t border-zinc-100 pt-4 dark:border-white/8">
-                    <span className="text-xl font-black tabular-nums text-orange-600">{combo.price}</span>
-                  </div>
-                </div>
-              ))}
+            <div className="rounded-xl border border-rose-200 bg-rose-50/60 p-4 dark:border-rose-500/25 dark:bg-rose-500/10">
+              <p className="flex items-center gap-1.5 text-xs font-bold text-rose-700 dark:text-rose-300">
+                <X size={14} /> Avoid This
+              </p>
+              <ul className="mt-3 space-y-2 text-xs text-zinc-700 dark:text-zinc-300">
+                <li>• Dark, blurry, or heavily filtered images.</li>
+                <li>• Photos copied from other restaurants.</li>
+                <li>• Showing extras that are not included in the base price.</li>
+                <li>• Phone numbers, watermarks, or overlaid text.</li>
+              </ul>
             </div>
           </div>
         </section>
 
-        <section className="grid gap-5 lg:grid-cols-2">
-          <div className="rounded-[28px] border border-zinc-200 bg-white p-6 shadow-sm sm:p-8 dark:border-white/8 dark:bg-zinc-900/70">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-600 text-white shadow-lg shadow-orange-600/20"><Camera size={19} /></div>
-              <div>
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-orange-600">Photo guide</p>
-                <h2 className="mt-1 text-xl font-black tracking-tight">Make the food easy to see.</h2>
-              </div>
-            </div>
-            <div className="mt-7 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 dark:border-emerald-500/15 dark:bg-emerald-500/5">
-                <p className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-emerald-600"><Check size={14} /> Do this</p>
-                <ul className="mt-4 space-y-3 text-[11px] font-medium leading-5 text-zinc-600 dark:text-zinc-400">
-                  <li>Use bright, natural light.</li>
-                  <li>Show the actual portion customers receive.</li>
-                  <li>Keep the background clean.</li>
-                  <li>Use a sharp landscape or square photo.</li>
-                </ul>
-              </div>
-              <div className="rounded-2xl border border-rose-100 bg-rose-50/70 p-4 dark:border-rose-500/15 dark:bg-rose-500/5">
-                <p className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-rose-600"><X size={14} /> Avoid this</p>
-                <ul className="mt-4 space-y-3 text-[11px] font-medium leading-5 text-zinc-600 dark:text-zinc-400">
-                  <li>Dark, blurry, or heavily filtered images.</li>
-                  <li>Photos downloaded from another restaurant.</li>
-                  <li>Items in the photo that are not included.</li>
-                  <li>Text, phone numbers, or watermarks.</li>
-                </ul>
-              </div>
-            </div>
+        {/* ── 5. EXAMPLE LIBRARY ── */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-zinc-900 dark:text-white">
+              Menu Examples to Adapt
+            </h2>
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">
+              Adjust prices for your kitchen costs
+            </span>
           </div>
 
-          <div className="rounded-[28px] border border-zinc-200 bg-white p-6 shadow-sm sm:p-8 dark:border-white/8 dark:bg-zinc-900/70">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-zinc-950 text-white shadow-lg dark:bg-white dark:text-zinc-950"><ListChecks size={19} /></div>
-              <div>
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-orange-600">Before publishing</p>
-                <h2 className="mt-1 text-xl font-black tracking-tight">Run the 60-second quality check.</h2>
-              </div>
-            </div>
-            <div className="mt-7 grid gap-2">
-              {[
-                "The name clearly identifies the dish or deal.",
-                "The description says what the customer receives.",
-                "The photo matches the item and portion.",
-                "At least one valid portion or combo price is set.",
-                "Required choices have sensible minimum and maximum limits.",
-                "Preparation time is realistic for a busy period.",
-                "Spelling, tags, category, and availability are correct.",
-              ].map((check) => (
-                <div key={check} className="flex items-start gap-3 rounded-xl bg-zinc-50 px-3 py-2.5 dark:bg-zinc-950/60">
-                  <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-emerald-500" />
-                  <p className="text-[11px] font-bold leading-5 text-zinc-600 dark:text-zinc-400">{check}</p>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {FOOD_EXAMPLES.map((item) => (
+              <div
+                key={item.name}
+                className="flex flex-col justify-between rounded-2xl border border-zinc-200/90 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="rounded-full bg-orange-50 px-2.5 py-0.5 text-[11px] font-semibold text-orange-700 dark:bg-orange-500/15 dark:text-orange-300">
+                      {item.type}
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-xs text-zinc-500 dark:text-zinc-400">
+                      <Clock3 size={12} /> {item.prep}
+                    </span>
+                  </div>
+                  <h3 className="mt-3 text-sm font-bold text-zinc-900 dark:text-white">
+                    {item.name}
+                  </h3>
+                  <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                    {item.section}
+                  </p>
                 </div>
-              ))}
-            </div>
+                <div className="mt-4 flex items-center justify-between border-t border-zinc-100 pt-3 dark:border-zinc-800">
+                  <span className="text-base font-bold tabular-nums text-orange-600 dark:text-orange-400">
+                    {item.price}
+                  </span>
+                  <div className="flex gap-1">
+                    {item.tags.slice(0, 2).map((t) => (
+                      <span
+                        key={t}
+                        className="rounded-md bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
+                      >
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-        </section>
 
-        <section className="py-16">
-          <SectionHeading
-            eyebrow="Common questions"
-            title="A few answers before you publish."
-            description="These are the decisions that most often affect menu clarity and customer satisfaction."
-          />
-          <div className="mt-8 grid gap-3 lg:grid-cols-2">
-            {FAQS.map((item, index) => (
-              <FaqItem key={item.question} item={item} open={openFaq === index} onToggle={() => setOpenFaq(openFaq === index ? -1 : index)} />
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {COMBO_EXAMPLES.map((combo) => (
+              <div
+                key={combo.name}
+                className="flex flex-col justify-between rounded-2xl border border-zinc-200/90 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+              >
+                <div>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
+                      <Package size={14} className="text-orange-500" />
+                      Combo Deal
+                    </span>
+                    <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-[11px] font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                      {combo.tag}
+                    </span>
+                  </div>
+                  <h3 className="mt-2.5 text-sm font-bold text-zinc-900 dark:text-white">
+                    {combo.name}
+                  </h3>
+                  <p className="mt-1 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+                    {combo.contents}
+                  </p>
+                </div>
+                <p className="mt-4 border-t border-zinc-100 pt-3 text-base font-bold tabular-nums text-orange-600 dark:border-zinc-800 dark:text-orange-400">
+                  {combo.price}
+                </p>
+              </div>
             ))}
           </div>
         </section>
 
-        <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-orange-600 to-orange-500 p-6 text-white shadow-2xl shadow-orange-600/15 sm:p-8 lg:p-10">
-          <div className="absolute -right-10 -top-16 h-56 w-56 rounded-full border-[36px] border-white/10" />
-          <div className="relative flex flex-col gap-7 lg:flex-row lg:items-center lg:justify-between">
-            <div className="max-w-2xl">
-              <p className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.22em] text-orange-100"><Zap size={13} /> Your next action</p>
-              <h2 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl">Start with one bestseller, then build from there.</h2>
-              <p className="mt-3 text-[12px] font-medium leading-6 text-orange-50/90">Create the item customers ask for most, preview it carefully, and use the same structure for the rest of your menu.</p>
-            </div>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Link href="/vendors/create-food" className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-white px-5 text-[9px] font-black uppercase tracking-widest text-orange-600 shadow-lg transition hover:bg-zinc-950 hover:text-white">
-                Create food <ArrowRight size={14} />
-              </Link>
-            </div>
-          </div>
+        {/* ── 6. QUICK FAQS ── */}
+        <section className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          {GUIDE_FAQS.map((faq, idx) => {
+            const isOpen = openFaq === idx;
+            return (
+              <div
+                key={faq.question}
+                className="overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+              >
+                <button
+                  type="button"
+                  onClick={() => setOpenFaq(isOpen ? -1 : idx)}
+                  className="flex w-full items-center justify-between gap-4 p-5 text-left"
+                >
+                  <span className="text-sm font-bold text-zinc-900 dark:text-white">
+                    {faq.question}
+                  </span>
+                  <ChevronDown
+                    size={16}
+                    className={`shrink-0 text-orange-500 transition-transform ${
+                      isOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                    >
+                      <p className="border-t border-zinc-100 px-5 pb-5 pt-3 text-sm leading-relaxed text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
+                        {faq.answer}
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
         </section>
-      </main>
+      </div>
     </div>
   );
 }

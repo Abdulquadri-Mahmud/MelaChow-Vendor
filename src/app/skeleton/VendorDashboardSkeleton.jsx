@@ -1,113 +1,101 @@
 "use client";
 
 export default function VendorDashboardSkeleton() {
-  const shimmer = "relative overflow-hidden bg-slate-200 dark:bg-slate-800 rounded-lg";
-  const bar = "h-4 w-full bg-slate-200 dark:bg-slate-800 overflow-hidden relative rounded-md";
-  const pulse =
-    "before:absolute before:inset-0 before:bg-gradient-to-r before:from-transparent before:via-white/40 dark:before:via-white/5 before:to-transparent before:animate-[shimmer_1.6s_infinite] before:bg-[length:200%_100%]";
+  const pulse = "animate-pulse rounded-lg bg-zinc-200/80 dark:bg-zinc-800";
 
   return (
-    <div className="min-h-screen animate-none p-3 space-y-8 bg-slate-50 dark:bg-slate-950">
-      {/* ====== Header Skeleton ====== */}
-      <div className="flex items-center gap-4 p-4 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
-        <div className={`${shimmer} ${pulse} w-14 h-14 rounded-full`} />
-        <div className="flex-1 space-y-2">
-          <div className={`${bar} ${pulse} w-40`} />
-          <div className={`${bar} ${pulse} w-24`} />
+    <div className="mx-auto max-w-[1440px] space-y-5 pb-8">
+      {/* Command Header Skeleton */}
+      <div className="overflow-hidden rounded-2xl border border-zinc-200/90 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="flex flex-col gap-4 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-2">
+              <div className={`h-4 w-24 ${pulse}`} />
+              <div className={`h-5 w-32 rounded-full ${pulse}`} />
+            </div>
+            <div className={`h-8 w-56 ${pulse}`} />
+            <div className={`h-3.5 w-64 ${pulse}`} />
+          </div>
+          <div className="flex gap-2.5">
+            <div className={`h-10 w-24 rounded-xl ${pulse}`} />
+            <div className={`h-10 w-32 rounded-xl ${pulse}`} />
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-2 border-t border-zinc-100 bg-zinc-50/70 px-5 py-3 dark:border-zinc-800 dark:bg-zinc-950/40 sm:px-6">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className={`h-9 w-24 rounded-xl ${pulse}`} />
+          ))}
         </div>
       </div>
 
-      {/* ====== Stat Cards ====== */}
-      <div className="grid md:grid-cols-4 grid-cols-2 gap-4">
+      {/* Pipeline Strip Skeleton */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {[1, 2, 3, 4].map((i) => (
           <div
             key={i}
-            className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3"
+            className="flex items-center gap-3.5 rounded-2xl border border-zinc-200/90 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
           >
-            <div className={`${bar} ${pulse} w-24`} />
-            <div className="flex items-center gap-2">
-              <div className={`${shimmer} ${pulse} w-8 h-8 rounded-md`} />
-              <div className={`${bar} ${pulse} w-12`} />
+            <div className={`h-10 w-10 shrink-0 rounded-xl ${pulse}`} />
+            <div className="flex-1 space-y-2">
+              <div className={`h-3 w-20 ${pulse}`} />
+              <div className={`h-6 w-10 ${pulse}`} />
+              <div className={`h-3 w-24 ${pulse}`} />
             </div>
           </div>
         ))}
       </div>
 
-      {/* ====== Category Cards Section ====== */}
-      <div className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-        <div className={`${bar} ${pulse} w-56`} />
-
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="p-4 bg-slate-100 dark:bg-slate-800/50 rounded-xl border border-transparent dark:border-slate-700/50 space-y-4">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <div className={`${shimmer} ${pulse} w-8 h-8 rounded-md`} />
-                  <div className={`${bar} ${pulse} w-24`} />
-                </div>
-                <div className={`${bar} ${pulse} w-10`} />
-              </div>
+      {/* KPI Grid Skeleton */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="space-y-4 rounded-2xl border border-zinc-200/90 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900"
+          >
+            <div className="flex items-center justify-between">
+              <div className={`h-4 w-28 ${pulse}`} />
+              <div className={`h-5 w-14 rounded-full ${pulse}`} />
             </div>
-          ))}
-        </div>
-
-        {/* Charts skeletons */}
-        <div className="grid md:grid-cols-2 gap-6 mt-6">
-          <div className="p-4 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm space-y-3">
-            <div className={`${bar} ${pulse} w-48`} />
-            <div className={`${shimmer} ${pulse} w-full h-60 rounded-lg`} />
-          </div>
-
-          <div className="p-4 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm space-y-3">
-            <div className={`${bar} ${pulse} w-48`} />
-            <div className={`${shimmer} ${pulse} w-full h-60 rounded-lg`} />
-          </div>
-        </div>
-      </div>
-
-      {/* ====== Sales & Orders ====== */}
-      <div className="grid md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm space-y-3">
-          <div className={`${bar} ${pulse} w-40`} />
-          <div className={`${shimmer} ${pulse} w-full h-64 rounded-lg`} />
-        </div>
-
-        <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm space-y-3">
-          <div className={`${bar} ${pulse} w-40`} />
-          <div className={`${shimmer} ${pulse} w-full h-64 rounded-lg`} />
-        </div>
-      </div>
-
-      {/* ====== Store Details / Location ====== */}
-      <div className="grid md:grid-cols-2 gap-6">
-        <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm space-y-3">
-          <div className={`${bar} ${pulse} w-40`} />
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className={`${bar} ${pulse} w-3/4`} />
-          ))}
-        </div>
-        <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm space-y-3">
-          <div className={`${bar} ${pulse} w-40`} />
-          {[1, 2, 3].map((i) => (
-            <div key={i} className={`${bar} ${pulse} w-2/3`} />
-          ))}
-        </div>
-      </div>
-
-      {/* ====== Opening Hours ====== */}
-      <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm space-y-4">
-        <div className={`${bar} ${pulse} w-56`} />
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="p-4 rounded-lg border border-slate-200 dark:border-slate-700/50 bg-slate-100 dark:bg-slate-800/50 space-y-2"
-            >
-              <div className={`${bar} ${pulse} w-20`} />
-              <div className={`${bar} ${pulse} w-32`} />
+            <div className="space-y-2">
+              <div className={`h-8 w-36 ${pulse}`} />
+              <div className={`h-3.5 w-40 ${pulse}`} />
             </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Main Analytics + Live Feed Skeleton */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+        <div className="rounded-2xl border border-zinc-200/90 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900 lg:col-span-8">
+          <div className="mb-5 flex items-center justify-between">
+            <div className="space-y-2">
+              <div className={`h-5 w-44 ${pulse}`} />
+              <div className={`h-3 w-56 ${pulse}`} />
+            </div>
+            <div className={`h-8 w-32 rounded-xl ${pulse}`} />
+          </div>
+          <div className={`h-[260px] w-full rounded-xl ${pulse}`} />
+        </div>
+
+        <div className="space-y-3 rounded-2xl border border-zinc-200/90 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900 lg:col-span-4">
+          <div className={`h-5 w-36 ${pulse}`} />
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className={`h-24 w-full rounded-xl ${pulse}`} />
           ))}
         </div>
+      </div>
+
+      {/* Operational Insights Skeleton */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="space-y-3 rounded-2xl border border-zinc-200/90 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900"
+          >
+            <div className={`h-5 w-40 ${pulse}`} />
+            <div className={`h-36 w-full rounded-xl ${pulse}`} />
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -610,7 +610,7 @@ const PortionsSection = ({ item, vendorId, itemId, queryClient }) => {
                         </div>
                         <div>
                              <label className="block text-sm font-semibold normal-case tracking-normal text-zinc-500 mb-2 ml-1">Daily Cap</label>
-                             <input className="h-12 px-4 w-full rounded-xl border bg-zinc-50  border-zinc-200  text-zinc-800  font-bold outline-none focus:border-orange-500" type="number" placeholder="Optional" value={portionForm.max_quantity} onChange={e => setPortionForm({ ...portionForm, max_quantity: e.target.value })} />
+                             <input className="h-12 px-4 w-full rounded-xl border bg-zinc-50  border-zinc-200  text-zinc-800  font-bold outline-none focus:border-orange-500" type="number" placeholder="Optional" value={newPortion.max_quantity} onChange={e => setNewPortion({ ...newPortion, max_quantity: e.target.value })} />
                         </div>
                     </div>
                 </div>

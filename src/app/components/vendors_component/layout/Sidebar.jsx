@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
+  BarChart3,
+  Clock,
   UtensilsCrossed,
   PlusCircle,
   ClipboardList,
@@ -35,8 +37,10 @@ const navigation = [
     title: "Overview",
     items: [
       { icon: LayoutDashboard, label: "Dashboard",     href: "/vendors/dashboard" },
-      { icon: Wallet,          label: "Transactions",  href: "/vendors/transactions" },
+      { icon: BarChart3,       label: "Analytics",     href: "/vendors/analytics" },
+      { icon: Clock,           label: "Availability",  href: "/vendors/availability" },
       { icon: ClipboardList,   label: "Orders",        href: "/vendors/order" },
+      { icon: Wallet,          label: "Transactions",  href: "/vendors/transactions" },
       { icon: Bell,            label: "Notifications", href: "/vendors/notifications" },
     ],
   },

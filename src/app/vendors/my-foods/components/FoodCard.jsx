@@ -1,158 +1,218 @@
 "use client";
 
 import {
-    Edit2, Archive, ArchiveRestore, ToggleLeft,
-    ToggleRight, ChevronRight, Clock, Tag, Trash2
+  Archive,
+  ArchiveRestore,
+  ChevronRight,
+  Clock,
+  Edit2,
+  ToggleLeft,
+  ToggleRight,
+  Trash2,
+  UtensilsCrossed,
 } from "lucide-react";
 
-const ITEM_TYPE_EMOJI = {
-    FOOD: "🍽️", DRINK: "🥤", SOUP: "🥘", SWALLOW: "🫓",
-    PROTEIN: "🍗", SIDE: "🍟", DESSERT: "🍰", OTHER: "🍴",
-};
-
 const DIETARY_BADGE = {
-    halal: { label: "Halal", color: "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10" },
-    veg: { label: "Veg", color: "text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10" },
-    vegan: { label: "Vegan", color: "text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-500/10" },
-    kosher: { label: "Kosher", color: "text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10" },
-    "non-veg": { label: "Non-Veg", color: "text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10" },
-    mixed: null,
+  halal: {
+    label: "Halal",
+    color:
+      "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30",
+  },
+  veg: {
+    label: "Veg",
+    color:
+      "bg-green-50 text-green-700 border-green-200 dark:bg-green-500/20 dark:text-green-300 dark:border-green-500/30",
+  },
+  vegan: {
+    label: "Vegan",
+    color:
+      "bg-green-50 text-green-800 border-green-200 dark:bg-green-500/20 dark:text-green-200 dark:border-green-500/30",
+  },
+  kosher: {
+    label: "Kosher",
+    color:
+      "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-500/20 dark:text-sky-300 dark:border-sky-500/30",
+  },
+  "non-veg": {
+    label: "Non-Veg",
+    color:
+      "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/20 dark:text-rose-300 dark:border-rose-500/30",
+  },
+  mixed: null,
 };
 
-export default function FoodCard({ item, onToggleAvailability, onArchive, onEdit, onDelete }) {
-    const dietary = DIETARY_BADGE[item.dietary_type];
+export default function FoodCard({
+  item,
+  onToggleAvailability,
+  onArchive,
+  onEdit,
+  onDelete,
+}) {
+  const dietary = DIETARY_BADGE[item.dietary_type];
+  const portionCount = item.portions?.count ?? 0;
 
-    const priceDisplay = item.portions.count === 0
-        ? "No price set"
-        : item.portions.min_price_naira === item.portions.max_price_naira
-            ? `₦${item.portions.min_price_naira?.toLocaleString()}`
-            : `₦${item.portions.min_price_naira?.toLocaleString()} – ₦${item.portions.max_price_naira?.toLocaleString()}`;
+  const priceDisplay =
+    portionCount === 0
+      ? "No price set"
+      : item.portions.min_price_naira === item.portions.max_price_naira
+        ? `₦${Number(item.portions.min_price_naira || 0).toLocaleString("en-NG")}`
+        : `₦${Number(item.portions.min_price_naira || 0).toLocaleString("en-NG")} – ₦${Number(item.portions.max_price_naira || 0).toLocaleString("en-NG")}`;
 
-    return (
-        <div className={`group relative bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-md overflow-hidden transition-all hover:border-orange-500/30 ${item.is_archived
-            ? "opacity-60"
-            : ""
-            }`}>
+  const statusPill = item.is_archived
+    ? {
+        label: "Archived",
+        cls: "bg-zinc-900/80 text-white",
+      }
+    : !item.is_available
+      ? {
+          label: "Hidden",
+          cls: "bg-amber-500/95 text-white",
+        }
+      : {
+          label: "Live",
+          cls: "bg-emerald-600/95 text-white",
+        };
 
-            {/* Image */}
-            <div className="relative h-40 bg-zinc-100 dark:bg-zinc-800 overflow-hidden">
-                {item.image_url ? (
-                    <img
-                        src={item.image_url}
-                        alt={item.name}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                ) : (
-                    <div className="w-full h-full flex items-center justify-center text-5xl">
-                        {ITEM_TYPE_EMOJI[item.item_type] || "🍽️"}
-                    </div>
-                )}
+  return (
+    <article
+      className={`group flex flex-col overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-sm transition hover:border-orange-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-orange-500/40 ${
+        item.is_archived ? "opacity-75" : ""
+      }`}
+    >
+      {/* Image */}
+      <div className="relative aspect-[16/10] w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800">
+        {item.image_url ? (
+          <img
+            src={item.image_url}
+            alt={item.name}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-zinc-400">
+            <UtensilsCrossed size={32} />
+          </div>
+        )}
 
-                {/* Status badges top-left */}
-                <div className="absolute top-2 left-2 flex flex-col gap-1">
-                    {item.is_archived && (
-                        <span className="text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded bg-zinc-900/80 text-white backdrop-blur-sm">
-                            Archived
-                        </span>
-                    )}
-                    {!item.is_archived && !item.is_available && (
-                        <span className="text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded bg-amber-500/90 text-white backdrop-blur-sm">
-                            Hidden
-                        </span>
-                    )}
-                </div>
+        <span
+          className={`absolute left-3 top-3 rounded-full px-2.5 py-0.5 text-[11px] font-semibold backdrop-blur-sm ${statusPill.cls}`}
+        >
+          {statusPill.label}
+        </span>
 
-                {/* Dietary badge top-right */}
-                {dietary && (
-                    <span className={`absolute top-2 right-2 text-[7px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded backdrop-blur-sm ${dietary.color}`}>
-                        {dietary.label}
-                    </span>
-                )}
-            </div>
+        {dietary && (
+          <span
+            className={`absolute right-3 top-3 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold backdrop-blur-sm ${dietary.color}`}
+          >
+            {dietary.label}
+          </span>
+        )}
+      </div>
 
-            {/* Body */}
-            <div className="p-3 space-y-2.5">
-                
-                {/* Name + location */}
-                <div>
-                    <h3 className="font-black text-zinc-900 dark:text-white text-sm tracking-tight leading-tight line-clamp-1">
-                        {item.name}
-                    </h3>
-                    <div className="flex flex-col gap-1 mt-1">
-                        {item.category && (
-                            <p className="text-[9px] font-black text-orange-500 bg-orange-50 dark:bg-orange-500/10 w-fit px-1.5 py-0.5 rounded border border-orange-100 dark:border-orange-500/20 uppercase tracking-widest">
-                                {item.section
-                                    ? `${item.section.name} · ${item.category.name}`
-                                    : item.category.name
-                                }
-                            </p>
-                        )}
-                    </div>
-                </div>
+      {/* Content */}
+      <div className="flex flex-1 flex-col justify-between p-4">
+        <div className="space-y-2">
+          <div className="flex items-start justify-between gap-2">
+            <h3 className="line-clamp-1 text-base font-bold text-zinc-900 dark:text-white">
+              {item.name}
+            </h3>
+            {item.prep_time_minutes ? (
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+                <Clock size={11} />
+                {item.prep_time_minutes}m
+              </span>
+            ) : null}
+          </div>
 
-                {/* Price + Metadata */}
-                <div className="flex items-center justify-between">
-                    <span className={`font-black text-sm tracking-tight ${item.portions.count === 0
-                        ? "text-zinc-300 dark:text-zinc-600"
-                        : "text-zinc-900 dark:text-white"
-                        }`}>
-                        {priceDisplay}
-                    </span>
-                    {item.prep_time_minutes && (
-                        <span className="flex items-center gap-1 text-[9px] font-black uppercase text-zinc-400 bg-zinc-50 dark:bg-zinc-800/50 px-1.5 py-0.5 rounded border border-zinc-100 dark:border-zinc-800">
-                             {item.prep_time_minutes}m
-                        </span>
-                    )}
-                </div>
+          {item.category && (
+            <p className="inline-flex max-w-full truncate rounded-lg border border-orange-200/70 bg-orange-50 px-2.5 py-0.5 text-[11px] font-semibold text-orange-700 dark:border-orange-500/25 dark:bg-orange-500/10 dark:text-orange-300">
+              {item.section
+                ? `${item.section.name} · ${item.category.name}`
+                : item.category.name}
+            </p>
+          )}
 
-                {/* ACTION BAR — Persistent (No longer on hover) */}
-                <div className="pt-2.5 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5">
-                        <button
-                            onClick={() => onEdit(item._id)}
-                            className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 flex items-center justify-center hover:bg-orange-500 hover:text-white transition-all active:scale-90"
-                            title="Edit Details"
-                        >
-                            <Edit2 size={14} />
-                        </button>
-                        <button
-                            onClick={() => onToggleAvailability(item._id)}
-                            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90 ${item.is_available 
-                                ? 'bg-orange-50 text-orange-500 hover:bg-orange-500 hover:text-white' 
-                                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400'}`}
-                            title={item.is_available ? "Hide content" : "Show content"}
-                        >
-                            {item.is_available ? <ToggleRight size={16} /> : <ToggleLeft size={16} />}
-                        </button>
-                        <button
-                            onClick={() => onArchive(item._id)}
-                            disabled={item.combos?.length > 0 && !item.is_archived}
-                            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90 ${item.is_archived
-                                ? 'bg-indigo-50 text-indigo-500 hover:bg-indigo-500 hover:text-white'
-                                : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-400 hover:bg-zinc-900 dark:hover:bg-white hover:text-white dark:hover:text-zinc-900 disabled:opacity-30'}`}
-                            title={item.is_archived ? "Restore" : "Archive Item"}
-                        >
-                            {item.is_archived ? <ArchiveRestore size={14} /> : <Archive size={14} />}
-                        </button>
-                        {(!item.combos || item.combos.length === 0) && (
-                            <button
-                                onClick={() => onDelete(item._id, item.name)}
-                                className="w-8 h-8 rounded-lg bg-zinc-50 dark:bg-zinc-800/50 text-rose-400 hover:bg-rose-500 hover:text-white transition-all active:scale-90"
-                                title="Delete Forever"
-                            >
-                                <Trash2 size={14} />
-                            </button>
-                        )}
-                    </div>
-
-                    <button
-                        onClick={() => onEdit(item._id)}
-                        className="h-8 px-4 rounded-lg bg-orange-600 text-white text-[9px] font-black uppercase tracking-widest hover:bg-orange-700 transition-all active:scale-95 flex items-center gap-1 shadow-sm shadow-orange-500/20"
-                    >
-                        Manage <ChevronRight size={12} />
-                    </button>
-                </div>
-            </div>
+          <div className="flex items-baseline justify-between pt-1">
+            <span
+              className={`text-base font-bold tabular-nums ${
+                portionCount === 0
+                  ? "text-amber-600 dark:text-amber-400"
+                  : "text-zinc-900 dark:text-white"
+              }`}
+            >
+              {priceDisplay}
+            </span>
+            {portionCount > 0 && (
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                {portionCount} {portionCount === 1 ? "portion" : "portions"}
+              </span>
+            )}
+          </div>
         </div>
-    );
+
+        {/* Action Row */}
+        <div className="mt-4 flex items-center justify-between gap-2 border-t border-zinc-100 pt-3.5 dark:border-zinc-800">
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => onToggleAvailability(item._id)}
+              title={
+                item.is_available
+                  ? "Hide from customers"
+                  : "Make available to customers"
+              }
+              aria-label={item.is_available ? "Hide dish" : "Show dish"}
+              className={`flex h-9 w-9 items-center justify-center rounded-xl border transition ${
+                item.is_available
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-600 hover:text-white dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300"
+                  : "border-zinc-200 bg-zinc-50 text-zinc-500 hover:bg-zinc-200 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400"
+              }`}
+            >
+              {item.is_available ? (
+                <ToggleRight size={17} />
+              ) : (
+                <ToggleLeft size={17} />
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onArchive(item._id)}
+              disabled={item.combos?.length > 0 && !item.is_archived}
+              title={item.is_archived ? "Restore dish" : "Archive dish"}
+              aria-label={item.is_archived ? "Restore dish" : "Archive dish"}
+              className="flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-zinc-600 transition hover:border-zinc-300 hover:bg-zinc-100 disabled:opacity-35 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+            >
+              {item.is_archived ? (
+                <ArchiveRestore size={15} />
+              ) : (
+                <Archive size={15} />
+              )}
+            </button>
+
+            {(!item.combos || item.combos.length === 0) && (
+              <button
+                type="button"
+                onClick={() => onDelete(item._id, item.name)}
+                title="Delete permanently"
+                aria-label="Delete dish"
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 text-rose-500 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-rose-400 dark:hover:bg-rose-500/15"
+              >
+                <Trash2 size={15} />
+              </button>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => onEdit(item._id)}
+            className="inline-flex min-h-[38px] items-center gap-1.5 rounded-xl bg-orange-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-orange-700"
+          >
+            <Edit2 size={13} />
+            <span>Manage</span>
+            <ChevronRight size={13} />
+          </button>
+        </div>
+      </div>
+    </article>
+  );
 }

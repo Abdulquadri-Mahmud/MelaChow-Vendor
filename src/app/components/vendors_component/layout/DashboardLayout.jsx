@@ -55,7 +55,7 @@ export default function DashboardLayout({ children }) {
         </div>}
 
         {/* Scrollable Content */}
-        <main className="flex-1 overflow-y-auto scroll md:p-2 p-1.5">
+        <main className="flex-1 overflow-y-auto scroll p-3 sm:p-4 md:p-6">
           {children}
           {/* <ScrollToTopButton/> */}
         </main>

@@ -58,6 +58,37 @@ export const setVendorLiveStatus = async (isLive) => {
   return response.data;
 };
 
+export const updateVendorAvailability = async (payload, currentOpeningHours = null) => {
+  try {
+    const response = await API.patch('/vendors/availability', payload);
+    return response.data;
+  } catch (error) {
+    // Graceful fallback if hitting a staging API build that doesn't yet expose PATCH /vendors/availability
+    if (error?.response?.status === 404 && currentOpeningHours !== undefined) {
+      const mergedOpeningHours = {
+        ...(currentOpeningHours || {}),
+        availability: {
+          ...(currentOpeningHours?.availability || {}),
+          ...payload,
+        },
+      };
+      const fallback = await API.patch('/vendors/update-vendor', {
+        openingHours: mergedOpeningHours,
+      });
+      return fallback.data;
+    }
+    throw error;
+  }
+};
+
+export const getVendorAnalytics = async (timeframe = "30d") => {
+  const response = await API.get(`/vendors/analytics`, {
+    params: { timeframe },
+    metadata: { suppressUnauthorized: true },
+  });
+  return response.data;
+};
+
 // --- PAYOUT & BANK MANAGEMENT ---
 export const getBankList = async () => {
     const response = await API.get('/wallet/banks');

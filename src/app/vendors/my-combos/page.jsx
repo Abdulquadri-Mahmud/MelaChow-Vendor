@@ -1,25 +1,23 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
-import { useVendorProfile } from '@/app/context/VendorProfileContext';
-import { useVendorCombos } from '@/app/hooks/useVendorCombos';
-import { useQueryClient } from '@tanstack/react-query';
-import { toggleComboAvailability, archiveComboItem } from '@/app/lib/menuApi';
-import ComboCard from './components/ComboCard';
-import ComboCardSkeleton from './components/ComboCardSkeleton';
-import EmptyCombos from './components/EmptyCombos';
-import { Plus, RotateCw, Loader2 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { useState, useEffect, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { useVendorProfile } from "@/app/context/VendorProfileContext";
+import { useVendorCombos } from "@/app/hooks/useVendorCombos";
+import { toggleComboAvailability, archiveComboItem } from "@/app/lib/menuApi";
+import ComboCard from "./components/ComboCard";
+import ComboCardSkeleton from "./components/ComboCardSkeleton";
+import EmptyCombos from "./components/EmptyCombos";
+import { AlertTriangle, Layers, Loader2, Plus, RefreshCw, Search, X } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function MyCombosPage() {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { vendorProfile, isLoading: isProfileLoading } = useVendorProfile();
   const vendorId = vendorProfile?._id || vendorProfile?.id;
 
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState('all');
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("all");
   const [page, setPage] = useState(1);
   const [mounted, setMounted] = useState(false);
 
@@ -27,23 +25,25 @@ export default function MyCombosPage() {
     setMounted(true);
   }, []);
 
-  const params = useMemo(() => ({
-    ...(search && { search }),
-    ...(status === 'unavailable' && { is_available: false, is_archived: false }),
-    ...(status === 'available' && { is_available: true, is_archived: false }),
-    ...(status === 'archived' && { is_archived: true }),
-    ...(status === 'all' && { is_archived: false }),
-  }), [search, status]);
+  const params = useMemo(
+    () => ({
+      ...(search && { search }),
+      ...(status === "unavailable" && { is_available: false, is_archived: false }),
+      ...(status === "available" && { is_available: true, is_archived: false }),
+      ...(status === "archived" && { is_archived: true }),
+      ...(status === "all" && { is_archived: false }),
+    }),
+    [search, status]
+  );
 
   const { data, isLoading, isError, isFetching, refetch } = useVendorCombos(vendorId, params);
 
-  // Hydration and Loading Guard
   if (!mounted || (isProfileLoading && !vendorId)) {
     return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex items-center justify-center p-6">
-        <div className="flex flex-col items-center gap-4">
-           <Loader2 className="animate-spin text-orange-500 w-12 h-12" />
-           <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Loading Dashboard...</p>
+      <div className="flex min-h-[60vh] items-center justify-center p-6">
+        <div className="flex flex-col items-center gap-3 text-zinc-500 dark:text-zinc-400">
+          <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+          <p className="text-sm font-medium">Loading combo bundles…</p>
         </div>
       </div>
     );
@@ -63,9 +63,9 @@ export default function MyCombosPage() {
 
       await toggleComboAvailability(comboId, !combo.is_available);
       handleRefresh();
-      toast.success('Availability updated');
+      toast.success("Availability updated");
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to update availability');
+      toast.error(err?.response?.data?.message || "Failed to update availability");
     }
   };
 
@@ -76,9 +76,9 @@ export default function MyCombosPage() {
 
       await archiveComboItem(comboId, !combo.is_archived);
       handleRefresh();
-      toast.success(combo.is_archived ? 'Combo restored' : 'Combo archived');
+      toast.success(combo.is_archived ? "Combo restored" : "Combo archived");
     } catch (err) {
-      toast.error(err?.response?.data?.message || 'Failed to update combo');
+      toast.error(err?.response?.data?.message || "Failed to update combo");
     }
   };
 
@@ -90,50 +90,57 @@ export default function MyCombosPage() {
     router.push(`/vendors/my-combos/${comboId}`);
   };
 
-  const isFiltered = status !== 'all' || search;
+  const isFiltered = status !== "all" || Boolean(search);
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 p-3 rounded-md">
-      <div className="max-w-6xl mx-auto space-y-4">
-        {/* Page Header */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="max-w-2xl">
-              <h1 className="text-2xl font-black text-zinc-900 dark:text-white tracking-tight uppercase">
-                🍱 Combo Bundles
-              </h1>
-              <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 mt-1.5 leading-relaxed uppercase tracking-widest">
-                Create value bundles with fixed pricing and add-on options.
-              </p>
+    <div className="mx-auto max-w-[1440px] space-y-6 pb-12">
+      {/* Header */}
+      <section className="rounded-2xl border border-zinc-200/90 bg-white p-5 shadow-sm sm:p-6 dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-orange-600 dark:text-orange-400">
+              <Layers size={14} />
+              Value Bundles
             </div>
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-zinc-950 sm:text-3xl dark:text-white">
+              Combo Bundles
+            </h1>
+            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+              Create value meal bundles with fixed pricing and optional customer swaps.
+            </p>
+          </div>
 
-            <div className="flex items-center gap-2">
-              {/* Refresh Button */}
-              <button
-                onClick={handleRefresh}
-                disabled={isFetching}
-                className={`h-10 w-10 flex items-center justify-center rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:text-orange-500 dark:hover:text-orange-400 transition-all ${
-                  isFetching ? 'opacity-50' : 'active:scale-95'
-                }`}
-                title="Refresh list"
-              >
-                <RotateCw size={16} className={isFetching ? 'animate-spin' : ''} />
-              </button>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={isFetching}
+              className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+            >
+              <RefreshCw size={15} className={isFetching ? "animate-spin" : ""} />
+              Refresh
+            </button>
 
-              {/* Create Combo */}
-              <button
-                onClick={() => router.push('/vendors/my-combos/create')}
-                className="h-9 px-4 bg-orange-600 hover:bg-orange-700 text-white text-[10px] font-black uppercase tracking-widest rounded-md transition-all active:scale-95 flex items-center gap-2"
-              >
-                <Plus size={14} /> Create Combo
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => router.push("/vendors/my-combos/create")}
+              className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-orange-700"
+            >
+              <Plus size={16} />
+              Create Combo
+            </button>
           </div>
         </div>
+      </section>
 
-        {/* Filter & Search Bar */}
-        <div className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 space-y-3">
-          <div className="flex gap-2 flex-wrap">
+      {/* Filter & Search Bar */}
+      <section className="rounded-2xl border border-zinc-200/90 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search
+              size={16}
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400"
+            />
             <input
               type="text"
               placeholder="Search combos by name..."
@@ -142,108 +149,121 @@ export default function MyCombosPage() {
                 setSearch(e.target.value);
                 setPage(1);
               }}
-              className="flex-1 min-w-[200px] px-4 py-2 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm bg-zinc-50 dark:bg-zinc-950 text-gray-900 dark:text-white placeholder-gray-500 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all"
+              className="h-11 w-full rounded-xl border border-zinc-200 bg-zinc-50 pl-10 pr-9 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-orange-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:bg-zinc-900"
             />
-            <select
-              value={status}
-              onChange={(e) => {
-                setStatus(e.target.value);
-                setPage(1);
-              }}
-              className="px-4 py-2 border border-zinc-200 dark:border-zinc-800 rounded-xl text-xs font-black uppercase tracking-widest bg-zinc-50 dark:bg-zinc-950 text-gray-900 dark:text-white outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all"
-            >
-              <option value="all">Active Combos</option>
-              <option value="available">Available Only</option>
-              <option value="unavailable">Hidden Only</option>
-              <option value="archived">Archived Items</option>
-            </select>
+            {search && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch("");
+                  setPage(1);
+                }}
+                aria-label="Clear search"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-lg p-1 text-zinc-400 hover:bg-zinc-200/60 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+              >
+                <X size={15} />
+              </button>
+            )}
           </div>
+
+          <select
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value);
+              setPage(1);
+            }}
+            className="h-11 rounded-xl border border-zinc-200 bg-zinc-50 px-4 text-sm font-medium text-zinc-800 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/20 sm:w-52 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100"
+          >
+            <option value="all">Active Combos</option>
+            <option value="available">Available Only</option>
+            <option value="unavailable">Hidden Only</option>
+            <option value="archived">Archived Items</option>
+          </select>
         </div>
 
-        {/* Results count */}
         {!isLoading && combos.length > 0 && (
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
-              {pagination.total || combos.length} {pagination.total === 1 ? 'combo' : 'combos'}
-              {isFiltered && ' matching filters'}
-              {isFetching && ' · Updating...'}
-            </p>
-          </div>
+          <p className="mt-3 text-xs font-medium text-zinc-500 dark:text-zinc-400 tabular-nums">
+            Showing {pagination.total || combos.length}{" "}
+            {(pagination.total || combos.length) === 1 ? "combo" : "combos"}
+            {isFiltered ? " matching filters" : ""}
+            {isFetching ? " · Updating…" : ""}
+          </p>
         )}
+      </section>
 
-        {/* Grid */}
-        {isError ? (
-          <div className="py-20">
-            <div className="bg-white dark:bg-zinc-900 border border-red-200 dark:border-red-900/30 rounded-lg p-8 max-w-md mx-auto text-center space-y-4">
-              <div className="text-5xl">⚠️</div>
-              <div>
-                <h3 className="text-lg font-black text-zinc-900 dark:text-white mb-1">
-                  Unable to Load Combos
-                </h3>
-                <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                  We encountered an issue while fetching your combo bundles. Please check your connection and try again.
-                </p>
-              </div>
-              <button
-                onClick={handleRefresh}
-                className="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-black uppercase tracking-widest rounded-md transition-all active:scale-95"
-              >
-                Try Again
-              </button>
-            </div>
+      {/* Grid */}
+      {isError ? (
+        <div className="rounded-2xl border border-rose-200 bg-white p-8 text-center shadow-sm dark:border-rose-900/40 dark:bg-zinc-900">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400">
+            <AlertTriangle size={22} />
           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-2">
-            {isLoading
-              ? Array.from({ length: 6 }).map((_, i) => <ComboCardSkeleton key={i} />)
-              : combos.length === 0
-              ? (
-                <EmptyCombos
-                  isFiltered={isFiltered}
-                  onClearFilters={() => {
-                    setSearch('');
-                    setStatus('all');
-                    setPage(1);
-                  }}
-                  onCreate={() => router.push('/vendors/my-combos/create')}
-                />
-              )
-              : combos.map((combo) => (
-                <ComboCard
-                  key={combo._id}
-                  combo={combo}
-                  onToggleAvailability={handleToggleAvailability}
-                  onArchive={handleArchive}
-                  onEdit={handleEdit}
-                  onView={handleView}
-                />
-              ))}
-          </div>
-        )}
+          <h2 className="text-lg font-semibold text-zinc-950 dark:text-white">
+            Unable to Load Combos
+          </h2>
+          <p className="mx-auto mt-1 max-w-md text-sm text-zinc-600 dark:text-zinc-400">
+            We encountered an issue while fetching your combo bundles. Check your connection and try again.
+          </p>
+          <button
+            type="button"
+            onClick={handleRefresh}
+            className="mt-5 inline-flex min-h-[42px] items-center justify-center rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-orange-700"
+          >
+            Try Again
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {isLoading ? (
+            Array.from({ length: 6 }).map((_, i) => <ComboCardSkeleton key={i} />)
+          ) : combos.length === 0 ? (
+            <EmptyCombos
+              isFiltered={isFiltered}
+              onClearFilters={() => {
+                setSearch("");
+                setStatus("all");
+                setPage(1);
+              }}
+              onCreate={() => router.push("/vendors/my-combos/create")}
+            />
+          ) : (
+            combos.map((combo) => (
+              <ComboCard
+                key={combo._id}
+                combo={combo}
+                onToggleAvailability={handleToggleAvailability}
+                onArchive={handleArchive}
+                onEdit={handleEdit}
+                onView={handleView}
+              />
+            ))
+          )}
+        </div>
+      )}
 
-        {/* Pagination */}
-        {pagination?.pages > 1 && (
-          <div className="flex items-center justify-center gap-2 pt-4">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="h-10 px-5 rounded-md border border-zinc-200 dark:border-zinc-700 text-xs font-black text-zinc-500 dark:text-zinc-400 disabled:opacity-40 hover:border-zinc-400 transition-all"
-            >
-              Previous
-            </button>
-            <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500 px-3">
-              Page {page} of {pagination.pages}
-            </span>
-            <button
-              onClick={() => setPage((p) => p + 1)}
-              disabled={!pagination.hasMore}
-              className="h-10 px-5 rounded-md border border-zinc-200 dark:border-zinc-700 text-xs font-black text-zinc-500 dark:text-zinc-400 disabled:opacity-40 hover:border-zinc-400 transition-all"
-            >
-              Next
-            </button>
-          </div>
-        )}
-      </div>
+      {/* Pagination */}
+      {pagination?.pages > 1 && (
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="inline-flex min-h-[40px] items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+          >
+            Previous
+          </button>
+          <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400 tabular-nums">
+            Page {page} of {pagination.pages}
+          </span>
+          <button
+            type="button"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={!pagination.hasMore}
+            className="inline-flex min-h-[40px] items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm font-semibold text-zinc-700 transition-colors hover:bg-zinc-50 disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }

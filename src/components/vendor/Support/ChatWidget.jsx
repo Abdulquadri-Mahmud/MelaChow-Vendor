@@ -7,7 +7,7 @@ import { MessageCircle, X, ArrowUp, Mail } from "lucide-react";
 const VENDOR_GREETING = {
   role: "assistant",
   content:
-    "Hi! I'm Chow, MelaChow's vendor support assistant. Ask me anything about your store, orders, escrow payouts, or menu management.",
+    "Hi! I'm Chow, MelaChow's vendor support assistant. Ask me anything about your store analytics, busy mode & availability controls, orders, escrow payouts, or menu management.",
 };
 
 export default function ChatWidget() {

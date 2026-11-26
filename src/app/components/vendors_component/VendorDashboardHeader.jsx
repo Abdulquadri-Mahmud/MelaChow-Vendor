@@ -4,6 +4,8 @@ import {
     Menu, 
     UtensilsCrossed,
     LayoutDashboard,
+    BarChart3,
+    SlidersHorizontal,
     Wallet,
     ClipboardList,
     Package,
@@ -18,6 +20,7 @@ import {
     Save,
     Loader2,
 } from "lucide-react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import NotificationBell from "@/app/components/NotificationBell";
@@ -28,15 +31,17 @@ import { updateVendorTodayHours } from "@/app/lib/vendorProfileApi";
 import { useVendorStorage } from "@/app/hooks/vendorStorage";
 
 const navigationItems = [
-    { icon: LayoutDashboard, label: "Dashboard",     href: "/vendors/dashboard" },
-    { icon: Wallet,          label: "Transactions",  href: "/vendors/transactions" },
-    { icon: ClipboardList,   label: "Orders",        href: "/vendors/order" },
-    { icon: Bell,            label: "Notifications", href: "/vendors/notifications" },
-    { icon: UtensilsCrossed, label: "My Foods",    href: "/vendors/my-foods" },
-    { icon: PlusCircle,      label: "Create Food", href: "/vendors/create-food" },
-    { icon: Star,            label: "Reviews",     href: "/vendors/reviews" },
-    { icon: User,            label: "Profile",     href: "/vendors/profile" },
-    { icon: HelpCircle,      label: "Help & FAQs", href: "/vendors/faqs" },
+    { icon: LayoutDashboard,   label: "Dashboard",     href: "/vendors/dashboard" },
+    { icon: BarChart3,         label: "Analytics",     href: "/vendors/analytics" },
+    { icon: SlidersHorizontal, label: "Availability",  href: "/vendors/availability" },
+    { icon: Wallet,            label: "Transactions",  href: "/vendors/transactions" },
+    { icon: ClipboardList,     label: "Orders",        href: "/vendors/order" },
+    { icon: Bell,              label: "Notifications", href: "/vendors/notifications" },
+    { icon: UtensilsCrossed,   label: "My Foods",      href: "/vendors/my-foods" },
+    { icon: PlusCircle,        label: "Create Food",   href: "/vendors/create-food" },
+    { icon: Star,              label: "Reviews",       href: "/vendors/reviews" },
+    { icon: User,              label: "Profile",       href: "/vendors/profile" },
+    { icon: HelpCircle,        label: "Help & FAQs",   href: "/vendors/faqs" },
 ];
 
 const dayKeys = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
@@ -136,13 +141,21 @@ function TodayHoursControl({ vendor }) {
                         <input type="time" value={closeTime} disabled={isSaving || isClosedToday} onChange={(event) => setCloseTime(event.target.value)} className="mt-2 h-11 w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-sm font-bold text-zinc-800 outline-none focus:border-orange-500 disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white" />
                     </label>
                     <div className="mt-4 grid grid-cols-2 gap-2">
-                        <button type="button" onClick={() => applyTodayHours({ closed: !isClosedToday, close: closeTime || todayHours.close, open: todayHours.open })} disabled={isSaving} className={`h-10 rounded-xl text-[10px] font-black uppercase tracking-wide transition disabled:opacity-50 ${isClosedToday ? "bg-emerald-600 text-white" : "bg-red-50 text-red-600 dark:bg-red-500/10"}`}>
+                        <button type="button" onClick={() => applyTodayHours({ closed: !isClosedToday, close: closeTime || todayHours.close, open: todayHours.open })} disabled={isSaving} className={`h-10 rounded-xl px-3 text-[10px] font-black uppercase tracking-wide transition disabled:opacity-50 ${isClosedToday ? "bg-emerald-600 text-white" : "bg-red-50 text-red-600 dark:bg-red-500/10"}`}>
                             {isClosedToday ? "Open today" : "Close today"}
                         </button>
-                        <button type="button" onClick={() => applyTodayHours({ closed: false, close: closeTime || todayHours.close, open: todayHours.open })} disabled={isSaving || isClosedToday || !closeTime} className="flex h-10 items-center justify-center gap-2 rounded-xl bg-orange-600 text-[10px] font-black uppercase tracking-wide text-white transition hover:bg-orange-700 disabled:opacity-50">
+                        <button type="button" onClick={() => applyTodayHours({ closed: false, close: closeTime || todayHours.close, open: todayHours.open })} disabled={isSaving || isClosedToday || !closeTime} className="flex h-10 items-center justify-center gap-2 rounded-xl bg-orange-600 px-3 text-[10px] font-black uppercase tracking-wide text-white transition hover:bg-orange-700 disabled:opacity-50">
                             {isSaving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Save
                         </button>
                     </div>
+                    <Link
+                        href="/vendors/availability"
+                        onClick={() => setIsOpen(false)}
+                        className="mt-3 flex min-h-[38px] w-full items-center justify-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-semibold text-zinc-700 transition hover:border-orange-300 hover:text-orange-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:text-orange-400"
+                    >
+                        <SlidersHorizontal size={13} />
+                        Busy Mode, Pause & Schedule
+                    </Link>
                 </div>
             )}
         </div>
@@ -322,22 +335,34 @@ export default function VendorDashboardHeader({ vendor, onMenuClick }) {
           <Menu size={18} />
         </button>
 
-        {/* <div className="flex flex-col">
-          <h1 className="text-lg font-extrabold text-zinc-900 dark:text-white leading-tight">
-            {vendor?.storeName || "Vendor Dashboard"}
-          </h1>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-            Welcome back, {vendor?.name?.split(" ")[0] || "Partner"}
-          </p>
-        </div> */}
+        {/* Store identity */}
+        <div className="hidden sm:flex min-w-0 flex-col">
+          <div className="flex items-center gap-2">
+            <span className="truncate max-w-[200px] xl:max-w-[260px] text-sm font-bold text-zinc-900 dark:text-white leading-tight">
+              {vendor?.name || vendor?.storeName || "Vendor Portal"}
+            </span>
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                vendor?.isLive
+                  ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
+                  : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
+              }`}
+            >
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${
+                  vendor?.isLive ? "bg-emerald-500" : "bg-zinc-400"
+                }`}
+              />
+              {vendor?.isLive ? "Live" : "Paused"}
+            </span>
+          </div>
+        </div>
 
         <GlobalSearch items={navigationItems} router={router} />
       </div>
 
       <div className="flex items-center gap-2">
         <TodayHoursControl vendor={vendor} />
-
-        {/* <div className="h-6 w-px bg-zinc-200 dark:bg-zinc-700 mx-1 hidden md:block"></div> */}
 
         {/* Notification Bell */}
         <NotificationBell
@@ -346,14 +371,18 @@ export default function VendorDashboardHeader({ vendor, onMenuClick }) {
           href="/vendors/notifications"
         />
 
-
-        <div className="flex items-center gap-3 pl-2 cursor-pointer hover:opacity-80 transition-opacity">
+        <button
+          type="button"
+          onClick={() => router.push("/vendors/profile")}
+          title="Store profile"
+          aria-label="Open store profile"
+          className="flex items-center gap-2.5 pl-1.5 rounded-full transition hover:opacity-85 focus-visible:outline-2 focus-visible:outline-orange-500"
+        >
           <div className="relative">
             <div
-              className={`size-10 rounded-full border-2 ${theme === 'dark' ? 'border-zinc-800' : 'border-white'} shadow-sm bg-zinc-200 bg-cover bg-center`}
+              className={`size-9 rounded-full border-2 ${theme === 'dark' ? 'border-zinc-700' : 'border-zinc-200'} shadow-sm bg-zinc-200 bg-cover bg-center`}
               style={{ backgroundImage: `url('${vendor?.logo || "/placeholder-logo.png"}')` }}
             />
-            {/* Notification Subscription Badge (Matches User Flow) */}
             {typeof window !== "undefined" && "Notification" in window && Notification.permission === "default" && (
               <motion.div
                 className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-orange-500 rounded-full border-2 border-white dark:border-zinc-900 shadow-sm z-10"
@@ -363,7 +392,7 @@ export default function VendorDashboardHeader({ vendor, onMenuClick }) {
               />
             )}
           </div>
-        </div>
+        </button>
       </div>
     </header>
   );

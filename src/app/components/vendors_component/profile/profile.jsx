@@ -1,185 +1,199 @@
 "use client";
-import "@/app/components/vendor-workspace/vendor-workspace.css";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import axios from "axios";
 import toast from "react-hot-toast";
-
+import { AnimatePresence, motion } from "framer-motion";
+import { useQueryClient } from "@tanstack/react-query";
 import {
-  Store,
+  ArrowRight,
+  BadgeCheck,
+  Bell,
+  Camera,
+  ChevronDown,
+  Clock,
+  CreditCard,
+  FileText,
+  Loader2,
+  Lock,
+  Mail,
   MapPin,
   Phone,
-  Mail,
-  DollarSign,
-  Clock,
-  Utensils,
-  Camera,
-  FileText,
-  Lock,
   Save,
-  ChevronDown,
-  ChevronUp,
-  CreditCard,
-  Truck,
-  X,
-  CheckCircle2,
-  Plus,
-  Bell,
   Star,
+  Store,
+  Utensils,
+  Vibrate,
   Volume2,
-  Vibrate
+  X,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+
 import { updateVendor } from "@/app/lib/vendorProfileApi";
-import { useQueryClient } from "@tanstack/react-query";
 import PermanentInstallButton from "@/app/components/PermanentInstallButton";
-import LocationSelector from "@/app/components/LocationSelector";
 import { useApi } from "@/app/context/ApiContext";
-import axios from "axios";
-import { Loader2 } from "lucide-react";
-import { getVendorAlertSettings, playVendorAlertPreview, saveVendorAlertSettings } from "@/app/lib/vendorAlertSettings";
+import {
+  getVendorAlertSettings,
+  playVendorAlertPreview,
+  saveVendorAlertSettings,
+} from "@/app/lib/vendorAlertSettings";
 import VendorLocationNotice from "@/app/components/vendors_component/location/VendorLocationNotice";
 
 const CLOUDINARY_PRESET = "GrubDash";
-const CLOUDINARY_HOST = "https://api.cloudinary.com/v1_1/dypn7gna0/image/upload";
+const CLOUDINARY_HOST =
+  "https://api.cloudinary.com/v1_1/dypn7gna0/image/upload";
 
-const CUISINE_GROUPS = {}; // Removed hardcoded groups
-
-const CUISINES = []; // Removed hardcoded flat list
+const DAYS = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+];
 
 const uploadToCloudinary = async (file) => {
   const formData = new FormData();
   formData.append("file", file);
   formData.append("upload_preset", CLOUDINARY_PRESET);
   try {
-    const res = await fetch(CLOUDINARY_HOST, {
-      method: "POST",
-      body: formData,
-    });
-
+    const res = await fetch(CLOUDINARY_HOST, { method: "POST", body: formData });
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
-      throw new Error(`Cloudinary upload failed: ${res.status} ${errorData.error?.message || ''}`);
+      throw new Error(
+        `Cloudinary upload failed: ${res.status} ${errorData.error?.message || ""}`
+      );
     }
-
     const data = await res.json();
     return data.secure_url;
   } catch (err) {
-    console.error("Cloudinary upload error detailed:", err);
+    console.error("Cloudinary upload error:", err);
     toast.error(`Image upload failed: ${err.message}`);
     return null;
   }
 };
 
-const Section = ({ title, icon: Icon, children, isOpen, onToggle, loading }) => (
-  <motion.div
-    initial={false}
-    className="bg-white  border border-zinc-100  overflow-hidden rounded-xl"
-  >
-    <button
-      onClick={onToggle}
-      aria-expanded={!!isOpen}
-      className="w-full flex items-center justify-between p-4 bg-white  hover:bg-zinc-50  transition-colors"
-    >
-      <div className="flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-xl bg-orange-50  flex items-center justify-center text-orange-600 ">
-          <Icon size={16} />
-        </div>
-        <h3 className="font-semibold text-zinc-900  text-base tracking-tight normal-case leading-none">{title}</h3>
-      </div>
-      <div className={`text-gray-400 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}>
-        <ChevronDown size={20} />
-      </div>
-    </button>
-
-    <AnimatePresence initial={false}>
-      {isOpen && (
-        <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: "auto", opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          transition={{ duration: 0.3, ease: "easeInOut" }}
-        >
-          <div className="p-4 pt-0 border-t border-zinc-50 ">
-            {children}
+function ProfileSection({ title, subtitle, icon: Icon, isOpen, onToggle, children }) {
+  return (
+    <section className="overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={Boolean(isOpen)}
+        className="flex w-full items-center justify-between gap-4 p-5 text-left transition hover:bg-zinc-50/70 dark:hover:bg-zinc-800/40"
+      >
+        <div className="flex min-w-0 items-center gap-3.5">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-600 dark:bg-orange-500/15 dark:text-orange-400">
+            <Icon size={18} />
+          </span>
+          <div className="min-w-0">
+            <h2 className="text-base font-bold tracking-tight text-zinc-900 dark:text-white">
+              {title}
+            </h2>
+            {subtitle && (
+              <p className="mt-0.5 truncate text-xs text-zinc-500 dark:text-zinc-400">
+                {subtitle}
+              </p>
+            )}
           </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
-  </motion.div>
-);
+        </div>
+        <span
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-500 transition-transform dark:bg-zinc-800 dark:text-zinc-400 ${
+            isOpen ? "rotate-180" : ""
+          }`}
+        >
+          <ChevronDown size={17} />
+        </span>
+      </button>
 
-const InputGroup = ({ label, icon: Icon, ...props }) => (
-  <label className="block space-y-2">
-    <span className="text-sm font-semibold text-zinc-500  normal-case tracking-normal flex items-center gap-2">
-      {Icon && <Icon size={12} />} {label}
-    </span>
-    <div className="relative group">
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="border-t border-zinc-100 p-5 dark:border-zinc-800">
+              {children}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </section>
+  );
+}
+
+function InputField({ label, icon: Icon, ...props }) {
+  return (
+    <label className="block space-y-1.5">
+      <span className="flex items-center gap-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+        {Icon && <Icon size={13} className="text-zinc-400" />}
+        {label}
+      </span>
       <input
-        className={`w-full bg-zinc-50  border border-zinc-200  text-zinc-900  text-xs font-bold normal-case tracking-tight rounded-xl focus:ring-1 focus:ring-orange-600 focus:border-orange-600 block p-3 transition-all outline-none ${props.disabled ? 'opacity-60 cursor-not-allowed' : 'hover:border-zinc-300 '}`}
+        className={`w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3.5 py-2.5 text-sm font-medium text-zinc-900 outline-none transition focus:border-orange-500 focus:bg-white dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:focus:bg-zinc-900 ${
+          props.disabled ? "cursor-not-allowed opacity-60" : ""
+        }`}
         {...props}
       />
-    </div>
-  </label>
-);
+    </label>
+  );
+}
 
 export default function VendorProfilePage({ vendor }) {
-  const [basicInfo, setBasicInfo] = useState({ storeName: "", phone: "", email: "", storeDescription: "", password: "" });
-  const [address, setAddress] = useState({ street: "", city: "", state: "", postalCode: "" });
+  const [basicInfo, setBasicInfo] = useState({
+    storeName: "",
+    phone: "",
+    email: "",
+    storeDescription: "",
+    password: "",
+  });
+  const [address, setAddress] = useState({
+    street: "",
+    city: "",
+    state: "",
+    postalCode: "",
+  });
   const [selectedStateId, setSelectedStateId] = useState("");
   const [selectedCityId, setSelectedCityId] = useState("");
   const [cuisineTypes, setCuisineTypes] = useState([]);
   const [openingHours, setOpeningHours] = useState({});
-  const [deliverySettings, setDeliverySettings] = useState({
-    deliveryManagedBy: "admin",
-    flatRateDeliveryFee: 0,
-    deliveryRadiusKm: 15
-  });
-  const [payoutDetails, setPayoutDetails] = useState({
-    bankName: "",
-    accountName: "",
-    accountNumber: "",
-  });
   const [logo, setLogo] = useState("");
   const [coverImage, setCoverImage] = useState("");
   const [platformCategories, setPlatformCategories] = useState([]);
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [openSections, setOpenSections] = useState({ basicInfo: true });
-  const [alertSettings, setAlertSettings] = useState(() => getVendorAlertSettings()); // Default open first section
+  const [alertSettings, setAlertSettings] = useState(() =>
+    getVendorAlertSettings()
+  );
   const [loadingSection, setLoadingSection] = useState("");
+
   const { baseUrl } = useApi();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (vendor) {
-      setBasicInfo({
-        storeName: vendor.storeName || "",
-        phone: vendor.phone || "",
-        email: vendor.email || "",
-        storeDescription: vendor.storeDescription || "",
-        password: "",
-      });
-      setAddress({
-        street: vendor.address?.street || "",
-        city: vendor.address?.city || "",
-        state: vendor.address?.state || "",
-        postalCode: vendor.address?.postalCode || "",
-      });
-      setSelectedStateId(vendor.stateId?._id || vendor.stateId || "");
-      setSelectedCityId(vendor.cityId?._id || vendor.cityId || "");
-      setCuisineTypes(vendor.cuisineTypes || []);
-      setOpeningHours(vendor.openingHours || {});
-      setDeliverySettings({
-        deliveryManagedBy: vendor.deliveryManagedBy || "admin",
-        flatRateDeliveryFee: vendor.flatRateDeliveryFee || 0,
-        deliveryRadiusKm: vendor.deliveryRadiusKm || 15
-      });
-      setPayoutDetails({
-        bankName: vendor.payoutDetails?.bankName || "",
-        accountName: vendor.payoutDetails?.accountName || "",
-        accountNumber: vendor.payoutDetails?.accountNumber || "",
-      });
-      setLogo(vendor.logo || "");
-      setCoverImage(vendor.coverImage || "");
-    }
+    if (!vendor) return;
+    setBasicInfo({
+      storeName: vendor.storeName || "",
+      phone: vendor.phone || "",
+      email: vendor.email || "",
+      storeDescription: vendor.storeDescription || "",
+      password: "",
+    });
+    setAddress({
+      street: vendor.address?.street || "",
+      city: vendor.address?.city || "",
+      state: vendor.address?.state || "",
+      postalCode: vendor.address?.postalCode || "",
+    });
+    setSelectedStateId(vendor.stateId?._id || vendor.stateId || "");
+    setSelectedCityId(vendor.cityId?._id || vendor.cityId || "");
+    setCuisineTypes(vendor.cuisineTypes || []);
+    setOpeningHours(vendor.openingHours || {});
+    setLogo(vendor.logo || "");
+    setCoverImage(vendor.coverImage || "");
   }, [vendor]);
 
   useEffect(() => {
@@ -187,9 +201,7 @@ export default function VendorProfilePage({ vendor }) {
       try {
         setIsLoadingCategories(true);
         const res = await axios.get(`${baseUrl}/categories/platform-categories`);
-        if (res.data?.success) {
-          setPlatformCategories(res.data.data);
-        }
+        if (res.data?.success) setPlatformCategories(res.data.data || []);
       } catch (err) {
         console.error("Failed to fetch platform categories:", err);
       } finally {
@@ -203,20 +215,15 @@ export default function VendorProfilePage({ vendor }) {
     const next = saveVendorAlertSettings({ ...alertSettings, ...changes });
     setAlertSettings(next);
   };
-  const toggleSection = (section) => {
-    setOpenSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }));
-  };
 
-  const queryClient = useQueryClient();
+  const toggleSection = (section) => {
+    setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
+  };
 
   const updateSection = async (section, data) => {
     setLoadingSection(section);
     try {
       let payload = {};
-
       if (section === "basicInfo") {
         payload = {
           storeName: data.storeName,
@@ -235,20 +242,6 @@ export default function VendorProfilePage({ vendor }) {
         payload = { cuisineTypes: data };
       } else if (section === "openingHours") {
         payload = { openingHours: data };
-      } else if (section === "deliverySettings") {
-        payload = {
-          deliveryManagedBy: data.deliveryManagedBy,
-          flatRateDeliveryFee: Number(data.flatRateDeliveryFee),
-          deliveryRadiusKm: Number(data.deliveryRadiusKm)
-        };
-      } else if (section === "payoutDetails") {
-        payload = {
-          payoutDetails: {
-            bankName: data.bankName,
-            accountName: data.accountName,
-            accountNumber: data.accountNumber,
-          }
-        };
       } else if (section === "logo") {
         payload = { logo: data };
       } else if (section === "coverImage") {
@@ -266,16 +259,21 @@ export default function VendorProfilePage({ vendor }) {
       }));
 
       if (typeof window !== "undefined") {
-        localStorage.setItem("melachow_vendor_cache", JSON.stringify(nextVendor));
+        localStorage.setItem(
+          "melachow_vendor_cache",
+          JSON.stringify(nextVendor)
+        );
       }
 
-      toast.success(`${section.replace(/([A-Z])/g, ' $1').trim()} updated successfully!`, {
-        icon: 'âœ…',
-        style: { borderRadius: '10px', background: '#333', color: '#fff' }
-      });
+      toast.success(
+        `${section.replace(/([A-Z])/g, " $1").trim()} updated successfully`
+      );
     } catch (err) {
       console.error(err);
-      const errorMessage = err.response?.data?.message || err.response?.data?.error || `Failed to update ${section}`;
+      const errorMessage =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        `Failed to update ${section}`;
       toast.error(errorMessage);
     } finally {
       setLoadingSection("");
@@ -283,338 +281,652 @@ export default function VendorProfilePage({ vendor }) {
   };
 
   const handleLogoChange = async (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
     const toastId = toast.loading("Uploading logo...");
     const url = await uploadToCloudinary(file);
     if (url) {
       setLogo(url);
       await updateSection("logo", url);
-      toast.success("Logo updated!", { id: toastId });
+      toast.success("Logo updated", { id: toastId });
     } else {
       toast.dismiss(toastId);
     }
   };
 
   const handleCoverChange = async (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
     const toastId = toast.loading("Uploading cover image...");
     const url = await uploadToCloudinary(file);
     if (url) {
       setCoverImage(url);
       await updateSection("coverImage", url);
-      toast.success("Cover image updated!", { id: toastId });
+      toast.success("Cover image updated", { id: toastId });
     } else {
       toast.dismiss(toastId);
     }
   };
 
   const toggleCuisine = (value) => {
-    if (cuisineTypes.includes(value)) {
-      setCuisineTypes(cuisineTypes.filter(c => c !== value));
-    } else {
-      setCuisineTypes([...cuisineTypes, value]);
-    }
+    setCuisineTypes((prev) =>
+      prev.includes(value) ? prev.filter((c) => c !== value) : [...prev, value]
+    );
   };
 
   const handleOpeningHoursChange = (day, key, value) => {
-    setOpeningHours({ ...openingHours, [day]: { ...openingHours[day], [key]: value } });
-  };
-
-  const handleStateChange = (stateId, stateName) => {
-    setSelectedStateId(stateId);
-    setSelectedCityId("");
-    setAddress(prev => ({ ...prev, state: stateName, city: "" }));
-  };
-
-  const handleCityChange = (cityId, cityName) => {
-    setSelectedCityId(cityId);
-    setAddress(prev => ({ ...prev, city: cityName }));
+    setOpeningHours((prev) => ({
+      ...prev,
+      [day]: { ...(prev[day] || {}), [key]: value },
+    }));
   };
 
   if (!vendor) return null;
 
   const successfulStatuses = new Set(["completed", "delivered"]);
-  const vendorOrders = Array.isArray(vendor.vendorOrders) ? vendor.vendorOrders : null;
+  const vendorOrders = Array.isArray(vendor.vendorOrders)
+    ? vendor.vendorOrders
+    : null;
   const totalSales = vendorOrders
     ? vendorOrders
-        .filter((order) => successfulStatuses.has(String(order.orderStatus || "").toLowerCase()))
+        .filter((order) =>
+          successfulStatuses.has(String(order.orderStatus || "").toLowerCase())
+        )
         .reduce((total, order) => {
-          const amount = Number(order.vendorTotal || 0);
-          return total + (order.moneyUnit === "kobo" ? amount / 100 : amount);
+          const amt = Number(order.vendorTotal || 0);
+          return total + (order.moneyUnit === "kobo" ? amt / 100 : amt);
         }, 0)
     : Number(vendor.totalSales || 0) / (vendor.moneyUnit === "kobo" ? 100 : 1);
+
   const formattedTotalSales = new Intl.NumberFormat("en-NG", {
     style: "currency",
     currency: "NGN",
     maximumFractionDigits: 0,
   }).format(totalSales);
 
-  return (
-    <div className="mc-workspace mc-profile max-w-7xl mx-auto space-y-4">
+  const ratingValue = Number(vendor.rating ?? vendor.ratings ?? 0);
 
-      {/* Hero Banner */}
-      <div className="mc-profile-hero relative rounded-xl overflow-hidden bg-white  border border-zinc-100  group">
-        <div className="h-40 w-full relative overflow-hidden">
-          {/* Background Image (Blurred Logo/Cover) */}
-          <div className="absolute inset-0 bg-gray-900">
+  return (
+    <div className="mx-auto max-w-[1200px] pb-12 font-sans text-zinc-900 dark:text-zinc-100">
+      <div className="space-y-5">
+        {/* ── 1. STORE PROFILE HERO ── */}
+        <section className="overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="relative h-36 w-full overflow-hidden bg-zinc-900 sm:h-44">
             <img
               src={coverImage || logo || "/placeholder.jpg"}
-              alt="Cover Background"
-              className="w-full h-full object-cover opacity-70 blur-sm scale-110"
+              alt="Store cover"
+              className="h-full w-full object-cover opacity-75"
             />
-          </div>
-          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(#fff 1px, transparent 1px)", backgroundSize: "20px 20px" }}></div>
-          
-          {/* Cover Update Button */}
-          <label className="absolute bottom-4 right-4 bg-white/20 hover:bg-white/40 backdrop-blur-md text-white px-4 py-2 rounded-xl cursor-pointer transition-all flex items-center gap-2 text-sm font-semibold normal-case tracking-normal border border-white/30 group-hover:scale-105 active:scale-95">
-            <Camera size={14} /> Update Cover
-            <input type="file" className="hidden" onChange={handleCoverChange} accept="image/*" />
-          </label>
-        </div>
-        <div className="px-6 pb-6 flex flex-col md:flex-row gap-5 -mt-10 relative z-10">
-          <div className="relative group">
-            <div className="w-24 h-24 rounded-xl border-4 border-white  overflow-hidden bg-white ">
-              <img src={logo || "/placeholder.jpg"} alt="Logo" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
-            </div>
-            <label className="absolute bottom-1 right-1 bg-zinc-900  text-white  p-1.5 rounded-xl cursor-pointer hover:bg-orange-600 hover:text-white transition-colors">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+            <label className="absolute bottom-3.5 right-4 inline-flex cursor-pointer items-center gap-2 rounded-xl border border-white/25 bg-black/45 px-4 py-2 text-xs font-semibold text-white backdrop-blur-md transition hover:bg-black/65">
               <Camera size={14} />
-              <input type="file" className="hidden" onChange={handleLogoChange} accept="image/*" />
+              <span>Update Cover</span>
+              <input
+                type="file"
+                className="hidden"
+                onChange={handleCoverChange}
+                accept="image/*"
+              />
             </label>
           </div>
 
-          <div className="flex-1 pt-2 md:pt-14">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="relative px-5 pb-6 sm:px-6">
+            <div className="-mt-11 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div className="flex items-end gap-4">
+                <div className="relative shrink-0">
+                  <div className="h-24 w-24 overflow-hidden rounded-2xl border-4 border-white bg-zinc-100 shadow-md dark:border-zinc-900 dark:bg-zinc-800">
+                    <img
+                      src={logo || "/placeholder.jpg"}
+                      alt="Store logo"
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <label
+                    title="Change store logo"
+                    className="absolute -bottom-1 -right-1 flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl bg-zinc-900 text-white shadow-md transition hover:bg-orange-600"
+                  >
+                    <Camera size={14} />
+                    <input
+                      type="file"
+                      className="hidden"
+                      onChange={handleLogoChange}
+                      accept="image/*"
+                    />
+                  </label>
+                </div>
+
+                <div className="min-w-0 pb-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h1 className="truncate text-xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-2xl">
+                      {basicInfo.storeName || "My Store"}
+                    </h1>
+                    {vendor.verified && (
+                      <BadgeCheck size={18} className="shrink-0 text-orange-500" />
+                    )}
+                  </div>
+                  <p className="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+                    <MapPin size={13} className="text-orange-500" />
+                    <span>
+                      {[address.city, address.state].filter(Boolean).join(", ") ||
+                        "Location not set"}
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${
+                    vendor.isLive
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300"
+                      : "border-zinc-200 bg-zinc-100 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                  }`}
+                >
+                  <span
+                    className={`h-2 w-2 rounded-full ${
+                      vendor.isLive ? "bg-emerald-500" : "bg-zinc-400"
+                    }`}
+                  />
+                  {vendor.isLive ? "Store Live" : "Store Paused"}
+                </span>
+                <span
+                  className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+                    vendor.isActive
+                      ? "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/30 dark:bg-sky-500/15 dark:text-sky-300"
+                      : "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-300"
+                  }`}
+                >
+                  {vendor.isActive ? "Account Active" : "Inactive"}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-5 grid grid-cols-3 gap-4 border-t border-zinc-100 pt-5 dark:border-zinc-800">
               <div>
-                <h1 className="text-3xl font-semibold text-gray-900  tracking-tight">{basicInfo.storeName || "My Store"}</h1>
-                <p className="text-gray-500 font-medium flex items-center gap-1 mt-1">
-                  <MapPin size={14} className="text-orange-500" />
-                  {address.city || "City"}, {address.state || "State"}
+                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                  Total Sales
+                </p>
+                <p className="mt-0.5 text-lg font-bold tabular-nums text-zinc-900 dark:text-white">
+                  {formattedTotalSales}
                 </p>
               </div>
-            <div className={`px-2 py-1 rounded-xl text-xs font-semibold normal-case tracking-normal border w-fit ${vendor.isActive ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-rose-50 text-rose-600 border-rose-200"}`}>
-                {vendor.isActive ? "Active" : "In Active"}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-6 mt-5 pt-5 border-t border-zinc-100 ">
               <div>
-                <p className="text-sm font-semibold text-zinc-500 normal-case tracking-normal leading-none mb-1.5">Total Sales</p>
-                <p className="text-xl font-semibold text-zinc-900  tracking-tight">{formattedTotalSales}</p>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-zinc-500 normal-case tracking-normal leading-none mb-1.5">Rating</p>
-                <div className="flex items-center gap-1">
-                  <span className="text-xl font-semibold text-zinc-900  tracking-tight">{Number(vendor.rating ?? vendor.ratings ?? 0) > 0 ? Number(vendor.rating ?? vendor.ratings).toFixed(1) : "New"}</span>
-                  <Star size={16} className="text-orange-600" fill="currentColor" aria-hidden="true" />
-                </div>
+                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                  Store Rating
+                </p>
+                <p className="mt-0.5 flex items-center gap-1 text-lg font-bold tabular-nums text-zinc-900 dark:text-white">
+                  <span>{ratingValue > 0 ? ratingValue.toFixed(1) : "New"}</span>
+                  <Star
+                    size={15}
+                    className="text-amber-500"
+                    fill="currentColor"
+                  />
+                </p>
               </div>
               <div>
-                <p className="text-sm font-semibold text-zinc-500 normal-case tracking-normal leading-none mb-1.5">Joined</p>
-                <p className="text-sm font-semibold text-zinc-900  tracking-tight">{vendor.createdAt ? new Date(vendor.createdAt).toLocaleDateString() : 'N/A'}</p>
+                <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                  Partner Since
+                </p>
+                <p className="mt-0.5 text-sm font-bold text-zinc-900 dark:text-white">
+                  {vendor.createdAt
+                    ? new Date(vendor.createdAt).toLocaleDateString("en-NG", {
+                        month: "short",
+                        year: "numeric",
+                      })
+                    : "—"}
+                </p>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </section>
 
-      <div className="grid grid-cols-1 gap-6">
-
-        {/* Basic Info */}
-        <Section
+        {/* ── 2. GENERAL INFORMATION ── */}
+        <ProfileSection
           title="General Information"
+          subtitle="Store name, contact phone, bio, and password"
           icon={Store}
           isOpen={openSections.basicInfo}
-          onToggle={() => toggleSection('basicInfo')}
+          onToggle={() => toggleSection("basicInfo")}
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <InputGroup label="Store Name" name="storeName" value={basicInfo.storeName} onChange={(e) => setBasicInfo({ ...basicInfo, storeName: e.target.value })} icon={Store} />
-            <InputGroup label="Phone Number" name="phone" value={basicInfo.phone} onChange={(e) => setBasicInfo({ ...basicInfo, phone: e.target.value })} icon={Phone} />
-            <InputGroup label="Email Address" value={basicInfo.email} disabled icon={Mail} />
-            <div className="md:col-span-2 space-y-2">
-              <label className="text-xs font-bold text-gray-400 normal-case tracking-normal flex items-center gap-2">
-                <FileText size={12} /> Description
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <InputField
+              label="Store Name"
+              name="storeName"
+              icon={Store}
+              value={basicInfo.storeName}
+              onChange={(e) =>
+                setBasicInfo({ ...basicInfo, storeName: e.target.value })
+              }
+            />
+            <InputField
+              label="Phone Number"
+              name="phone"
+              icon={Phone}
+              value={basicInfo.phone}
+              onChange={(e) =>
+                setBasicInfo({ ...basicInfo, phone: e.target.value })
+              }
+            />
+            <InputField
+              label="Email Address"
+              icon={Mail}
+              value={basicInfo.email}
+              disabled
+            />
+            <InputField
+              label="New Password (Optional)"
+              type="password"
+              icon={Lock}
+              placeholder="Leave blank to keep current password"
+              value={basicInfo.password}
+              onChange={(e) =>
+                setBasicInfo({ ...basicInfo, password: e.target.value })
+              }
+            />
+            <div className="space-y-1.5 md:col-span-2">
+              <label className="flex items-center gap-1.5 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                <FileText size={13} className="text-zinc-400" />
+                Store Description
               </label>
               <textarea
-                className="w-full bg-zinc-50  border border-zinc-200  text-zinc-900  text-sm font-bold normal-case tracking-tight rounded-xl focus:ring-1 focus:ring-orange-600 focus:border-orange-600 block p-3 transition-all outline-none h-24 resize-none hover:border-zinc-300 "
+                rows={3}
                 value={basicInfo.storeDescription}
-                onChange={(e) => setBasicInfo({ ...basicInfo, storeDescription: e.target.value })}
+                onChange={(e) =>
+                  setBasicInfo({
+                    ...basicInfo,
+                    storeDescription: e.target.value,
+                  })
+                }
+                placeholder="Tell customers about your specialty dishes..."
+                className="w-full resize-none rounded-xl border border-zinc-200 bg-zinc-50 px-3.5 py-2.5 text-sm text-zinc-900 outline-none transition focus:border-orange-500 focus:bg-white dark:border-zinc-700 dark:bg-zinc-950 dark:text-white dark:focus:bg-zinc-900"
               />
             </div>
-            <InputGroup label="New Password (Optional)" type="password" value={basicInfo.password} onChange={(e) => setBasicInfo({ ...basicInfo, password: e.target.value })} icon={Lock} placeholder="Leave blank to keep current" />
           </div>
-          <div className="flex justify-end mt-4">
-            <button onClick={() => updateSection("basicInfo", basicInfo)} disabled={loadingSection === "basicInfo"} className="flex items-center gap-2 bg-orange-600 text-white px-5 py-2.5 rounded-xl font-semibold normal-case text-sm tracking-normal hover:bg-orange-700 transition-all active:scale-95 disabled:opacity-50">
-              {loadingSection === "basicInfo" ? "Saving..." : <><Save size={16} /> Save Changes</>}
+
+          <div className="mt-5 flex justify-end">
+            <button
+              type="button"
+              onClick={() => updateSection("basicInfo", basicInfo)}
+              disabled={loadingSection === "basicInfo"}
+              className="inline-flex min-h-[42px] items-center gap-2 rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-700 disabled:opacity-55"
+            >
+              {loadingSection === "basicInfo" ? (
+                <Loader2 size={15} className="animate-spin" />
+              ) : (
+                <Save size={15} />
+              )}
+              <span>
+                {loadingSection === "basicInfo" ? "Saving..." : "Save Changes"}
+              </span>
             </button>
           </div>
-        </Section>
+        </ProfileSection>
 
-        {/* Address */}
-        <Section
-          title="Location & Address"
+        {/* ── 3. LOCATION & GPS ── */}
+        <ProfileSection
+          title="Location & GPS Pickup Pin"
+          subtitle="Accurate GPS ensures correct distance delivery fees"
           icon={MapPin}
           isOpen={openSections.address}
-          onToggle={() => toggleSection('address')}
+          onToggle={() => toggleSection("address")}
         >
-          <VendorLocationNotice vendor={{ ...vendor, address }} profile always onSaved={() => queryClient.invalidateQueries({ queryKey: ["vendors"] })} />
-        </Section>
+          <VendorLocationNotice
+            vendor={{ ...vendor, address }}
+            profile
+            always
+            onSaved={() => queryClient.invalidateQueries({ queryKey: ["vendors"] })}
+          />
+        </ProfileSection>
 
-        {/* Cuisine Types */}
-        <Section
-          title="Cuisines & Tags"
+        {/* ── 4. CUISINES & TAGS ── */}
+        <ProfileSection
+          title="Cuisines & Categories"
+          subtitle={`${cuisineTypes.length} selected`}
           icon={Utensils}
           isOpen={openSections.cuisineTypes}
-          onToggle={() => toggleSection('cuisineTypes')}
+          onToggle={() => toggleSection("cuisineTypes")}
         >
-          <div className="space-y-6">
-            <div className="flex flex-wrap gap-2 mb-6">
-              {cuisineTypes.length === 0 && (
-                <p className="text-sm text-zinc-500 font-bold normal-case tracking-normal flex items-center px-2">No categories selected...</p>
-              )}
-              {cuisineTypes.map((cuisine) => (
-                <div key={cuisine} className="flex items-center gap-2 bg-orange-600 text-white px-3 py-1.5 rounded-xl font-semibold normal-case text-sm tracking-normal">
-                  {cuisine}
-                  <button onClick={() => toggleCuisine(cuisine)} className="hover:text-orange-200 transition-colors">
-                    <X size={12} />
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-              {isLoadingCategories ? (
-                <div className="flex flex-col items-center justify-center py-10 opacity-50">
-                  <Loader2 className="animate-spin mb-2" />
-                  <p className="text-sm font-semibold normal-case tracking-normal">Loading categories...</p>
-                </div>
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              {cuisineTypes.length === 0 ? (
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  No cuisine categories selected yet.
+                </p>
               ) : (
-                <div className="grid lg:grid-cols-4 grid-cols-2 gap-3">
-                  {platformCategories.map((group) => {
-                    const isSelected = cuisineTypes.includes(group.name);
-                    return (
-                      <button
-                        key={group._id}
-                        onClick={() => toggleCuisine(group.name)}
-                        className={`p-4 border rounded-xl text-sm font-semibold normal-case tracking-normal transition-all text-center flex flex-col items-center gap-2 ${
-                          isSelected
-                            ? "bg-orange-600 border-orange-600 text-white shadow-lg shadow-orange-600/20"
-                            : "bg-zinc-50  border-zinc-200  text-zinc-600  hover:border-orange-500"
-                        } ${!group.isActive ? "opacity-50 grayscale" : ""}`}
-                      >
-                        {group.image && <img alt={group.name} src={group.image} className="w-12 h-12 p-1 object-contain bg-white rounded-full" />}
-                        <span className="block">{group.name}</span>
-                        {group.description && (
-                          <p className={`text-xs font-medium normal-case tracking-normal opacity-70 line-clamp-2 px-2 ${isSelected ? "text-orange-50" : "text-zinc-500"}`}>
-                            {group.description}
-                          </p>
-                        )}
-                        {!group.isActive && <span className="text-xs text-rose-500">(Inactive)</span>}
-                      </button>
-                    );
-                  })}
-                </div>
+                cuisineTypes.map((cuisine) => (
+                  <span
+                    key={cuisine}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-orange-600 px-3 py-1 text-xs font-semibold text-white"
+                  >
+                    {cuisine}
+                    <button
+                      type="button"
+                      onClick={() => toggleCuisine(cuisine)}
+                      aria-label={`Remove ${cuisine}`}
+                      className="rounded-full p-0.5 hover:bg-white/20"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))
               )}
             </div>
-          </div>
-          <div className="flex justify-end mt-6">
-            <button onClick={() => updateSection("cuisineTypes", cuisineTypes)} disabled={loadingSection === "cuisineTypes"} className="flex items-center gap-2 bg-gray-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-orange-600 transition-all  Active:scale-95 disabled:opacity-50">
-              {loadingSection === "cuisineTypes" ? "Saving..." : <><Save size={18} /> Update Cuisines</>}
-            </button>
-          </div>
-        </Section>
 
-        {/* Opening Hours */}
-        <Section
+            {isLoadingCategories ? (
+              <div className="flex items-center justify-center gap-2 py-10 text-sm text-zinc-500">
+                <Loader2 size={18} className="animate-spin text-orange-500" />
+                <span>Loading categories...</span>
+              </div>
+            ) : (
+              <div className="grid max-h-[420px] grid-cols-2 gap-3 overflow-y-auto pr-1 sm:grid-cols-3 lg:grid-cols-4">
+                {platformCategories.map((group) => {
+                  const isSelected = cuisineTypes.includes(group.name);
+                  return (
+                    <button
+                      key={group._id}
+                      type="button"
+                      onClick={() => toggleCuisine(group.name)}
+                      className={`flex flex-col items-center gap-2 rounded-xl border p-4 text-center transition ${
+                        isSelected
+                          ? "border-orange-600 bg-orange-600 text-white shadow-sm"
+                          : "border-zinc-200 bg-zinc-50/70 text-zinc-700 hover:border-orange-300 dark:border-zinc-800 dark:bg-zinc-950/40 dark:text-zinc-200"
+                      } ${!group.isActive ? "opacity-50 grayscale" : ""}`}
+                    >
+                      {group.image && (
+                        <img
+                          alt={group.name}
+                          src={group.image}
+                          className="h-11 w-11 rounded-full bg-white object-contain p-1"
+                        />
+                      )}
+                      <span className="text-xs font-bold">{group.name}</span>
+                      {group.description && (
+                        <p
+                          className={`line-clamp-2 text-[11px] ${
+                            isSelected
+                              ? "text-orange-100"
+                              : "text-zinc-500 dark:text-zinc-400"
+                          }`}
+                        >
+                          {group.description}
+                        </p>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => updateSection("cuisineTypes", cuisineTypes)}
+                disabled={loadingSection === "cuisineTypes"}
+                className="inline-flex min-h-[42px] items-center gap-2 rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-700 disabled:opacity-55"
+              >
+                {loadingSection === "cuisineTypes" ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : (
+                  <Save size={15} />
+                )}
+                <span>
+                  {loadingSection === "cuisineTypes"
+                    ? "Saving..."
+                    : "Update Cuisines"}
+                </span>
+              </button>
+            </div>
+          </div>
+        </ProfileSection>
+
+        {/* ── 5. OPERATING HOURS ── */}
+        <ProfileSection
           title="Operating Hours"
+          subtitle="Weekly open and close schedule (Africa/Lagos WAT)"
           icon={Clock}
           isOpen={openSections.openingHours}
-          onToggle={() => toggleSection('openingHours')}
+          onToggle={() => toggleSection("openingHours")}
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].map((day) => (
-              <div key={day} className="border border-zinc-100  bg-zinc-50/30  p-4 rounded-xl space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="capitalize font-semibold text-sm normal-case tracking-normal text-zinc-900 ">{day}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-sm font-semibold text-zinc-500 normal-case tracking-normal leading-none mb-1 d-block">Open</label>
-                    <input type="time" value={openingHours[day]?.open || ""} onChange={(e) => handleOpeningHoursChange(day, "open", e.target.value)} className="w-full bg-white  border border-zinc-200  text-zinc-900  rounded-xl p-2 text-xs outline-none focus:border-orange-500 transition-all font-bold" />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {DAYS.map((day) => {
+              const closed = Boolean(openingHours[day]?.closed);
+              return (
+                <div
+                  key={day}
+                  className="space-y-3 rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-950/40"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-bold capitalize text-zinc-900 dark:text-white">
+                      {day}
+                    </span>
+                    <label className="inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                      <input
+                        type="checkbox"
+                        checked={closed}
+                        onChange={(e) =>
+                          handleOpeningHoursChange(
+                            day,
+                            "closed",
+                            e.target.checked
+                          )
+                        }
+                        className="accent-orange-600"
+                      />
+                      <span>Closed</span>
+                    </label>
                   </div>
-                  <div>
-                    <label className="text-sm font-semibold text-zinc-500 normal-case tracking-normal leading-none mb-1 d-block">Close</label>
-                    <input type="time" value={openingHours[day]?.close || ""} onChange={(e) => handleOpeningHoursChange(day, "close", e.target.value)} className="w-full bg-white  border border-zinc-200  text-zinc-900  rounded-xl p-2 text-xs outline-none focus:border-orange-500 transition-all font-bold" />
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <label className="block text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">
+                      Open
+                      <input
+                        type="time"
+                        disabled={closed}
+                        value={openingHours[day]?.open || ""}
+                        onChange={(e) =>
+                          handleOpeningHoursChange(day, "open", e.target.value)
+                        }
+                        className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-2 text-xs font-semibold text-zinc-900 outline-none focus:border-orange-500 disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                      />
+                    </label>
+                    <label className="block text-[11px] font-semibold text-zinc-500 dark:text-zinc-400">
+                      Close
+                      <input
+                        type="time"
+                        disabled={closed}
+                        value={openingHours[day]?.close || ""}
+                        onChange={(e) =>
+                          handleOpeningHoursChange(day, "close", e.target.value)
+                        }
+                        className="mt-1 w-full rounded-lg border border-zinc-200 bg-white px-2.5 py-2 text-xs font-semibold text-zinc-900 outline-none focus:border-orange-500 disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+                      />
+                    </label>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
-          <div className="flex justify-end mt-4">
-            <button onClick={() => updateSection("openingHours", openingHours)} disabled={loadingSection === "openingHours"} className="flex items-center gap-2 bg-orange-600 text-white px-5 py-2.5 rounded-xl font-semibold normal-case text-sm tracking-normal hover:bg-orange-700 transition-all  Active:scale-95 disabled:opacity-50">
-              {loadingSection === "openingHours" ? "Saving..." : <><Save size={16} /> Update Hours</>}
+          <div className="mt-5 flex justify-end">
+            <button
+              type="button"
+              onClick={() => updateSection("openingHours", openingHours)}
+              disabled={loadingSection === "openingHours"}
+              className="inline-flex min-h-[42px] items-center gap-2 rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-700 disabled:opacity-55"
+            >
+              {loadingSection === "openingHours" ? (
+                <Loader2 size={15} className="animate-spin" />
+              ) : (
+                <Save size={15} />
+              )}
+              <span>
+                {loadingSection === "openingHours"
+                  ? "Saving..."
+                  : "Update Hours"}
+              </span>
             </button>
           </div>
-        </Section>
+        </ProfileSection>
 
-
-        <Section
+        {/* ── 6. INCOMING ORDER ALERTS ── */}
+        <ProfileSection
           title="Incoming Order Alerts"
+          subtitle="Configure kitchen alarm sound & vibration on this device"
           icon={Bell}
           isOpen={openSections.alerts}
-          onToggle={() => toggleSection('alerts')}
+          onToggle={() => toggleSection("alerts")}
         >
-          <div className="space-y-2">
-            <p className="text-xs font-bold leading-relaxed text-zinc-500 ">Choose how you receive new-order alerts on this device. Alerts are silent while the order desk is open.</p>
-            <button onClick={() => updateAlertSettings({ alarmEnabled: !alertSettings.alarmEnabled })} className="flex w-full items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-left  ">
-              <Volume2 size={18} className="text-orange-600" />
-              <div className="flex-1"><p className="text-xs font-semibold normal-case tracking-wide text-zinc-900 ">Loud order alarm</p><p className="mt-1 text-sm text-zinc-500">Repeats until the order is accepted.</p></div>
-              <span className={`relative h-6 w-11 rounded-full ${alertSettings.alarmEnabled ? "bg-orange-600" : "bg-zinc-300 "}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-all ${alertSettings.alarmEnabled ? "left-6" : "left-1"}`} /></span>
+          <div className="space-y-3">
+            <p className="text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+              Choose how this device alerts you when a new order arrives.
+            </p>
+
+            <button
+              type="button"
+              onClick={() =>
+                updateAlertSettings({ alarmEnabled: !alertSettings.alarmEnabled })
+              }
+              className="flex w-full items-center gap-3.5 rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-4 text-left dark:border-zinc-800 dark:bg-zinc-950/40"
+            >
+              <Volume2 size={18} className="shrink-0 text-orange-600 dark:text-orange-400" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-zinc-900 dark:text-white">
+                  Loud order alarm
+                </p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Repeats until pending orders are accepted.
+                </p>
+              </div>
+              <span
+                className={`relative h-6 w-11 shrink-0 rounded-full transition ${
+                  alertSettings.alarmEnabled
+                    ? "bg-orange-600"
+                    : "bg-zinc-300 dark:bg-zinc-700"
+                }`}
+              >
+                <span
+                  className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-all ${
+                    alertSettings.alarmEnabled ? "left-6" : "left-1"
+                  }`}
+                />
+              </span>
             </button>
-            <button onClick={() => updateAlertSettings({ vibrationEnabled: !alertSettings.vibrationEnabled })} className="flex w-full items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 p-3 text-left  ">
-              <Vibrate size={18} className="text-orange-600" />
-              <div className="flex-1"><p className="text-xs font-semibold normal-case tracking-wide text-zinc-900 ">Vibration</p><p className="mt-1 text-sm text-zinc-500">Used on devices that support vibration.</p></div>
-              <span className={`relative h-6 w-11 rounded-full ${alertSettings.vibrationEnabled ? "bg-orange-600" : "bg-zinc-300 "}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-all ${alertSettings.vibrationEnabled ? "left-6" : "left-1"}`} /></span>
+
+            <button
+              type="button"
+              onClick={() =>
+                updateAlertSettings({
+                  vibrationEnabled: !alertSettings.vibrationEnabled,
+                })
+              }
+              className="flex w-full items-center gap-3.5 rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-4 text-left dark:border-zinc-800 dark:bg-zinc-950/40"
+            >
+              <Vibrate size={18} className="shrink-0 text-orange-600 dark:text-orange-400" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-zinc-900 dark:text-white">
+                  Device vibration
+                </p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Vibrates phones &amp; tablets that support haptic alerts.
+                </p>
+              </div>
+              <span
+                className={`relative h-6 w-11 shrink-0 rounded-full transition ${
+                  alertSettings.vibrationEnabled
+                    ? "bg-orange-600"
+                    : "bg-zinc-300 dark:bg-zinc-700"
+                }`}
+              >
+                <span
+                  className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-all ${
+                    alertSettings.vibrationEnabled ? "left-6" : "left-1"
+                  }`}
+                />
+              </span>
             </button>
-            <div className="flex items-center gap-3 rounded-xl border border-zinc-100 bg-zinc-50 p-3  ">
-              <Bell size={18} className="text-orange-600" />
-              <div className="flex-1"><p className="text-xs font-semibold normal-case tracking-wide text-zinc-900 ">Repeat every</p><p className="mt-1 text-sm text-zinc-500">While pending orders remain.</p></div>
-              <select value={alertSettings.intervalSeconds} onChange={(event) => updateAlertSettings({ intervalSeconds: Number(event.target.value) })} className="rounded-xl border border-zinc-200 bg-white px-2 py-1.5 text-xs font-semibold text-zinc-800 outline-none   "><option value={6}>6 sec</option><option value={10}>10 sec</option><option value={15}>15 sec</option></select>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-950/40">
+              <div className="flex items-center gap-3">
+                <Bell size={18} className="text-orange-600 dark:text-orange-400" />
+                <div>
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-white">
+                    Repeat interval
+                  </p>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    Frequency while incoming orders wait.
+                  </p>
+                </div>
+              </div>
+              <select
+                value={alertSettings.intervalSeconds}
+                onChange={(e) =>
+                  updateAlertSettings({
+                    intervalSeconds: Number(e.target.value),
+                  })
+                }
+                className="rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-800 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+              >
+                <option value={6}>Every 6 sec</option>
+                <option value={10}>Every 10 sec</option>
+                <option value={15}>Every 15 sec</option>
+              </select>
             </div>
-            <div className="flex justify-end pt-2"><button onClick={() => { playVendorAlertPreview({ vibrationEnabled: alertSettings.vibrationEnabled }); toast.success("Alarm test started"); }} className="rounded-xl bg-orange-600 px-4 py-2 text-sm font-semibold normal-case tracking-normal text-white">Test alarm</button></div>
+
+            <div className="flex justify-end pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  playVendorAlertPreview({
+                    vibrationEnabled: alertSettings.vibrationEnabled,
+                  });
+                  toast.success("Alarm test played");
+                }}
+                className="inline-flex min-h-[42px] items-center gap-2 rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-700"
+              >
+                <Volume2 size={15} />
+                <span>Test Alarm</span>
+              </button>
+            </div>
           </div>
-        </Section>
-        {/* Payout Details */}
-        <Section
-          title="Finance Details"
+        </ProfileSection>
+
+        {/* ── 7. FINANCE & PAYOUT ACCOUNT ── */}
+        <ProfileSection
+          title="Settlement & Payout Account"
+          subtitle="Paystack-verified bank details & T+1 schedule"
           icon={CreditCard}
           isOpen={openSections.payoutDetails}
-          onToggle={() => toggleSection('payoutDetails')}
+          onToggle={() => toggleSection("payoutDetails")}
         >
-          <div className="p-8 flex flex-col items-center justify-center text-center bg-zinc-50  border border-zinc-100  rounded-xl">
-            <div className="w-16 h-16 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-500 mb-4">
-              <CreditCard size={32} />
+          <div className="flex flex-col items-start justify-between gap-4 rounded-xl border border-zinc-200/80 bg-zinc-50/70 p-5 dark:border-zinc-800 dark:bg-zinc-950/40 sm:flex-row sm:items-center">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-zinc-900 dark:text-white">
+                  Managed via Paystack Verification
+                </h3>
+                <span className="inline-flex items-center gap-1 rounded-full bg-zinc-200/70 px-2 py-0.5 text-[10px] font-semibold text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                  <Lock size={10} /> Locked
+                </span>
+              </div>
+              <p className="max-w-md text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+                Payout bank accounts are locked after onboarding for your
+                protection. Contact support@melachow.com to request a change, or
+                view your ledger and T+1 payout history anytime.
+              </p>
             </div>
-            <h3 className="text-sm font-semibold text-zinc-900  normal-case tracking-tight mb-2">Payout details</h3>
-            <p className="text-sm text-zinc-500 max-w-sm font-semibold normal-case tracking-normal mb-6 leading-relaxed">
-              Bank details are managed through Paystack verification. Contact support if you need to update your payout account.
-            </p>
-            <div className="bg-orange-600/80 text-white px-6 py-3 rounded-xl text-sm font-semibold normal-case tracking-normal">
-              Managed through Paystack
-            </div>
+            <Link
+              href="/vendors/transactions"
+              className="inline-flex min-h-[42px] shrink-0 items-center gap-2 rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-700"
+            >
+              <span>Open Transactions</span>
+              <ArrowRight size={15} />
+            </Link>
           </div>
-        </Section>
+        </ProfileSection>
 
-        {/* PWA Install Section */}
-        <div className="mt-8 mb-10">
-          <p className="text-sm font-semibold text-zinc-500  normal-case tracking-normal mb-4 text-center">Take your store on the go</p>
+        {/* PWA Install */}
+        <div className="pt-2">
           <PermanentInstallButton />
         </div>
-
       </div>
     </div>
   );
 }
-
-

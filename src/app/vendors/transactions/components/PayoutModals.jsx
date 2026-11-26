@@ -1,344 +1,372 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-    X, 
-    Building2, 
-    User, 
-    Hash, 
-    AlertCircle, 
-    CheckCircle2, 
-    Loader2, 
-    ArrowRight, 
-    Banknote,
-    Info,
-    ArrowDownToLine
+import {
+  X,
+  Building2,
+  User,
+  Hash,
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  CalendarClock,
+  ShieldCheck,
 } from "lucide-react";
-import { 
-    getBankList, 
-    resolveBankAccount, 
-    saveVendorBankAccount,
+import {
+  getBankList,
+  resolveBankAccount,
+  saveVendorBankAccount,
 } from "../../../lib/vendorApi";
+import { formatNaira, getNextSweepLabel } from "../lib/transactionUtils";
 
-export function ConfigureBankModal({ isOpen, onClose, onSaved, existingDetails }) {
-    const [banks, setBanks] = useState([]);
-    const [selectedBank, setSelectedBank] = useState(existingDetails?.bankCode || "");
-    const [accountNumber, setAccountNumber] = useState(existingDetails?.accountNumber || "");
-    const [accountName, setAccountName] = useState(existingDetails?.accountName || "");
-    const [isLoadingBanks, setIsLoadingBanks] = useState(false);
-    const [isResolving, setIsResolving] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
-    const [error, setError] = useState("");
+export function ConfigureBankModal({
+  isOpen,
+  onClose,
+  onSaved,
+  existingDetails,
+}) {
+  const [banks, setBanks] = useState([]);
+  const [selectedBank, setSelectedBank] = useState(
+    existingDetails?.bankCode || ""
+  );
+  const [accountNumber, setAccountNumber] = useState(
+    existingDetails?.accountNumber || ""
+  );
+  const [accountName, setAccountName] = useState(
+    existingDetails?.accountName || ""
+  );
+  const [isLoadingBanks, setIsLoadingBanks] = useState(false);
+  const [isResolving, setIsResolving] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
 
-    useEffect(() => {
-        if (isOpen) {
-            fetchBanks();
-            setSelectedBank(existingDetails?.bankCode || "");
-            setAccountNumber(existingDetails?.accountNumber || "");
-            setAccountName(existingDetails?.accountName || "");
-            setError("");
-        }
+  useEffect(() => {
+    if (isOpen) {
+      fetchBanks();
+      setSelectedBank(existingDetails?.bankCode || "");
+      setAccountNumber(existingDetails?.accountNumber || "");
+      setAccountName(existingDetails?.accountName || "");
+      setError("");
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isOpen]);
+  }, [isOpen]);
 
-    const fetchBanks = async () => {
-        setIsLoadingBanks(true);
-        try {
-            const res = await getBankList();
-            if (res.banks) {
-                // Deduplicate banks by bank.code to prevent React key warning
-                const uniqueBanks = [];
-                const seenCodes = new Set();
-                for (const bank of res.banks) {
-                    if (!seenCodes.has(bank.code)) {
-                        seenCodes.add(bank.code);
-                        uniqueBanks.push(bank);
-                    }
-                }
-                setBanks(uniqueBanks);
-            }
-        } catch (err) {
-            console.error("Failed to fetch banks:", err);
-            setError("Could not load bank list. Please try again.");
-        } finally {
-            setIsLoadingBanks(false);
+  const fetchBanks = async () => {
+    setIsLoadingBanks(true);
+    try {
+      const res = await getBankList();
+      if (res.banks) {
+        const uniqueBanks = [];
+        const seenCodes = new Set();
+        for (const bank of res.banks) {
+          if (!seenCodes.has(bank.code)) {
+            seenCodes.add(bank.code);
+            uniqueBanks.push(bank);
+          }
         }
+        setBanks(uniqueBanks);
+      }
+    } catch (err) {
+      console.error("Failed to fetch banks:", err);
+      setError("Could not load bank list. Please try again.");
+    } finally {
+      setIsLoadingBanks(false);
+    }
+  };
+
+  useEffect(() => {
+    if (
+      accountNumber.length !== 10 ||
+      !selectedBank ||
+      accountName ||
+      isResolving
+    ) {
+      return;
+    }
+
+    const resolve = async () => {
+      setIsResolving(true);
+      setError("");
+      try {
+        const res = await resolveBankAccount(accountNumber, selectedBank);
+        if (res.account_name) {
+          setAccountName(res.account_name);
+        }
+      } catch {
+        setError("Could not verify account. Please check details.");
+        setAccountName("");
+      } finally {
+        setIsResolving(false);
+      }
     };
 
-    const handleResolve = async () => {
-        if (accountNumber.length !== 10 || !selectedBank) return;
-        
-        setIsResolving(true);
-        setError("");
-        try {
-            const res = await resolveBankAccount(accountNumber, selectedBank);
-            if (res.account_name) {
-                setAccountName(res.account_name);
-            }
-        } catch (err) {
-            setError("Could not verify account. Please check details.");
-            setAccountName("");
-        } finally {
-            setIsResolving(false);
-        }
-    };
+    resolve();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accountNumber, selectedBank]);
 
-    // Auto-resolve when bank and 10-digit account number are present
-    useEffect(() => {
-        if (accountNumber.length !== 10 || !selectedBank || accountName || isResolving) return;
+  const handleSave = async () => {
+    if (!selectedBank || !accountNumber || !accountName) {
+      setError("Please fill all fields and verify the account.");
+      return;
+    }
 
-        const resolve = async () => {
-            setIsResolving(true);
-            setError("");
-            try {
-                const res = await resolveBankAccount(accountNumber, selectedBank);
-                if (res.account_name) {
-                    setAccountName(res.account_name);
-                }
-            } catch {
-                setError("Could not verify account. Please check details.");
-                setAccountName("");
-            } finally {
-                setIsResolving(false);
-            }
-        };
+    setIsSaving(true);
+    setError("");
+    try {
+      const bankObj = banks.find((b) => b.code === selectedBank);
+      await saveVendorBankAccount({
+        bank_name: bankObj?.name || existingDetails?.bankName || "",
+        bank_code: selectedBank,
+        account_number: accountNumber,
+        account_name: accountName,
+      });
+      onSaved();
+      onClose();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to save bank account.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
-        resolve();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [accountNumber, selectedBank]);
+  if (!isOpen) return null;
 
-    const handleSave = async () => {
-        if (!selectedBank || !accountNumber || !accountName) {
-            setError("Please fill all fields and verify the account.");
-            return;
-        }
+  return (
+    <AnimatePresence>
+      <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+          className="absolute inset-0 bg-zinc-950/60 backdrop-blur-sm"
+        />
 
-        setIsSaving(true);
-        setError("");
-        try {
-            const bankObj = banks.find(b => b.code === selectedBank);
-            await saveVendorBankAccount({
-                bank_name: bankObj?.name || existingDetails?.bankName || "",
-                bank_code: selectedBank,
-                account_number: accountNumber,
-                account_name: accountName
-            });
-            onSaved();
-            onClose();
-        } catch (err) {
-            setError(err.response?.data?.message || "Failed to save bank account.");
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
-    if (!isOpen) return null;
-
-    return (
-        <AnimatePresence>
-            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    onClick={onClose}
-                    className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm"
-                />
-                
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                    className="relative w-full max-w-md bg-white dark:bg-zinc-900 rounded-md border border-zinc-200 dark:border-zinc-800 shadow-2xl overflow-hidden"
-                >
-                    <div className="p-6 border-b border-zinc-50 dark:border-zinc-800/50 flex items-center justify-between">
-                        <div>
-                            <h2 className="text-lg font-black text-zinc-900 dark:text-white uppercase tracking-tight">Register Bank Account</h2>
-                            <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 mt-0.5 uppercase tracking-widest">One-time setup — contact support to change.</p>
-                        </div>
-                        <button onClick={onClose} className="p-2 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-md text-zinc-400 transition-all">
-                            <X size={20} />
-                        </button>
-                    </div>
-
-                    <div className="p-6 space-y-5">
-                        {/* 🔒 Security Notice */}
-                        <div className="p-3 bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 rounded-md flex items-start gap-2.5">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-amber-600 mt-0.5 shrink-0"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
-                            <p className="text-[9px] font-black text-amber-700 dark:text-amber-400 uppercase tracking-widest leading-relaxed">
-                                This is a one-time registration. For security, bank details cannot be changed from your dashboard. Contact MelaChow support for any payout account updates.
-                            </p>
-                        </div>
-
-                        {error && (
-                            <div className="p-3 bg-rose-50 dark:bg-rose-500/10 border border-rose-100 dark:border-rose-500/20 rounded-md flex items-center gap-3 text-rose-600">
-                                <AlertCircle size={16} className="shrink-0" />
-                                <p className="text-[10px] font-black uppercase tracking-widest">{error}</p>
-                            </div>
-                        )}
-
-                        <div className="space-y-4">
-                            {/* Bank Selection */}
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Select Bank</label>
-                                <div className="relative">
-                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">
-                                        <Building2 size={16} />
-                                    </div>
-                                    <select
-                                        value={selectedBank}
-                                        onChange={(e) => {
-                                            setSelectedBank(e.target.value);
-                                            setAccountName("");
-                                        }}
-                                        disabled={isLoadingBanks}
-                                        className="w-full pl-10 pr-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-md text-xs font-black text-zinc-900 dark:text-white focus:outline-none focus:border-orange-500 appearance-none uppercase tracking-tight"
-                                    >
-                                        <option value="">Choose a bank...</option>
-                                        {banks.map((bank) => (
-                                            <option key={bank.code} value={bank.code}>{bank.name}</option>
-                                        ))}
-                                    </select>
-                                    {isLoadingBanks && (
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                                            <Loader2 size={14} className="animate-spin text-orange-500" />
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Account Number */}
-                            <div className="space-y-1.5">
-                                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Account Number</label>
-                                <div className="relative">
-                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400">
-                                        <Hash size={16} />
-                                    </div>
-                                    <input
-                                        type="text"
-                                        maxLength={10}
-                                        placeholder="0123456789"
-                                        value={accountNumber}
-                                        onChange={(e) => {
-                                            const val = e.target.value.replace(/\D/g, "");
-                                            setAccountNumber(val);
-                                            if (val.length !== 10) setAccountName("");
-                                        }}
-                                        className="w-full pl-10 pr-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-800 rounded-md text-sm font-black text-zinc-900 dark:text-white focus:outline-none focus:border-orange-500 tracking-[0.2em] placeholder:tracking-normal"
-                                    />
-                                    {isResolving && (
-                                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                                            <Loader2 size={14} className="animate-spin text-orange-500" />
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Resolved Name */}
-                            <AnimatePresence>
-                                {accountName && (
-                                    <motion.div
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: 1, height: "auto" }}
-                                        exit={{ opacity: 0, height: 0 }}
-                                        className="p-4 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-100 dark:border-emerald-500/20 rounded-md"
-                                    >
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 rounded-md">
-                                                <User size={16} />
-                                            </div>
-                                            <div className="flex-1">
-                                                <p className="text-[8px] font-black text-emerald-600/60 uppercase tracking-widest leading-none">Account Name Verified</p>
-                                                <p className="text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase mt-1 tracking-tight">{accountName}</p>
-                                            </div>
-                                            <div className="text-emerald-600">
-                                                <CheckCircle2 size={18} />
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
-                    </div>
-
-                    <div className="p-6 bg-zinc-50 dark:bg-zinc-900/50 flex gap-3">
-                        <button
-                            onClick={onClose}
-                            className="flex-1 px-4 py-3 border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 text-[10px] font-black uppercase tracking-widest rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all active:scale-95"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={handleSave}
-                            disabled={!accountName || isSaving}
-                            className="flex-[2] px-4 py-3 bg-orange-600 text-white text-[10px] font-black uppercase tracking-widest rounded-md transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:grayscale"
-                        >
-                            {isSaving ? <Loader2 size={16} className="animate-spin" /> : "Save Bank Details"}
-                        </button>
-                    </div>
-                </motion.div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96, y: 12 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.96, y: 12 }}
+          className="relative w-full max-w-md overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-800 dark:bg-zinc-900"
+        >
+          <div className="flex items-center justify-between border-b border-zinc-100 p-5 dark:border-zinc-800">
+            <div>
+              <h2 className="text-base font-bold tracking-tight text-zinc-900 dark:text-white">
+                Register Bank Account
+              </h2>
+              <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                One-time setup · contact support to update later
+              </p>
             </div>
-        </AnimatePresence>
-    );
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg p-2 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          <div className="space-y-4 p-5">
+            <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50/80 p-3.5 text-xs leading-relaxed text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+              <ShieldCheck size={16} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
+              <p>
+                For security, bank details are locked after registration.
+                Contact MelaChow support for any future payout account changes.
+              </p>
+            </div>
+
+            {error && (
+              <div className="flex items-center gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-medium text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
+                <AlertCircle size={15} className="shrink-0" />
+                <p>{error}</p>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                  Bank
+                </label>
+                <div className="relative">
+                  <Building2
+                    size={16}
+                    className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400"
+                  />
+                  <select
+                    value={selectedBank}
+                    onChange={(e) => {
+                      setSelectedBank(e.target.value);
+                      setAccountName("");
+                    }}
+                    disabled={isLoadingBanks}
+                    className="w-full appearance-none rounded-xl border border-zinc-200 bg-zinc-50 py-3 pl-10 pr-4 text-sm font-medium text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+                  >
+                    <option value="">Choose a bank...</option>
+                    {banks.map((bank) => (
+                      <option key={bank.code} value={bank.code}>
+                        {bank.name}
+                      </option>
+                    ))}
+                  </select>
+                  {isLoadingBanks && (
+                    <Loader2
+                      size={15}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 animate-spin text-orange-500"
+                    />
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                  Account Number (10 digits)
+                </label>
+                <div className="relative">
+                  <Hash
+                    size={16}
+                    className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400"
+                  />
+                  <input
+                    type="text"
+                    maxLength={10}
+                    placeholder="0123456789"
+                    value={accountNumber}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, "");
+                      setAccountNumber(val);
+                      if (val.length !== 10) setAccountName("");
+                    }}
+                    className="w-full rounded-xl border border-zinc-200 bg-zinc-50 py-3 pl-10 pr-4 font-mono text-sm font-semibold tracking-wider text-zinc-900 outline-none focus:border-orange-500 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
+                  />
+                  {isResolving && (
+                    <Loader2
+                      size={15}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 animate-spin text-orange-500"
+                    />
+                  )}
+                </div>
+              </div>
+
+              <AnimatePresence>
+                {accountName && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 dark:border-emerald-500/30 dark:bg-emerald-500/10"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
+                        <User size={16} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
+                          Verified Account Name
+                        </p>
+                        <p className="truncate text-sm font-bold text-emerald-900 dark:text-emerald-100">
+                          {accountName}
+                        </p>
+                      </div>
+                      <CheckCircle2 size={18} className="shrink-0 text-emerald-600" />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+
+          <div className="flex gap-3 border-t border-zinc-100 bg-zinc-50/80 p-5 dark:border-zinc-800 dark:bg-zinc-950/40">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={!accountName || isSaving}
+              className="flex flex-[2] items-center justify-center gap-2 rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-700 disabled:opacity-50"
+            >
+              {isSaving ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                "Save Bank Details"
+              )}
+            </button>
+          </div>
+        </motion.div>
+      </div>
+    </AnimatePresence>
+  );
 }
 
-export function PayoutScheduleInfo({ nextPayoutTime, balance, payoutDetails }) {
-    const now = new Date();
-    // Vendor sweep: 7:30 AM WAT (UTC+1) = 06:30 UTC — T+1 morning after Paystack overnight settlement
-    const todayAt730AM = new Date();
-    todayAt730AM.setHours(7, 30, 0, 0);
-    const isAfter730AM = now >= todayAt730AM;
+export function PayoutScheduleInfo({ balance = 0, payoutDetails }) {
+  const scheduledTime = getNextSweepLabel();
+  const hasBank = Boolean(
+    payoutDetails?.payoutEnabled && payoutDetails?.accountNumber
+  );
 
-    const scheduledTime = isAfter730AM
-        ? "Tomorrow at 7:30 AM"
-        : "Today at 7:30 AM";
-
-    const hasBank = payoutDetails?.payoutEnabled && payoutDetails?.accountNumber;
-
-    return (
-        <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-md p-4 space-y-3">
-            <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                <p className="text-[10px] font-black text-blue-900 dark:text-blue-300 uppercase tracking-widest">
-                    Automatic Payout Scheduled
-                </p>
+  return (
+    <div className="flex flex-col justify-between rounded-2xl border border-zinc-200/90 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+      <div>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-50 text-sky-600 dark:bg-sky-500/15 dark:text-sky-400">
+              <CalendarClock size={18} />
+            </span>
+            <div>
+              <h3 className="text-sm font-bold text-zinc-900 dark:text-white">
+                Automatic T+1 Payout Schedule
+              </h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                Daily morning sweep after Paystack settlement
+              </p>
             </div>
-            {hasBank ? (
-                <>
-                    <div className="flex items-center justify-between">
-                        <p className="text-[10px] font-black text-blue-700 dark:text-blue-400 uppercase tracking-widest">
-                            Next Payout
-                        </p>
-                        <p className="text-[10px] font-black text-blue-900 dark:text-blue-200 uppercase tracking-widest">
-                            {scheduledTime}
-                        </p>
-                    </div>
-                    <div className="flex items-center justify-between">
-                        <p className="text-[10px] font-black text-blue-700 dark:text-blue-400 uppercase tracking-widest">
-                            Amount
-                        </p>
-                        <p className="text-sm font-black text-blue-900 dark:text-blue-200">
-                            ₦{balance?.toLocaleString() || "0"}
-                        </p>
-                    </div>
-                    <div className="pt-2 border-t border-blue-200 dark:border-blue-500/20">
-                        <p className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">
-                            Destination: {payoutDetails.bankName} — {payoutDetails.accountNumber}
-                        </p>
-                    </div>
-                    <p className="text-[9px] text-blue-600/70 dark:text-blue-400/70 font-medium leading-relaxed">
-                        Earnings from orders completed today are paid out tomorrow morning at 7:30 AM,
-                        after your payment provider settles funds overnight.
-                        Any balance above ₦0 pays out automatically.
-                    </p>
-
-                </>
-            ) : (
-                <p className="text-[10px] font-black text-blue-700 dark:text-blue-400 uppercase tracking-widest">
-                    Link a bank account below to receive automatic payouts.
-                </p>
-            )}
+          </div>
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+              hasBank
+                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300"
+                : "bg-amber-50 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300"
+            }`}
+          >
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                hasBank ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+              }`}
+            />
+            {hasBank ? "Active" : "Awaiting Bank"}
+          </span>
         </div>
-    );
+
+        <div className="mt-4 grid grid-cols-2 gap-3 rounded-xl border border-zinc-200/80 bg-zinc-50/80 p-3.5 dark:border-zinc-800 dark:bg-zinc-950/50">
+          <div>
+            <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
+              Next Scheduled Sweep
+            </p>
+            <p className="mt-0.5 text-sm font-bold text-zinc-900 dark:text-white">
+              {scheduledTime}
+            </p>
+          </div>
+          <div>
+            <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
+              Queued Balance
+            </p>
+            <p className="mt-0.5 text-sm font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+              {formatNaira(balance)}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <p className="mt-3 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+        {hasBank
+          ? "Earnings from delivered orders settle into your available balance and pay out automatically at 7:30 AM WAT for any balance above ₦0."
+          : "Once your settlement bank account is verified and linked, available funds pay out automatically every morning at 7:30 AM WAT."}
+      </p>
+    </div>
+  );
 }

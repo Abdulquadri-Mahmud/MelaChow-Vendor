@@ -1,17 +1,33 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import { AnimatePresence, motion } from "framer-motion";
+import toast from "react-hot-toast";
+import {
+  AlertCircle,
+  BookOpen,
+  Loader2,
+  Plus,
+  RefreshCw,
+  SlidersHorizontal,
+  Trash2,
+  X,
+} from "lucide-react";
+
 import { useVendorProfile } from "@/app/context/VendorProfileContext";
 import { useVendorFoods } from "@/app/hooks/useVendorFoods";
-import { useQueryClient } from "@tanstack/react-query";
-import { toggleMenuItemAvailability, archiveMenuItem, deleteMenuItem } from "@/app/lib/menuApi";
+import {
+  archiveMenuItem,
+  deleteMenuItem,
+  toggleMenuItemAvailability,
+} from "@/app/lib/menuApi";
 import FoodCard from "./components/FoodCard";
 import FoodCardSkeleton from "./components/FoodCardSkeleton";
 import FoodsFilterBar from "./components/FoodsFilterBar";
 import EmptyFoods from "./components/EmptyFoods";
-import { Plus, RotateCw } from "lucide-react";
-import toast from "react-hot-toast";
 
 export default function MyFoodsPage() {
   const router = useRouter();
@@ -19,12 +35,13 @@ export default function MyFoodsPage() {
   const { vendorProfile } = useVendorProfile();
   const vendorId = vendorProfile?._id || vendorProfile?.id;
 
-  // Filter state
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [activeSection, setActiveSection] = useState(null);
   const [page, setPage] = useState(1);
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleSearch = useCallback((value) => {
     setSearch(value);
@@ -32,10 +49,18 @@ export default function MyFoodsPage() {
     window._searchTimer = setTimeout(() => {
       setDebouncedSearch(value);
       setPage(1);
-    }, 350);
+    }, 300);
   }, []);
 
-  // Build filters object for the hook
+  useEffect(() => {
+    if (!deleteTarget) return;
+    const onKey = (e) => {
+      if (e.key === "Escape" && !isDeleting) setDeleteTarget(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [deleteTarget, isDeleting]);
+
   const filters = {
     status,
     section: activeSection || undefined,
@@ -44,17 +69,18 @@ export default function MyFoodsPage() {
     limit: 50,
   };
 
-  const { data, isLoading, isError, isFetching } =
-    useVendorFoods(vendorId, filters);
+  const { data, isLoading, isError, isFetching } = useVendorFoods(
+    vendorId,
+    filters
+  );
 
   const items = data?.items || [];
   const stats = data?.stats || {};
   const pagination = data?.pagination || {};
 
-  // Derive unique sections from fetched items for filter bar
   const sections = useMemo(() => {
     const seen = new Map();
-    items.forEach(item => {
+    items.forEach((item) => {
       if (item.section && !seen.has(item.section._id)) {
         seen.set(item.section._id, item.section);
       }
@@ -62,12 +88,10 @@ export default function MyFoodsPage() {
     return Array.from(seen.values());
   }, [items]);
 
-  // Invalidate and refetch
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["vendor-foods", vendorId] });
   };
 
-  // Toggle availability
   const handleToggleAvailability = async (itemId) => {
     try {
       await toggleMenuItemAvailability(vendorId, itemId);
@@ -79,7 +103,7 @@ export default function MyFoodsPage() {
   };
 
   const handleArchive = async (itemId) => {
-    const item = items.find(i => i._id === itemId);
+    const item = items.find((i) => i._id === itemId);
     if (!item) return;
     try {
       await archiveMenuItem(vendorId, itemId, !item.is_archived);
@@ -88,71 +112,39 @@ export default function MyFoodsPage() {
     } catch (err) {
       const serverMsg = err?.response?.data?.message;
       const blockedByCombos = err?.response?.data?.combos;
-
-      if (blockedByCombos?.length > 0) {
-        // Specific combo-block message
-        toast.error(serverMsg, {
-          duration: 6000,    // longer — vendor needs to read it
-          icon: "🍱",
-        });
-      } else {
-        // Generic fallback
-        toast.error(serverMsg || "Failed to update food");
-      }
+      toast.error(serverMsg || "Failed to update food", {
+        duration: blockedByCombos?.length ? 6000 : 4000,
+      });
     }
   };
 
-  // Navigate to food management page (inline editing — wizard deprecated)
   const handleEdit = (itemId) => {
     router.push(`/vendors/my-foods/${itemId}`);
   };
 
-  // Permanently delete a menu item (with confirmation toast)
   const handleDelete = (itemId, itemName) => {
-    toast((t) => (
-      <div className="flex flex-col gap-3 min-w-[260px]">
-        <div>
-          <p className="font-black text-sm text-zinc-900 dark:text-white">
-            Delete &ldquo;{itemName}&rdquo;?
-          </p>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 leading-relaxed">
-            Permanently removes this item, all its sizes, choices, and options.
-            This cannot be undone.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => toast.dismiss(t.id)}
-            className="flex-1 h-8 rounded-md border border-zinc-200 dark:border-zinc-700 text-[10px] font-black uppercase tracking-widest text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={async () => {
-              toast.dismiss(t.id);
-              try {
-                await deleteMenuItem(vendorId, itemId);
-                invalidate();
-                toast.success(`"${itemName}" deleted`);
-              } catch (err) {
-                const msg = err?.response?.data?.message;
-                const blocked = err?.response?.data?.combos;
-                toast.error(msg || "Could not delete item", {
-                  duration: blocked ? 6000 : 4000,
-                  icon: blocked ? "🍱" : "❌",
-                });
-              }
-            }}
-            className="flex-1 h-8 rounded-md bg-rose-600 hover:bg-rose-700 text-white text-[10px] font-black uppercase tracking-widest transition-colors"
-          >
-            Delete Forever
-          </button>
-        </div>
-      </div>
-    ), { duration: 8000 });
+    setDeleteTarget({ id: itemId, name: itemName });
   };
 
-  // Clear all filters
+  const confirmDelete = async () => {
+    if (!deleteTarget || isDeleting) return;
+    setIsDeleting(true);
+    try {
+      await deleteMenuItem(vendorId, deleteTarget.id);
+      invalidate();
+      toast.success(`"${deleteTarget.name}" deleted`);
+      setDeleteTarget(null);
+    } catch (err) {
+      const msg = err?.response?.data?.message;
+      const blocked = err?.response?.data?.combos;
+      toast.error(msg || "Could not delete item", {
+        duration: blocked ? 6000 : 4000,
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const handleClearFilters = () => {
     setSearch("");
     setDebouncedSearch("");
@@ -161,188 +153,233 @@ export default function MyFoodsPage() {
     setPage(1);
   };
 
-  const isFiltered = !!(debouncedSearch || status !== "all" || activeSection);
+  const isFiltered = Boolean(
+    debouncedSearch || status !== "all" || activeSection
+  );
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 p-3 rounded-md">
-      <div className="max-w-6xl mx-auto space-y-4">
+    <div className="mx-auto max-w-[1440px] pb-10 font-sans text-zinc-900 dark:text-zinc-100">
+      <div className="space-y-5">
+        {/* ── 1. HEADER CARD ── */}
+        <section className="overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="relative flex flex-col gap-4 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
+            <div
+              className="pointer-events-none absolute inset-y-0 right-0 w-1/2 opacity-40 dark:opacity-20"
+              style={{
+                background:
+                  "radial-gradient(ellipse at top right, rgba(249,115,22,0.16), transparent 68%)",
+              }}
+            />
 
-        {/* Page Header */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="max-w-2xl">
-              <h1 className="text-2xl font-black text-zinc-900 dark:text-white tracking-tight uppercase">
-                Menu Hub
+            <div className="relative space-y-1.5">
+              <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-3xl">
+                My Menu
               </h1>
-              <p className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400 mt-1.5 leading-relaxed uppercase tracking-widest">
-                Manage your culinary offerings, pricing, and storefront organization.
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                Manage dishes, portion pricing, availability, and storefront
+                organization.
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
-              {/* Refresh Button */}
+            <div className="relative flex flex-wrap items-center gap-2.5">
+              <Link
+                href="/vendors/options-library"
+                className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+              >
+                <SlidersHorizontal size={15} />
+                <span>Options Library</span>
+              </Link>
+              <Link
+                href="/vendors/menu-guide"
+                className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+              >
+                <BookOpen size={15} />
+                <span>Guide</span>
+              </Link>
               <button
+                type="button"
                 onClick={invalidate}
                 disabled={isFetching}
-                className={`h-10 w-10 flex items-center justify-center rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 hover:text-orange-500 dark:hover:text-orange-400 transition-all ${isFetching ? "opacity-50" : "active:scale-95"}`}
-                title="Refresh list"
+                className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-55 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                title="Refresh menu"
               >
-                <RotateCw size={16} className={isFetching ? "animate-spin" : ""} />
+                <RefreshCw
+                  size={15}
+                  className={isFetching ? "animate-spin" : ""}
+                />
+                <span className="hidden sm:inline">Refresh</span>
               </button>
-
-              {/* Add Food — primary */}
-              <button
-                onClick={() => router.push("/vendors/create-food")}
-                className="h-9 px-4 bg-orange-600 hover:bg-orange-700 text-white text-[10px] font-black uppercase tracking-widest rounded-md transition-all active:scale-95 flex items-center gap-2"
+              <Link
+                href="/vendors/create-food"
+                className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-700"
               >
-                <Plus size={14} /> Add Food
-              </button>
+                <Plus size={16} />
+                <span>Add Food</span>
+              </Link>
             </div>
           </div>
+        </section>
 
-          {/* Marquee Tips Bar */}
-          <div className="relative h-10 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-md overflow-hidden flex items-center">
-             <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-white dark:from-zinc-900 to-transparent z-10 pointer-events-none" />
-             <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-white dark:from-zinc-900 to-transparent z-10 pointer-events-none" />
-             
-             <div className="flex items-center gap-2 px-4 h-full bg-zinc-50/50 dark:bg-zinc-800/50 border-r border-zinc-100 dark:border-zinc-800 shrink-0 z-20">
-                <span className="text-xl">🚀</span>
-                <span className="text-[10px] font-black uppercase tracking-widest text-orange-500">Menu Pro Tips:</span>
-             </div>
-
-             <div className="flex-1 overflow-hidden relative group">
-                <div className="animate-marquee whitespace-nowrap flex gap-12 items-center px-6">
-                   <div className="flex items-center gap-2 text-sm font-bold text-zinc-600 dark:text-zinc-300">
-                      <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                      Add multiple Portions to offer small, medium, and large sizes of the same dish!
-                   </div>
-                   <div className="flex items-center gap-2 text-sm font-bold text-zinc-600 dark:text-zinc-300">
-                      <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                      Create Combo Bundles to increase order value — e.g. Burger + Fries + Drink deals!
-                   </div>
-                   <div className="flex items-center gap-2 text-sm font-bold text-zinc-600 dark:text-zinc-300">
-                      <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                      Use Custom Choices to allow customers to add extra toppings, protein, or sides!
-                   </div>
-                   <div className="flex items-center gap-2 text-sm font-bold text-zinc-600 dark:text-zinc-300">
-                      <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                      Variations help you manage complex food items like different sizes or addon combinations efficiently.
-                   </div>
-                   {/* Duplicate for seamless loop */}
-                   <div className="flex items-center gap-2 text-sm font-bold text-zinc-600 dark:text-zinc-300">
-                      <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                      Add multiple Portions to offer small, medium, and large sizes of the same dish!
-                   </div>
-                   <div className="flex items-center gap-2 text-sm font-bold text-zinc-600 dark:text-zinc-300">
-                      <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
-                      Create Combo Bundles to increase order value — e.g. Burger + Fries + Drink deals!
-                   </div>
-                </div>
-             </div>
-             
-             <style jsx>{`
-                @keyframes marquee {
-                   0% { transform: translateX(0); }
-                   100% { transform: translateX(-50%); }
-                }
-                .animate-marquee {
-                   display: flex;
-                   width: max-content;
-                   animation: marquee 40s linear infinite;
-                }
-                .animate-marquee:hover {
-                   animation-play-state: paused;
-                }
-             `}</style>
-          </div>
-        </div>
-
-        {/* Filter Bar */}
+        {/* ── 2. STATS & FILTER BAR ── */}
         <FoodsFilterBar
           search={search}
           onSearch={handleSearch}
           status={status}
-          onStatus={(v) => { setStatus(v); setPage(1); }}
+          onStatus={(v) => {
+            setStatus(v);
+            setPage(1);
+          }}
           sections={sections}
           activeSection={activeSection}
-          onSection={(id) => { setActiveSection(id); setPage(1); }}
+          onSection={(id) => {
+            setActiveSection(id);
+            setPage(1);
+          }}
           stats={stats}
+          resultCount={pagination.total ?? items.length}
+          isFiltered={isFiltered}
+          isFetching={isFetching && !isLoading}
+          onClearFilters={handleClearFilters}
         />
 
-        {/* Results count */}
-        {!isLoading && items.length > 0 && (
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
-              {pagination.total} {pagination.total === 1 ? "food" : "foods"}
-              {isFiltered && " matching filters"}
-              {isFetching && " · Updating..."}
-            </p>
-          </div>
-        )}
-
-        {/* Grid */}
+        {/* ── 3. MENU GRID ── */}
         {isError ? (
-          <div className="py-20 text-center">
-            <p className="text-sm font-bold text-zinc-400 dark:text-zinc-500">
-              Failed to load your foods.
-            </p>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-200">
+            <span className="inline-flex items-center gap-2">
+              <AlertCircle size={17} />
+              Failed to load your menu items.
+            </span>
             <button
+              type="button"
               onClick={invalidate}
-              className="mt-4 text-xs font-black text-orange-500 hover:text-orange-600 uppercase tracking-widest"
+              className="rounded-xl bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-700"
             >
-              Try again
+              Try Again
             </button>
           </div>
         ) : (
-          <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-2 transition-opacity duration-300 ${isFetching && !isLoading ? "opacity-60 pointer-events-none" : "opacity-100"}`}>
-            {isLoading
-              ? Array.from({ length: 8 }).map((_, i) => (
+          <div
+            className={`grid grid-cols-1 gap-4 transition-opacity duration-200 sm:grid-cols-2 lg:grid-cols-3 ${
+              isFetching && !isLoading
+                ? "pointer-events-none opacity-65"
+                : "opacity-100"
+            }`}
+          >
+            {isLoading ? (
+              Array.from({ length: 6 }).map((_, i) => (
                 <FoodCardSkeleton key={i} />
               ))
-              : items.length === 0
-                ? <EmptyFoods
-                  isFiltered={isFiltered}
-                  onClearFilters={handleClearFilters}
-                  onAddFood={() => router.push("/vendors/create-food")}
+            ) : items.length === 0 ? (
+              <EmptyFoods
+                isFiltered={isFiltered}
+                onClearFilters={handleClearFilters}
+                onAddFood={() => router.push("/vendors/create-food")}
+              />
+            ) : (
+              items.map((item) => (
+                <FoodCard
+                  key={item._id}
+                  item={item}
+                  onToggleAvailability={handleToggleAvailability}
+                  onArchive={handleArchive}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
                 />
-                : items.map(item => (
-                  <FoodCard
-                    key={item._id}
-                    item={item}
-                    onToggleAvailability={handleToggleAvailability}
-                    onArchive={handleArchive}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                  />
-                ))
-            }
+              ))
+            )}
           </div>
         )}
 
-        {/* Pagination */}
+        {/* ── 4. PAGINATION ── */}
         {pagination.pages > 1 && (
-          <div className="flex items-center justify-center gap-2 pt-4">
+          <div className="flex items-center justify-center gap-3 pt-2">
             <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
+              type="button"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="h-10 px-5 rounded-md border border-zinc-200 dark:border-zinc-700 text-xs font-black text-zinc-500 dark:text-zinc-400 disabled:opacity-40 hover:border-zinc-400 transition-all"
+              className="inline-flex min-h-[42px] items-center rounded-xl border border-zinc-200 bg-white px-5 py-2 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
             >
               Previous
             </button>
-            <span className="text-xs font-bold text-zinc-400 dark:text-zinc-500 px-3">
+            <span className="text-xs font-semibold tabular-nums text-zinc-500 dark:text-zinc-400">
               Page {page} of {pagination.pages}
             </span>
             <button
-              onClick={() => setPage(p => p + 1)}
+              type="button"
+              onClick={() => setPage((p) => p + 1)}
               disabled={!pagination.hasMore}
-              className="h-10 px-5 rounded-md border border-zinc-200 dark:border-zinc-700 text-xs font-black text-zinc-500 dark:text-zinc-400 disabled:opacity-40 hover:border-zinc-400 transition-all"
+              className="inline-flex min-h-[42px] items-center rounded-xl border border-zinc-200 bg-white px-5 py-2 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-40 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
             >
               Next
             </button>
           </div>
         )}
-
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {deleteTarget && (
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Delete menu item"
+          >
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => !isDeleting && setDeleteTarget(null)}
+              className="absolute inset-0 bg-zinc-950/60 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 8 }}
+              className="relative w-full max-w-md overflow-hidden rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-rose-50 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400">
+                  <Trash2 size={20} />
+                </span>
+                <button
+                  type="button"
+                  onClick={() => !isDeleting && setDeleteTarget(null)}
+                  className="rounded-lg p-1.5 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <h3 className="mt-4 text-lg font-bold text-zinc-900 dark:text-white">
+                Delete &ldquo;{deleteTarget.name}&rdquo;?
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+                This permanently removes the dish along with all of its portions
+                and choice groups. This action cannot be undone.
+              </p>
+              <div className="mt-6 flex justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setDeleteTarget(null)}
+                  disabled={isDeleting}
+                  className="min-h-[42px] rounded-xl border border-zinc-200 bg-white px-5 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDelete}
+                  disabled={isDeleting}
+                  className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-55"
+                >
+                  {isDeleting && <Loader2 size={15} className="animate-spin" />}
+                  <span>{isDeleting ? "Deleting..." : "Delete Forever"}</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
