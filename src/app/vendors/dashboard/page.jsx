@@ -353,7 +353,7 @@ export default function VendorDashboard() {
 
   const isLive = Boolean(vendorData?.isLive);
   const canGoLive = isLive || Boolean(vendorData?.liveReadiness?.isReady);
-  const storeName = vendorData?.name || vendorData?.storeName || "Your Kitchen";
+  const storeName = vendorData?.storeName || vendorData?.name || "Your Kitchen";
   const syncedLabel = lastSyncedAt
     ? lastSyncedAt.toLocaleTimeString("en-NG", {
         hour: "2-digit",

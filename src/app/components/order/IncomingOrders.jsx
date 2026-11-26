@@ -104,8 +104,8 @@ export default function IncomingOrders() {
           </div>
         ) : incoming.length > 0 ? (
           <div className="space-y-4">
-            <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-2">
-              {incoming.slice(0, 4).map((order) => (
+            <div className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {incoming.slice(0, 6).map((order) => (
                 <VendorOrderCard
                   key={orderId(order) || order._id}
                   order={order}
@@ -114,7 +114,7 @@ export default function IncomingOrders() {
                 />
               ))}
             </div>
-            {incoming.length > 4 && (
+            {incoming.length > 6 && (
               <Link
                 href="/vendors/order"
                 className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-700"

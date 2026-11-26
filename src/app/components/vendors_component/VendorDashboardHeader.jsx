@@ -339,7 +339,7 @@ export default function VendorDashboardHeader({ vendor, onMenuClick }) {
         <div className="hidden sm:flex min-w-0 flex-col">
           <div className="flex items-center gap-2">
             <span className="truncate max-w-[200px] xl:max-w-[260px] text-sm font-bold text-zinc-900 dark:text-white leading-tight">
-              {vendor?.name || vendor?.storeName || "Vendor Portal"}
+              {vendor?.storeName || vendor?.name || "Vendor Portal"}
             </span>
             <span
               className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${

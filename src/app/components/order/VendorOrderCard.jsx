@@ -130,7 +130,7 @@ export default function VendorOrderCard({ order, onRefresh, nowMs }) {
   return (
     <article
       aria-label={`Order ${receipt.code}`}
-      className={`flex flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition dark:bg-zinc-900 ${
+      className={`flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition dark:bg-zinc-900 ${
         isSlaUrgent
           ? "border-rose-300 ring-2 ring-rose-500/20 dark:border-rose-500/50"
           : isPending
@@ -152,7 +152,7 @@ export default function VendorOrderCard({ order, onRefresh, nowMs }) {
       )}
 
       {/* ── HEADER ── */}
-      <header className="flex items-start justify-between gap-3 border-b border-zinc-100 p-4 sm:p-5 dark:border-zinc-800">
+      <header className="flex items-start justify-between gap-2.5 border-b border-zinc-100 p-4 dark:border-zinc-800">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <Link
@@ -263,9 +263,9 @@ export default function VendorOrderCard({ order, onRefresh, nowMs }) {
         )}
 
         {addressSnippet && (
-          <span className="inline-flex min-w-0 items-center gap-1 text-zinc-500 dark:text-zinc-400">
+          <span className="inline-flex min-w-0 max-w-full items-center gap-1 text-zinc-500 dark:text-zinc-400">
             <MapPin size={12} className="shrink-0 text-zinc-400" />
-            <span className="truncate max-w-[230px]">{addressSnippet}</span>
+            <span className="truncate">{addressSnippet}</span>
           </span>
         )}
 

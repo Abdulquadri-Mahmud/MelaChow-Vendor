@@ -508,18 +508,18 @@ export default function VendorOrderDesk() {
 
         {/* ── 4. ORDER CARDS GRID / LOADING / EMPTY ─────────────────────────── */}
         {isPending ? (
-          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-            {[1, 2, 3, 4].map((i) => (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
               <div
                 key={i}
-                className="space-y-4 rounded-2xl border border-zinc-200/90 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900"
+                className="space-y-4 rounded-2xl border border-zinc-200/90 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start justify-between gap-3">
                   <div className="space-y-2">
-                    <div className="h-5 w-36 animate-pulse rounded-lg bg-zinc-200/80 dark:bg-zinc-800" />
-                    <div className="h-3.5 w-48 animate-pulse rounded-lg bg-zinc-200/80 dark:bg-zinc-800" />
+                    <div className="h-5 w-32 animate-pulse rounded-lg bg-zinc-200/80 dark:bg-zinc-800" />
+                    <div className="h-3.5 w-40 animate-pulse rounded-lg bg-zinc-200/80 dark:bg-zinc-800" />
                   </div>
-                  <div className="h-11 w-20 animate-pulse rounded-xl bg-zinc-200/80 dark:bg-zinc-800" />
+                  <div className="h-10 w-16 animate-pulse rounded-xl bg-zinc-200/80 dark:bg-zinc-800" />
                 </div>
                 <div className="h-28 w-full animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-800/70" />
                 <div className="h-11 w-full animate-pulse rounded-xl bg-zinc-200/80 dark:bg-zinc-800" />
@@ -528,7 +528,7 @@ export default function VendorOrderDesk() {
           </div>
         ) : filtered.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-2">
+            <div className="grid grid-cols-1 items-stretch gap-4 md:grid-cols-2 lg:grid-cols-3">
               {filtered.slice(0, limit).map((order) => (
                 <VendorOrderCard
                   key={orderId(order) || order._id}
