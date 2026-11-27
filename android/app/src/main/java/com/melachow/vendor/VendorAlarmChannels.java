@@ -7,6 +7,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.media.AudioAttributes;
+import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 
@@ -15,6 +16,7 @@ import android.os.Build;
  */
 public final class VendorAlarmChannels {
     public static final String CHANNEL_ORDERS = "melachow_orders";
+    public static final String CHANNEL_ORDER_UPDATES = "melachow_order_updates_v1";
     public static final String CHANNEL_ORDER_ALARM = "melachow_vendor_order_alarm_v1";
     public static final String CHANNEL_ORDER_ALARM_SERVICE = "melachow_vendor_alarm_service_v1";
 
@@ -65,18 +67,44 @@ public final class VendorAlarmChannels {
             nm.createNotificationChannel(alarmChannel);
         }
 
-        if (nm.getNotificationChannel(CHANNEL_ORDERS) == null) {
+        // Fresh normal-sound channel for routine order status updates, payouts, and account notifications
+        if (nm.getNotificationChannel(CHANNEL_ORDER_UPDATES) == null) {
+            NotificationChannel updatesChannel = new NotificationChannel(
+                CHANNEL_ORDER_UPDATES,
+                "Order Status Updates",
+                NotificationManager.IMPORTANCE_DEFAULT
+            );
+            updatesChannel.setDescription("Order status updates, payouts, and account notifications");
+            AudioAttributes normalAudio = new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build();
+            updatesChannel.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION), normalAudio);
+            updatesChannel.enableVibration(true);
+            updatesChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+            nm.createNotificationChannel(updatesChannel);
+        }
+
+        // General order-update channel uses normal notification sound (NOT the loud new-order kitchen alarm)
+        NotificationChannel existingOrders = nm.getNotificationChannel(CHANNEL_ORDERS);
+        if (existingOrders != null && alarmSound.equals(existingOrders.getSound())) {
+            nm.deleteNotificationChannel(CHANNEL_ORDERS);
+            existingOrders = null;
+        }
+        if (existingOrders == null) {
             NotificationChannel ordersChannel = new NotificationChannel(
                 CHANNEL_ORDERS,
                 "MelaChow Order Updates",
-                NotificationManager.IMPORTANCE_HIGH
+                NotificationManager.IMPORTANCE_DEFAULT
             );
-            ordersChannel.setDescription("Order updates and account notifications");
-            ordersChannel.setSound(alarmSound, alarmAudio);
+            ordersChannel.setDescription("Order status updates, payouts, and account notifications");
+            AudioAttributes normalAudio = new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build();
+            ordersChannel.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION), normalAudio);
             ordersChannel.enableVibration(true);
-            ordersChannel.setVibrationPattern(ALARM_VIBRATION_PATTERN);
             ordersChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
-            ordersChannel.setBypassDnd(true);
             nm.createNotificationChannel(ordersChannel);
         }
 
