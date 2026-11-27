@@ -19,44 +19,115 @@ const locationError = (error) => {
   return new Error(error?.message || "Could not obtain a GPS reading. Turn on location services and try again.");
 };
 
-const captureNativePosition = async ({ targetAccuracyMeters, maximumAccuracyMeters, timeoutMs }) => {
+const captureNativePosition = async ({ targetAccuracyMeters, acceptableAccuracyMeters, maximumAccuracyMeters, timeoutMs }) => {
   const permissions = await Geolocation.checkPermissions();
-  if (permissions.location !== "granted" && permissions.coarseLocation !== "granted") {
+  // Always request precise ("location") permission if only coarse or prompt is currently granted
+  if (permissions.location !== "granted") {
     const requested = await Geolocation.requestPermissions({ permissions: ["location", "coarseLocation"] });
     if (requested.location !== "granted" && requested.coarseLocation !== "granted") {
       throw locationError({ code: 1 });
     }
   }
 
-  let position;
-  try {
-    position = await Geolocation.getCurrentPosition({
-      enableHighAccuracy: true,
-      timeout: timeoutMs,
-      maximumAge: 0,
-    });
-  } catch (error) {
-    throw locationError(error);
-  }
+  return new Promise((resolve, reject) => {
+    let bestPosition = null;
+    let watchId = null;
+    let finished = false;
+    let settleTimer = null;
 
-  const accuracy = Number(position?.coords?.accuracy);
-  if (!Number.isFinite(accuracy)) throw new Error("Your device did not return GPS accuracy. Please try again.");
-  if (accuracy > maximumAccuracyMeters) {
-    throw new Error(`Location accuracy is only ±${accuracyLabel(accuracy)}. Enable precise location and try outdoors.`);
-  }
-  return position;
+    const cleanup = () => {
+      if (settleTimer) clearTimeout(settleTimer);
+      clearTimeout(timer);
+      if (watchId != null) {
+        const idToClear = watchId;
+        watchId = null;
+        Geolocation.clearWatch({ id: idToClear }).catch(() => {});
+      }
+    };
+
+    const finish = (error, position) => {
+      if (finished) return;
+      finished = true;
+      cleanup();
+      if (error) reject(error);
+      else resolve(position);
+    };
+
+    const timer = setTimeout(async () => {
+      let candidate = bestPosition;
+      if (!candidate) {
+        try {
+          candidate = await Geolocation.getCurrentPosition({
+            enableHighAccuracy: true,
+            timeout: 8000,
+            maximumAge: 0,
+          });
+        } catch (err) {
+          return finish(locationError(err));
+        }
+      }
+      const accuracy = Number(candidate?.coords?.accuracy);
+      if (candidate && Number.isFinite(accuracy) && accuracy <= maximumAccuracyMeters) {
+        return finish(null, candidate);
+      }
+      finish(
+        candidate && Number.isFinite(accuracy)
+          ? new Error(`Location accuracy is only ±${accuracyLabel(accuracy)}. Enable precise location and try outdoors.`)
+          : new Error("Could not obtain a GPS reading. Turn on device location and try again.")
+      );
+    }, timeoutMs);
+
+    Geolocation.watchPosition(
+      {
+        enableHighAccuracy: true,
+        timeout: timeoutMs,
+        maximumAge: 0,
+        minimumUpdateInterval: 1000,
+      },
+      (position, error) => {
+        if (finished) return;
+        if (error) {
+          if (error?.code === 1 || String(error?.message || "").toLowerCase().includes("permission")) {
+            finish(locationError(error));
+          }
+          return;
+        }
+        const accuracy = Number(position?.coords?.accuracy);
+        if (!Number.isFinite(accuracy) || accuracy <= 0) return;
+        if (!bestPosition || accuracy < Number(bestPosition.coords.accuracy)) {
+          bestPosition = position;
+        }
+        if (accuracy <= targetAccuracyMeters) {
+          finish(null, bestPosition);
+          return;
+        }
+        if (accuracy <= acceptableAccuracyMeters && !settleTimer) {
+          settleTimer = setTimeout(() => {
+            if (bestPosition) finish(null, bestPosition);
+          }, 3500);
+        }
+      }
+    )
+      .then((id) => {
+        if (finished) Geolocation.clearWatch({ id }).catch(() => {});
+        else watchId = id;
+      })
+      .catch((err) => finish(locationError(err)));
+  });
 };
 
-const captureBrowserPosition = ({ targetAccuracyMeters, maximumAccuracyMeters, timeoutMs }) =>
+const captureBrowserPosition = ({ targetAccuracyMeters, acceptableAccuracyMeters, maximumAccuracyMeters, timeoutMs }) =>
   new Promise((resolve, reject) => {
     if (!navigator.geolocation) return reject(new Error("Location is unavailable on this device."));
 
     let bestPosition = null;
     let watchId = null;
     let finished = false;
+    let settleTimer = null;
     const finish = (error, position) => {
       if (finished) return;
       finished = true;
+      if (settleTimer) clearTimeout(settleTimer);
       if (watchId != null) navigator.geolocation.clearWatch(watchId);
       clearTimeout(timer);
       if (error) reject(error); else resolve(position);
@@ -72,9 +143,17 @@ const captureBrowserPosition = ({ targetAccuracyMeters, maximumAccuracyMeters, t
     watchId = navigator.geolocation.watchPosition(
       (position) => {
         const accuracy = Number(position.coords.accuracy);
-        if (!Number.isFinite(accuracy)) return;
+        if (!Number.isFinite(accuracy) || accuracy <= 0) return;
         if (!bestPosition || accuracy < Number(bestPosition.coords.accuracy)) bestPosition = position;
-        if (accuracy <= targetAccuracyMeters) finish(null, position);
+        if (accuracy <= targetAccuracyMeters) {
+          finish(null, bestPosition);
+          return;
+        }
+        if (accuracy <= acceptableAccuracyMeters && !settleTimer) {
+          settleTimer = setTimeout(() => {
+            if (bestPosition) finish(null, bestPosition);
+          }, 3500);
+        }
       },
       (error) => {
         if (error?.code === 1) finish(locationError(error));
@@ -87,7 +166,8 @@ const captureBrowserPosition = ({ targetAccuracyMeters, maximumAccuracyMeters, t
 
 export const capturePrecisePosition = (options = {}) => {
   const settings = {
-    targetAccuracyMeters: 100,
+    targetAccuracyMeters: 25,
+    acceptableAccuracyMeters: 65,
     maximumAccuracyMeters: 1000,
     timeoutMs: 25000,
     ...options,
