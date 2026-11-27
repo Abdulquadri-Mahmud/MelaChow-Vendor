@@ -9,6 +9,8 @@ import android.content.Intent;
 import android.content.pm.ServiceInfo;
 import android.content.res.AssetFileDescriptor;
 import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Handler;
@@ -48,6 +50,8 @@ public class VendorAlarmService extends Service {
     private static volatile boolean ringing = false;
 
     private MediaPlayer mediaPlayer;
+    private AudioManager audioManager;
+    private AudioFocusRequest audioFocusRequest;
     private Vibrator vibrator;
     private PowerManager.WakeLock wakeLock;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
@@ -235,8 +239,11 @@ public class VendorAlarmService extends Service {
         }
 
         acquireWakeLock(durationMs + 5_000L);
-        startLoopingAlarmAudio();
+        boolean audioStarted = startLoopingAlarmAudio();
         if (vibrate) startLoopingVibration();
+        if (!audioStarted) {
+            postFallbackNotification(this, title, body, orderId, route, durationMs, true);
+        }
 
         ringing = true;
         mainHandler.removeCallbacks(autoStopRunnable);
@@ -267,19 +274,32 @@ public class VendorAlarmService extends Service {
         wakeLock = null;
     }
 
-    private void startLoopingAlarmAudio() {
+    private boolean startLoopingAlarmAudio() {
         stopAudio();
         try {
+            AudioAttributes attrs = new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ALARM)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build();
+
+            audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+            if (audioManager != null) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    audioFocusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+                        .setAudioAttributes(attrs)
+                        .setWillPauseWhenDucked(false)
+                        .build();
+                    audioManager.requestAudioFocus(audioFocusRequest);
+                } else {
+                    audioManager.requestAudioFocus(null, AudioManager.STREAM_ALARM, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
+                }
+            }
+
             AssetFileDescriptor afd = getResources().openRawResourceFd(R.raw.vendor_order_alarm);
-            if (afd == null) return;
+            if (afd == null) return false;
 
             MediaPlayer player = new MediaPlayer();
-            player.setAudioAttributes(
-                new AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                    .build()
-            );
+            player.setAudioAttributes(attrs);
             player.setDataSource(afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
             afd.close();
             player.setLooping(true);
@@ -287,8 +307,10 @@ public class VendorAlarmService extends Service {
             player.prepare();
             player.start();
             mediaPlayer = player;
+            return true;
         } catch (Throwable error) {
             Log.e(TAG, "Failed to play looping vendor alarm audio", error);
+            return false;
         }
     }
 
@@ -297,6 +319,16 @@ public class VendorAlarmService extends Service {
             try { if (mediaPlayer.isPlaying()) mediaPlayer.stop(); } catch (Throwable ignored) {}
             try { mediaPlayer.release(); } catch (Throwable ignored) {}
             mediaPlayer = null;
+        }
+        if (audioManager != null) {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && audioFocusRequest != null) {
+                    audioManager.abandonAudioFocusRequest(audioFocusRequest);
+                } else {
+                    audioManager.abandonAudioFocus(null);
+                }
+            } catch (Throwable ignored) {}
+            audioFocusRequest = null;
         }
     }
 

@@ -32,6 +32,24 @@ export const SocketProvider = ({ children }) => {
     const listenersRegistered = useRef(false);
     const authFailed = useRef(false);
     const lastUnreadFetchAt = useRef(0);
+    const recentOrderAlarmsRef = useRef(new Map());
+
+    const triggerVendorOrderAlarmOnce = (orderIdKey, payload) => {
+        const key = String(orderIdKey || payload?.orderId || Date.now());
+        const now = Date.now();
+        const lastTriggered = recentOrderAlarmsRef.current.get(key) || 0;
+        if (now - lastTriggered < 15000) return false;
+        recentOrderAlarmsRef.current.set(key, now);
+        // Prune old keys
+        for (const [k, ts] of recentOrderAlarmsRef.current.entries()) {
+            if (now - ts > 60000) recentOrderAlarmsRef.current.delete(k);
+        }
+        const alertSettings = getVendorAlertSettings();
+        if (alertSettings.alarmEnabled) {
+            void startVendorOrderAlarm(payload);
+        }
+        return true;
+    };
 
     // Determine role based on path
     const getRoleFromPath = (path) => {
@@ -104,8 +122,28 @@ export const SocketProvider = ({ children }) => {
                 if (!notification.read) {
                     setUnreadCount(prev => prev + 1);
 
-                    // ✅ FIX: "Silent" Notifications — added global toast alert
-                    // Skip if it's a new order (that has its own custom toast below)
+                    // ✅ FIX: Trigger kitchen alarm & refresh if vendor_new_order arrives via new_notification
+                    if (notification.type === 'vendor_new_order' && role === 'vendor') {
+                        const vendorOrderId = notification.data?.orderDatabaseId || notification.orderDatabaseId || notification.orderId;
+                        const triggered = triggerVendorOrderAlarmOnce(vendorOrderId || notification._id, {
+                            title: notification.title || 'New Order Received!',
+                            body: notification.body || 'Open MelaChow Vendor now to review and accept.',
+                            orderId: vendorOrderId || '',
+                            route: notification.url || (vendorOrderId ? `/vendors/order/${vendorOrderId}` : '/vendors/order'),
+                        });
+                        if (triggered) {
+                            window.dispatchEvent(new CustomEvent('vendor:new-order', {
+                                detail: {
+                                    _id: vendorOrderId,
+                                    vendorOrderId,
+                                    orderId: notification.orderId,
+                                    alertPlayed: true,
+                                },
+                            }));
+                        }
+                    }
+
+                    // Skip duplicate generic toast for vendor_new_order (handled via dedicated alarm/toast)
                     if (notification.type !== 'vendor_new_order') {
                         const isHighUrgency = ['admin_order_ready', 'rider_assignment_needed', 'urgent_system'].includes(notification.type);
 
@@ -182,15 +220,12 @@ export const SocketProvider = ({ children }) => {
 
                     const vendorOrderId = order.vendorOrderId || order._id;
 
-                    const alertSettings = getVendorAlertSettings();
-                    if (alertSettings.alarmEnabled) {
-                        void startVendorOrderAlarm({
-                            title: 'New Order Received!',
-                            body: `Order #${order.orderNumber || order._id?.slice(-6)} · ${order.customerName || 'Customer'}`,
-                            orderId: vendorOrderId || '',
-                            route: vendorOrderId ? `/vendors/order/${vendorOrderId}` : '/vendors/order',
-                        });
-                    }
+                    triggerVendorOrderAlarmOnce(vendorOrderId || order.orderId, {
+                        title: 'New Order Received!',
+                        body: `Order #${order.orderNumber || order.orderId || order._id?.slice(-6)} · ${order.customerName || 'Customer'}`,
+                        orderId: vendorOrderId || '',
+                        route: vendorOrderId ? `/vendors/order/${vendorOrderId}` : '/vendors/order',
+                    });
 
                     const newOrderNotification = {
                         _id: `order-${vendorOrderId || Date.now()}`,
@@ -334,6 +369,16 @@ export const SocketProvider = ({ children }) => {
         authFailed.current = false;
         connect();
 
+        const handleTokenSet = (event) => {
+            if (!event?.detail?.role || event.detail.role === role) {
+                authFailed.current = false;
+                listenersRegistered.current = false;
+                socketService.disconnect();
+                connect();
+            }
+        };
+        window.addEventListener('melachow:auth-token-set', handleTokenSet);
+
         const interval = setInterval(() => {
             const status = socketService.getConnectionStatus();
             setIsConnected(status.isConnected);
@@ -344,6 +389,7 @@ export const SocketProvider = ({ children }) => {
         }, 30000);
 
         return () => {
+            window.removeEventListener('melachow:auth-token-set', handleTokenSet);
             clearInterval(interval);
             listenersRegistered.current = false;
             socketService.removeAllListeners();

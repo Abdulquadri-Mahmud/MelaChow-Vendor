@@ -1,7 +1,16 @@
 import axios from 'axios';
+import { TokenManager } from './auth-token';
 
 const SERVICE_WORKER_TIMEOUT_MS = 10000;
 const API_TIMEOUT_MS = 15000;
+
+const getAuthHeaders = (role = 'user') => {
+    const token = TokenManager.getToken(role);
+    return {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+};
 
 const withTimeout = (promise, ms, message) => {
     let timeoutId;

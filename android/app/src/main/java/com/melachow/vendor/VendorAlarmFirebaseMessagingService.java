@@ -47,6 +47,7 @@ public class VendorAlarmFirebaseMessagingService extends MessagingService {
                 long durationMs = parseLongOrDefault(data.get("durationMs"), 60_000L);
 
                 VendorAlarmService.startAlarmSafely(this, title, body, orderId, route, durationMs, false);
+                VendorAlarmPlugin.emitEvent("alarmStarted", orderId, route);
                 return;
             }
         }
