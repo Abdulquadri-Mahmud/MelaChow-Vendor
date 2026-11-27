@@ -34,9 +34,9 @@ import PermanentInstallButton from "@/app/components/PermanentInstallButton";
 import { useApi } from "@/app/context/ApiContext";
 import {
   getVendorAlertSettings,
-  playVendorAlertPreview,
   saveVendorAlertSettings,
 } from "@/app/lib/vendorAlertSettings";
+import VendorNativeAlarmControls from "./VendorNativeAlarmControls";
 import VendorLocationNotice from "@/app/components/vendors_component/location/VendorLocationNotice";
 
 const CLOUDINARY_PRESET = "GrubDash";
@@ -870,21 +870,7 @@ export default function VendorProfilePage({ vendor }) {
               </select>
             </div>
 
-            <div className="flex justify-end pt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  playVendorAlertPreview({
-                    vibrationEnabled: alertSettings.vibrationEnabled,
-                  });
-                  toast.success("Alarm test played");
-                }}
-                className="inline-flex min-h-[42px] items-center gap-2 rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-700"
-              >
-                <Volume2 size={15} />
-                <span>Test Alarm</span>
-              </button>
-            </div>
+            <VendorNativeAlarmControls alertSettings={alertSettings} />
           </div>
         </ProfileSection>
 

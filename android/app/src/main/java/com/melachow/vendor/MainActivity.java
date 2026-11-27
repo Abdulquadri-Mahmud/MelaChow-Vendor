@@ -1,9 +1,11 @@
 package com.melachow.vendor;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
+import android.view.WindowManager;
 
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -18,8 +20,20 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(ReceiptPrinterPlugin.class);
+        registerPlugin(VendorAlarmPlugin.class);
         SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
+        VendorAlarmChannels.ensureAll(this);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true);
+            setTurnScreenOn(true);
+        } else {
+            getWindow().addFlags(
+                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                    | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+            );
+        }
 
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         getWindow().getDecorView().setBackgroundColor(Color.WHITE);
@@ -37,6 +51,15 @@ public class MainActivity extends BridgeActivity {
                 .build();
         });
         ViewCompat.requestApplyInsets(content);
+
+        VendorAlarmPlugin.handleAlarmLaunchIntent(this, getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        VendorAlarmPlugin.handleAlarmLaunchIntent(this, intent);
     }
 
     @Override

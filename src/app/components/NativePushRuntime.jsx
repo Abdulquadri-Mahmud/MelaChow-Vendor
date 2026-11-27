@@ -6,12 +6,37 @@ import { PushNotifications } from "@capacitor/push-notifications";
 import toast from "react-hot-toast";
 import { TokenManager } from "@/app/lib/auth-token";
 import { nativePushTokenKey, registerNativePushToken, removeNativePushToken } from "@/app/lib/push-notification-service";
+import {
+  isVendorDismissAlarmPush,
+  isVendorNewOrderPush,
+  startVendorOrderAlarm,
+  stopVendorOrderAlarm,
+  subscribeVendorAlarmEvents,
+  syncVendorAlarmPreferences,
+} from "@/app/lib/nativeVendorAlarm";
+
+const safeRoute = (target) =>
+  typeof target === "string" && target.startsWith("/") && !target.startsWith("//") ? target : null;
 
 export default function NativePushRuntime({ role = "vendor" }) {
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
     let disposed = false;
     const handles = [];
+
+    void syncVendorAlarmPreferences();
+
+    const unsubscribeAlarm = subscribeVendorAlarmEvents({
+      onOpened: (detail) => {
+        void stopVendorOrderAlarm();
+        const route = safeRoute(detail?.route) || "/vendors/order";
+        if (typeof window !== "undefined") {
+          if (window.__melachowVendorNavigate) window.__melachowVendorNavigate(route);
+          else window.location.href = route;
+        }
+      },
+    });
+
     const add = async (event, callback) => {
       const handle = await PushNotifications.addListener(event, callback);
       if (disposed) await handle.remove(); else handles.push(handle);
@@ -26,6 +51,7 @@ export default function NativePushRuntime({ role = "vendor" }) {
     };
     const clear = (event) => {
       if (event.detail?.role !== role) return;
+      void stopVendorOrderAlarm();
       const token = localStorage.getItem(nativePushTokenKey(role));
       const authToken = TokenManager.getToken(role);
       if (token && authToken) removeNativePushToken(token, role, authToken).catch(() => {});
@@ -37,14 +63,31 @@ export default function NativePushRuntime({ role = "vendor" }) {
       let permission = await PushNotifications.checkPermissions();
       if (permission.receive === "prompt" || permission.receive === "prompt-with-rationale") permission = await PushNotifications.requestPermissions();
       if (permission.receive !== "granted") return;
-      if (Capacitor.getPlatform() === "android") await PushNotifications.createChannel({ id: "melachow_orders", name: "MelaChow updates", description: "Order updates and account notifications", importance: 5, visibility: 1, vibration: true });
+      // Native VendorAlarmChannels creates melachow_vendor_order_alarm_v1 & melachow_orders with USAGE_ALARM sound.
       await PushNotifications.register();
     };
     const openNotification = ({ notification }) => {
-      const target = notification?.data?.url || notification?.data?.route;
-      if (typeof target === "string" && target.startsWith("/") && !target.startsWith("//")) window.__melachowVendorNavigate?.(target);
+      void stopVendorOrderAlarm();
+      const target = safeRoute(notification?.data?.url || notification?.data?.route);
+      if (target) {
+        if (window.__melachowVendorNavigate) window.__melachowVendorNavigate(target);
+        else window.location.href = target;
+      }
     };
-    const showNotification = (notification) => toast(notification.body || notification.title || "You have a new MelaChow update.", { duration: 7000 });
+    const showNotification = (notification) => {
+      if (isVendorDismissAlarmPush(notification)) {
+        void stopVendorOrderAlarm();
+      } else if (isVendorNewOrderPush(notification)) {
+        const data = notification?.data || {};
+        void startVendorOrderAlarm({
+          title: notification?.title || data.title || "New Order Received!",
+          body: notification?.body || data.body || "Open MelaChow Vendor now to accept.",
+          orderId: data.orderDatabaseId || data.orderId || "",
+          route: safeRoute(data.url || data.route) || "/vendors/order",
+        });
+      }
+      toast(notification.body || notification.title || "You have a new MelaChow update.", { duration: 7000 });
+    };
     window.addEventListener("melachow:auth-token-set", tokenChanged);
     window.addEventListener("melachow:auth-token-clearing", clear);
     const setup = async () => {
@@ -60,6 +103,7 @@ export default function NativePushRuntime({ role = "vendor" }) {
     const appState = App.addListener("appStateChange", ({ isActive }) => { if (isActive) tokenChanged(); });
     return () => {
       disposed = true;
+      unsubscribeAlarm();
       window.removeEventListener("melachow:auth-token-set", tokenChanged);
       window.removeEventListener("melachow:auth-token-clearing", clear);
       handles.forEach((handle) => handle.remove());

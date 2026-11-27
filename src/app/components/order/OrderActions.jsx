@@ -4,6 +4,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { AlertCircle, Check, ChevronRight, Loader2, X } from "lucide-react";
 import { completeOrder, updateOrderStatus } from "@/app/lib/vendorApi";
+import { stopVendorOrderAlarm } from "@/app/lib/nativeVendorAlarm";
 import {
   nextOrderAction,
   orderId,
@@ -27,6 +28,7 @@ export default function OrderActions({
     showCancel && ["pending", "accepted", "preparing"].includes(status);
 
   const update = async (value) => {
+    void stopVendorOrderAlarm();
     if (busy) return;
     setBusy(true);
     setError("");

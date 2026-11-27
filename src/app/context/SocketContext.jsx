@@ -4,7 +4,8 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import socketService from '@/app/lib/socketService';
 import { TokenManager } from '@/app/lib/auth-token';
 import toast from 'react-hot-toast';
-import { getVendorAlertSettings, playVendorNewOrderAlert } from '@/app/lib/vendorAlertSettings';
+import { getVendorAlertSettings } from '@/app/lib/vendorAlertSettings';
+import { startVendorOrderAlarm, stopVendorOrderAlarm } from '@/app/lib/nativeVendorAlarm';
 
 const SocketContext = createContext({
     isConnected: false,
@@ -182,12 +183,13 @@ export const SocketProvider = ({ children }) => {
                     const vendorOrderId = order.vendorOrderId || order._id;
 
                     const alertSettings = getVendorAlertSettings();
-
-                    const onOrderDesk = /^\/vendors\/orders?(\/|$)|^\/native\/vendor-orders?(\/|$)/.test(window.location.pathname);
-                    if (alertSettings.alarmEnabled && !onOrderDesk) {
-
-                        playVendorNewOrderAlert({ vibrationEnabled: alertSettings.vibrationEnabled });
-
+                    if (alertSettings.alarmEnabled) {
+                        void startVendorOrderAlarm({
+                            title: 'New Order Received!',
+                            body: `Order #${order.orderNumber || order._id?.slice(-6)} · ${order.customerName || 'Customer'}`,
+                            orderId: vendorOrderId || '',
+                            route: vendorOrderId ? `/vendors/order/${vendorOrderId}` : '/vendors/order',
+                        });
                     }
 
                     const newOrderNotification = {
@@ -214,6 +216,7 @@ export const SocketProvider = ({ children }) => {
                         <div
                             className={`bg-white dark:bg-slate-900 shadow-2xl rounded-2xl p-4 flex items-start gap-4 w-full max-w-sm border-l-4 border-orange-500 cursor-pointer ${t.visible ? 'animate-in slide-in-from-right-full' : 'animate-out fade-out'}`}
                             onClick={() => {
+                                void stopVendorOrderAlarm();
                                 window.location.href = `/vendors/order/${vendorOrderId}`;
                                 toast.dismiss(t.id);
                             }}
