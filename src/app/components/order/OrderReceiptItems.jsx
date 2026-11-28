@@ -23,7 +23,7 @@ export default function OrderReceiptItems({ items, compact = false }) {
             <h3>{item.name}</h3>
             {item.packs > 1 && <span>{item.packs} packs</span>}
           </div>
-          {item.packs > 1 && (
+          {item.packs > 1 && item.portionsPerPack > 1 && (
             <p className="receipt-pack-rule">
               Each pack: {item.portionsPerPack} × {item.portion}
             </p>

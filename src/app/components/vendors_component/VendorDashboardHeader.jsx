@@ -19,6 +19,8 @@ import {
     Power,
     Save,
     Loader2,
+    Moon,
+    Sun,
 } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -321,16 +323,16 @@ function GlobalSearch({ items, router }) {
 }
 
 export default function VendorDashboardHeader({ vendor, onMenuClick }) {
-    const { theme } = useTheme();
+    const { theme, toggleTheme } = useTheme();
     const router = useRouter();
 
     return (
-    <header className="sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border-b border-zinc-200 dark:border-zinc-800 transition-all">
+    <header className="sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border-t-2 border-t-orange-500 border-b border-orange-100/80 dark:border-zinc-800 transition-all">
       <div className="flex items-center gap-3 flex-1">
         {/* Mobile Toggle (Visible on small screens) */}
         <button
           onClick={onMenuClick}
-          className="md:hidden p-1.5 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors"
+          className="md:hidden p-1.5 text-zinc-600 hover:bg-orange-50 hover:text-orange-600 dark:text-zinc-300 dark:hover:bg-zinc-800 rounded-md transition-colors"
         >
           <Menu size={18} />
         </button>
@@ -362,6 +364,17 @@ export default function VendorDashboardHeader({ vendor, onMenuClick }) {
       </div>
 
       <div className="flex items-center gap-2">
+        {/* Dark / Light Mode Toggle */}
+        <button
+          type="button"
+          onClick={toggleTheme}
+          title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          className="flex h-10 w-10 items-center justify-center rounded-md border border-orange-200/80 bg-orange-50/70 text-orange-600 transition hover:bg-orange-100 active:scale-95 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-400 dark:hover:bg-orange-500/20"
+        >
+          {theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}
+        </button>
+
         <TodayHoursControl vendor={vendor} />
 
         {/* Notification Bell */}
@@ -380,7 +393,7 @@ export default function VendorDashboardHeader({ vendor, onMenuClick }) {
         >
           <div className="relative">
             <div
-              className={`size-9 rounded-full border-2 ${theme === 'dark' ? 'border-zinc-700' : 'border-zinc-200'} shadow-sm bg-zinc-200 bg-cover bg-center`}
+              className={`size-9 rounded-full border-2 ${theme === 'dark' ? 'border-orange-500/50' : 'border-orange-300'} shadow-sm bg-zinc-200 bg-cover bg-center`}
               style={{ backgroundImage: `url('${vendor?.logo || "/placeholder-logo.png"}')` }}
             />
             {typeof window !== "undefined" && "Notification" in window && Notification.permission === "default" && (

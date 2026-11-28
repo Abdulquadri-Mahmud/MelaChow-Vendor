@@ -105,7 +105,7 @@ function getStatusPillClasses(status) {
   }
 }
 
-export default function VendorOrderCard({ order, onRefresh, nowMs }) {
+export default function VendorOrderCard({ order, onRefresh, nowMs, autoCancelMinutes }) {
   const { vendorProfile } = useVendorProfile();
   const receipt = orderReceipt(order);
   const status = statusOf(order);
@@ -118,8 +118,39 @@ export default function VendorOrderCard({ order, onRefresh, nowMs }) {
 
   const isPending = status === "pending";
   const isActiveKitchen = ["pending", "accepted", "preparing"].includes(status);
-  const isSlaWarning = isPending && elapsed.minutes >= 3 && elapsed.seconds < 270;
-  const isSlaUrgent = isPending && elapsed.seconds >= 270;
+
+  // Sync SLA countdown & warning states directly with backend auto-cancel config
+  const parsedSlaMinutes = Number(order?.autoCancelMinutes ?? autoCancelMinutes ?? 10);
+  const slaMinutes =
+    Number.isFinite(parsedSlaMinutes) && parsedSlaMinutes > 0
+      ? Math.round(parsedSlaMinutes)
+      : 10;
+  const slaSeconds = slaMinutes * 60;
+  const parsedAutoCancelAt = order?.autoCancelAt
+    ? new Date(order.autoCancelAt).getTime()
+    : NaN;
+  const autoCancelAtMs = Number.isFinite(parsedAutoCancelAt)
+    ? parsedAutoCancelAt
+    : validDate
+      ? created.getTime() + slaSeconds * 1000
+      : NaN;
+  const remainingSeconds = Number.isFinite(autoCancelAtMs)
+    ? Math.max(0, Math.ceil((autoCancelAtMs - effectiveNow) / 1000))
+    : Math.max(0, slaSeconds - elapsed.seconds);
+  const remainingLabel = `${Math.floor(remainingSeconds / 60)}:${String(
+    remainingSeconds % 60
+  ).padStart(2, "0")}`;
+
+  const warningThresholdSec = Math.max(60, Math.round(slaSeconds * 0.5));
+  const urgentThresholdSec = Math.max(warningThresholdSec + 30, slaSeconds - 120);
+  const isSlaExpired = isPending && elapsed.valid && remainingSeconds === 0;
+  const isSlaUrgent =
+    isPending && !isSlaExpired && elapsed.seconds >= urgentThresholdSec;
+  const isSlaWarning =
+    isPending &&
+    !isSlaExpired &&
+    !isSlaUrgent &&
+    elapsed.seconds >= warningThresholdSec;
 
   const totalPacks = receipt.items.reduce((sum, it) => sum + (it.packs || 1), 0);
   const addressSnippet = formatAddressSnippet(receipt.address);
@@ -130,23 +161,25 @@ export default function VendorOrderCard({ order, onRefresh, nowMs }) {
   return (
     <article
       aria-label={`Order ${receipt.code}`}
-      className={`flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition dark:bg-zinc-900 ${
-        isSlaUrgent
+      className={`flex h-full min-w-0 flex-col overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:shadow-md dark:bg-zinc-900 ${
+        isSlaUrgent || isSlaExpired
           ? "border-rose-300 ring-2 ring-rose-500/20 dark:border-rose-500/50"
           : isPending
-            ? "border-orange-300/90 dark:border-orange-500/40"
-            : "border-zinc-200/90 dark:border-zinc-800"
+            ? "border-orange-300 ring-1 ring-orange-500/15 dark:border-orange-500/40"
+            : isActiveKitchen
+              ? "border-orange-200/90 dark:border-orange-500/30"
+              : "border-zinc-200/90 dark:border-zinc-800"
       }`}
     >
-      {/* Top urgency bar for incoming orders */}
-      {isPending && (
+      {/* Top primary / urgency bar */}
+      {isActiveKitchen && (
         <div
           className={`h-1.5 w-full ${
-            isSlaUrgent
+            isSlaUrgent || isSlaExpired
               ? "bg-gradient-to-r from-rose-600 to-red-500"
               : isSlaWarning
-                ? "bg-gradient-to-r from-amber-500 to-orange-500"
-                : "bg-gradient-to-r from-orange-500 to-amber-500"
+                ? "bg-gradient-to-r from-amber-500 to-orange-600"
+                : "bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500"
           }`}
         />
       )}
@@ -228,19 +261,21 @@ export default function VendorOrderCard({ order, onRefresh, nowMs }) {
       </header>
 
       {/* SLA warning callout */}
-      {(isSlaWarning || isSlaUrgent) && (
+      {(isSlaWarning || isSlaUrgent || isSlaExpired) && (
         <div
           className={`flex items-start gap-2.5 border-b px-4 py-2.5 text-xs sm:px-5 ${
-            isSlaUrgent
+            isSlaUrgent || isSlaExpired
               ? "border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-500/30 dark:bg-rose-500/15 dark:text-rose-200"
               : "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200"
           }`}
         >
           <AlertTriangle size={15} className="mt-0.5 shrink-0" />
           <span>
-            {isSlaUrgent
-              ? "Urgent: accept right away before the 5-minute auto-cancel SLA expires."
-              : "Waiting over 3 minutes — please accept soon to avoid auto-cancellation."}
+            {isSlaExpired
+              ? `Auto-cancel window (${slaMinutes}m) reached — syncing order status...`
+              : isSlaUrgent
+                ? `Urgent: accept within ${remainingLabel} before the ${slaMinutes}-minute auto-cancel SLA expires.`
+                : `Please accept soon — ${remainingLabel} left in the ${slaMinutes}-minute auto-cancel window.`}
           </span>
         </div>
       )}
@@ -340,7 +375,7 @@ export default function VendorOrderCard({ order, onRefresh, nowMs }) {
                           </h3>
                           <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
                             {item.portion} × {item.portionCount}
-                            {item.packs > 1
+                            {item.packs > 1 && item.portionsPerPack > 1
                               ? ` (${item.portionsPerPack} per pack)`
                               : ""}
                           </p>

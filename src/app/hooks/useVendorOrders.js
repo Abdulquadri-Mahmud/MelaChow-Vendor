@@ -4,6 +4,18 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getVendorOrders } from "@/app/lib/vendorApi";
 import { useVendorProfile } from "@/app/context/VendorProfileContext";
 
+const DEFAULT_AUTO_CANCEL_MINUTES = 10;
+
+const isVendorVisibleOrder = (order) => {
+  const payment = String(
+    order?.userOrderId?.paymentStatus || order?.paymentStatus || ""
+  )
+    .trim()
+    .toLowerCase();
+  // Defense-in-depth: hide unpaid / failed checkout attempts from the kitchen desk.
+  return !["pending", "unpaid", "failed"].includes(payment);
+};
+
 export default function useVendorOrders() {
   const { vendorProfile } = useVendorProfile();
   const client = useQueryClient();
@@ -14,10 +26,20 @@ export default function useVendorOrders() {
     enabled: !!vendorId,
     queryFn: async () => {
       const response = await getVendorOrders();
-      const orders = response.vendorOrders || response.data || response;
-      if (!Array.isArray(orders))
+      const rawOrders = response.vendorOrders || response.data || response;
+      if (!Array.isArray(rawOrders))
         throw new Error("Your orders could not be loaded. Please retry.");
-      return orders;
+      const orders = rawOrders.filter(isVendorVisibleOrder);
+      const parsedMinutes = Number(
+        response?.meta?.autoCancelMinutes ??
+          orders[0]?.autoCancelMinutes ??
+          DEFAULT_AUTO_CANCEL_MINUTES
+      );
+      const autoCancelMinutes =
+        Number.isFinite(parsedMinutes) && parsedMinutes > 0
+          ? Math.round(parsedMinutes)
+          : DEFAULT_AUTO_CANCEL_MINUTES;
+      return { orders, autoCancelMinutes };
     },
     staleTime: 5000,
     refetchInterval: 30000,
@@ -39,5 +61,11 @@ export default function useVendorOrders() {
       window.removeEventListener("melachow:vendor-alarm-state", onAlarmState);
     };
   }, [client, vendorId]);
-  return { ...query, orders: query.data || [], vendor: vendorProfile };
+  const orders = Array.isArray(query.data)
+    ? query.data
+    : query.data?.orders || [];
+  const autoCancelMinutes = Array.isArray(query.data)
+    ? DEFAULT_AUTO_CANCEL_MINUTES
+    : query.data?.autoCancelMinutes || DEFAULT_AUTO_CANCEL_MINUTES;
+  return { ...query, orders, autoCancelMinutes, vendor: vendorProfile };
 }

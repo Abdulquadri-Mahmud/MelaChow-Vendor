@@ -15,7 +15,7 @@ import { orderId, queueGroup } from "@/app/lib/orderReceipt.mjs";
 import VendorOrderCard from "./VendorOrderCard";
 
 export default function IncomingOrders() {
-  const { orders, isPending, isFetching, isError, refetch } = useVendorOrders();
+  const { orders, autoCancelMinutes, isPending, isFetching, isError, refetch } = useVendorOrders();
   const [nowMs, setNowMs] = useState(() => Date.now());
 
   const incoming = useMemo(
@@ -38,24 +38,25 @@ export default function IncomingOrders() {
   }, [incoming.length]);
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-      <header className="flex flex-col gap-3 border-b border-zinc-100 p-5 dark:border-zinc-800 sm:flex-row sm:items-center sm:justify-between">
+    <section className="overflow-hidden rounded-2xl border border-orange-200/80 bg-white shadow-sm dark:border-orange-500/25 dark:bg-zinc-900">
+      <div className="h-1 w-full bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500" />
+      <header className="flex flex-col gap-3 border-b border-orange-100/80 bg-gradient-to-r from-orange-50/60 via-white to-white p-5 dark:border-zinc-800 dark:from-orange-500/10 dark:via-zinc-900 dark:to-zinc-900 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-orange-600 dark:text-orange-400">
+            <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-orange-700 dark:bg-orange-500/20 dark:text-orange-300">
               Orders first
             </span>
             <span
               className={`inline-flex min-w-[24px] items-center justify-center rounded-full px-2 py-0.5 text-xs font-bold tabular-nums ${
                 incoming.length > 0
-                  ? "animate-pulse bg-orange-600 text-white"
-                  : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
+                  ? "animate-pulse bg-orange-600 text-white shadow-sm shadow-orange-500/30"
+                  : "bg-orange-100/80 text-orange-700 dark:bg-orange-500/15 dark:text-orange-300"
               }`}
             >
               {incoming.length}
             </span>
           </div>
-          <h2 className="mt-1 text-lg font-bold tracking-tight text-zinc-900 dark:text-white">
+          <h2 className="mt-1.5 text-lg font-bold tracking-tight text-zinc-900 dark:text-white">
             Incoming Orders
           </h2>
           <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
@@ -67,7 +68,7 @@ export default function IncomingOrders() {
 
         <Link
           href="/vendors/order"
-          className="inline-flex min-h-[42px] shrink-0 items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-xs font-semibold text-zinc-700 transition hover:border-orange-300 hover:text-orange-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:border-orange-500/40 dark:hover:text-orange-300"
+          className="inline-flex min-h-[42px] shrink-0 items-center justify-center gap-2 rounded-xl bg-orange-600 px-4 py-2.5 text-xs font-semibold text-white shadow-sm shadow-orange-600/20 transition hover:bg-orange-700"
         >
           <span>Open Order Desk</span>
           <ArrowRight size={14} />
@@ -110,6 +111,7 @@ export default function IncomingOrders() {
                   key={orderId(order) || order._id}
                   order={order}
                   nowMs={nowMs}
+                  autoCancelMinutes={autoCancelMinutes}
                   onRefresh={() => refetch()}
                 />
               ))}

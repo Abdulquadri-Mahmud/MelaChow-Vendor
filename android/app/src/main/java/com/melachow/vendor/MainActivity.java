@@ -65,13 +65,20 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onResume() {
         super.onResume();
-        applyLightSystemBars();
+        ensureSystemBarsVisible();
     }
 
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
-        if (hasFocus) applyLightSystemBars();
+        if (hasFocus) ensureSystemBarsVisible();
+    }
+
+    private void ensureSystemBarsVisible() {
+        WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(
+            getWindow(), getWindow().getDecorView()
+        );
+        controller.show(WindowInsetsCompat.Type.systemBars());
     }
 
     private void applyLightSystemBars() {

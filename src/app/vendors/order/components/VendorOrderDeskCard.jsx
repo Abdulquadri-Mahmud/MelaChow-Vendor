@@ -185,9 +185,15 @@ export default function VendorOrderDeskCard({
 
   const isPending = status === "pending";
   const isReady = ["ready", "ready_for_pickup"].includes(status);
-  const isAtRisk = isPending && elapsed.minutes >= 3;
-  const isFinalWarning = isPending && elapsed.totalSeconds >= 270;
-  const isLate = isPending && elapsed.minutes >= 5;
+  const parsedSlaMinutes = Number(order?.autoCancelMinutes ?? 10);
+  const slaMinutes =
+    Number.isFinite(parsedSlaMinutes) && parsedSlaMinutes > 0
+      ? Math.round(parsedSlaMinutes)
+      : 10;
+  const slaSeconds = slaMinutes * 60;
+  const isAtRisk = isPending && elapsed.totalSeconds >= Math.max(60, Math.round(slaSeconds * 0.5));
+  const isFinalWarning = isPending && elapsed.totalSeconds >= Math.max(120, slaSeconds - 120);
+  const isLate = isPending && elapsed.totalSeconds >= slaSeconds;
   const isTablet = mode === "tablet";
   const toneClass = TONE_CLASSES[meta.tone] || TONE_CLASSES.amber;
   const customerPhone = user?.phone || userOrder.phone || order.phone || "N/A";
@@ -282,7 +288,7 @@ export default function VendorOrderDeskCard({
                   {isFinalWarning ? "Final warning before auto-cancel" : "Vendor action required"}
                 </p>
                 <p className={`mt-1 text-xs font-bold leading-relaxed ${isFinalWarning ? "text-rose-600/90 dark:text-rose-200/90" : "text-amber-700/90 dark:text-amber-200/90"}`}>
-                  Accept this order before the 5-minute SLA ends. Visual alerts stay active even when voice alerts are turned off.
+                  Accept this order before the {slaMinutes}-minute SLA ends. Visual alerts stay active even when voice alerts are turned off.
                 </p>
               </div>
             </div>

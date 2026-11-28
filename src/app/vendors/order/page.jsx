@@ -90,7 +90,7 @@ function matchesHistoryFilter(order, historyFilter) {
 }
 
 export default function VendorOrderDesk() {
-  const { orders, isPending, isFetching, isError, refetch, dataUpdatedAt } =
+  const { orders, autoCancelMinutes, isPending, isFetching, isError, refetch, dataUpdatedAt } =
     useVendorOrders();
   const [tab, setTab] = useState("incoming");
   const [historyFilter, setHistoryFilter] = useState("all");
@@ -209,20 +209,21 @@ export default function VendorOrderDesk() {
     <div className="mx-auto max-w-[1440px] pb-10 font-sans text-zinc-900 dark:text-zinc-100">
       <div className="space-y-5">
         {/* ── 1. COMMAND HEADER CARD ────────────────────────────────────────── */}
-        <section className="overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-          <div className="relative flex flex-col gap-5 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
+        <section className="overflow-hidden rounded-2xl border border-orange-200/80 bg-white shadow-sm dark:border-orange-500/25 dark:bg-zinc-900">
+          <div className="h-1.5 w-full bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500" />
+          <div className="relative flex flex-col gap-5 bg-gradient-to-br from-orange-50/55 via-white to-white p-5 dark:from-orange-500/10 dark:via-zinc-900 dark:to-zinc-900 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
             <div
-              className="pointer-events-none absolute inset-y-0 right-0 w-1/2 opacity-40 dark:opacity-20"
+              className="pointer-events-none absolute inset-y-0 right-0 w-1/2 opacity-50 dark:opacity-25"
               style={{
                 background:
-                  "radial-gradient(ellipse at top right, rgba(249,115,22,0.16), transparent 68%)",
+                  "radial-gradient(ellipse at top right, rgba(249,115,22,0.2), transparent 68%)",
               }}
             />
 
             <div className="relative space-y-2">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-orange-200 bg-orange-100/80 px-2.5 py-0.5 text-xs font-semibold text-orange-700 dark:border-orange-500/30 dark:bg-orange-500/20 dark:text-orange-300">
+                  <span className="h-2 w-2 rounded-full bg-orange-500 animate-pulse" />
                   Live Kitchen Feed
                 </span>
                 {lastUpdatedLabel && (
@@ -235,25 +236,25 @@ export default function VendorOrderDesk() {
               </div>
 
               <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white sm:text-3xl">
-                Order Desk
+                Order <span className="text-orange-600 dark:text-orange-400">Desk</span>
               </h1>
 
               {/* Compact 3-Step Kitchen Workflow + Live Today Stats */}
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-zinc-600 dark:text-zinc-400">
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-orange-100 text-[11px] font-bold text-orange-700 dark:bg-orange-500/20 dark:text-orange-300">
+                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-orange-600 text-[11px] font-bold text-white shadow-sm shadow-orange-600/20">
                     1
                   </span>
                   Accept
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-orange-100 text-[11px] font-bold text-orange-700 dark:bg-orange-500/20 dark:text-orange-300">
+                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-orange-500 text-[11px] font-bold text-white shadow-sm shadow-orange-500/20">
                     2
                   </span>
                   Prepare
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-orange-100 text-[11px] font-bold text-orange-700 dark:bg-orange-500/20 dark:text-orange-300">
+                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[11px] font-bold text-white shadow-sm shadow-amber-500/20">
                     3
                   </span>
                   Mark Ready &amp; Handoff
@@ -265,9 +266,9 @@ export default function VendorOrderDesk() {
             <div className="relative flex flex-wrap items-center gap-3">
               <Link
                 href="/vendors/dashboard"
-                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-orange-200/80 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700 transition hover:border-orange-300 hover:bg-orange-50/70 hover:text-orange-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:border-orange-500/40 dark:hover:text-orange-300"
               >
-                <LayoutDashboard size={15} />
+                <LayoutDashboard size={15} className="text-orange-600 dark:text-orange-400" />
                 <span>Dashboard</span>
               </Link>
 
@@ -275,7 +276,7 @@ export default function VendorOrderDesk() {
                 type="button"
                 onClick={() => refetch()}
                 disabled={isFetching}
-                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-700 disabled:opacity-60"
+                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm shadow-orange-600/25 transition hover:bg-orange-700 disabled:opacity-60"
               >
                 <RefreshCw
                   size={15}
@@ -287,10 +288,10 @@ export default function VendorOrderDesk() {
           </div>
 
           {/* Operational Snapshot Strip */}
-          <div className="grid grid-cols-3 gap-3 border-t border-zinc-100 bg-zinc-50/80 px-5 py-3.5 text-xs dark:border-zinc-800 dark:bg-zinc-950/40 sm:px-6">
+          <div className="grid grid-cols-3 gap-3 border-t border-orange-100/80 bg-orange-50/40 px-5 py-3.5 text-xs dark:border-zinc-800 dark:bg-zinc-950/50 sm:px-6">
             <div>
               <p className="text-zinc-500 dark:text-zinc-400">Active Queue</p>
-              <p className="mt-0.5 text-base font-bold tabular-nums text-zinc-900 dark:text-white">
+              <p className="mt-0.5 text-base font-bold tabular-nums text-orange-600 dark:text-orange-400">
                 {todayStats.activeQueue}
               </p>
             </div>
@@ -332,17 +333,17 @@ export default function VendorOrderDesk() {
                 }}
                 className={`flex items-center gap-3.5 rounded-2xl border p-4 text-left shadow-sm transition ${
                   active
-                    ? "border-orange-500 bg-orange-50/80 ring-1 ring-orange-500/30 dark:border-orange-500/70 dark:bg-orange-500/15"
-                    : "border-zinc-200/90 bg-white hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700"
+                    ? "border-orange-500 bg-gradient-to-br from-orange-50 via-orange-50/70 to-amber-50/60 shadow-orange-500/10 ring-1 ring-orange-500/30 dark:border-orange-500/70 dark:from-orange-500/20 dark:via-orange-500/10 dark:to-zinc-900"
+                    : "border-zinc-200/90 bg-white hover:border-orange-300/80 hover:bg-orange-50/30 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-orange-500/40"
                 }`}
               >
                 <span
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition ${
                     active
-                      ? "bg-orange-600 text-white"
+                      ? "bg-orange-600 text-white shadow-sm shadow-orange-600/30"
                       : urgentIncoming
-                        ? "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300"
-                        : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
+                        ? "bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300"
+                        : "bg-orange-50/80 text-orange-600 dark:bg-zinc-800 dark:text-orange-400"
                   }`}
                 >
                   <Icon size={18} />
@@ -364,10 +365,10 @@ export default function VendorOrderDesk() {
                 <span
                   className={`inline-flex min-w-[28px] shrink-0 items-center justify-center rounded-full px-2 py-0.5 text-xs font-bold tabular-nums ${
                     active
-                      ? "bg-orange-600 text-white"
+                      ? "bg-orange-600 text-white shadow-sm shadow-orange-600/25"
                       : urgentIncoming
-                        ? "animate-pulse bg-amber-500 text-white"
-                        : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+                        ? "animate-pulse bg-orange-500 text-white"
+                        : "bg-orange-50 text-orange-700 dark:bg-zinc-800 dark:text-zinc-300"
                   }`}
                 >
                   {count}
@@ -378,13 +379,14 @@ export default function VendorOrderDesk() {
         </nav>
 
         {/* ── 3. TOOLBAR: SEARCH, HISTORY SUB-FILTERS & SORT ────────────────── */}
-        <section className="rounded-2xl border border-zinc-200/90 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:px-5">
+        <section className="rounded-2xl border border-orange-200/70 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900 sm:px-5">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-wrap items-center gap-2.5">
+              <span className="h-5 w-1 rounded-full bg-orange-600" aria-hidden="true" />
               <h2 className="text-base font-bold tracking-tight text-zinc-900 dark:text-white">
                 {activeTabMeta.label}
               </h2>
-              <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-bold tabular-nums text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+              <span className="rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-bold tabular-nums text-orange-700 dark:bg-orange-500/20 dark:text-orange-300">
                 {filtered.length}
               </span>
 
@@ -534,6 +536,7 @@ export default function VendorOrderDesk() {
                   key={orderId(order) || order._id}
                   order={order}
                   nowMs={nowMs}
+                  autoCancelMinutes={autoCancelMinutes}
                   onRefresh={() => refetch()}
                 />
               ))}

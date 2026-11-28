@@ -25,9 +25,12 @@ import {
   Package,
   Store,
   X,
-  Loader2
+  Loader2,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { useApi } from "@/app/context/ApiContext";
+import { useTheme } from "@/app/context/ThemeContext";
 import { useVendorStorage } from "@/app/hooks/vendorStorage";
 import { useSocket } from "@/app/context/SocketContext";
 import { getVendorOrders } from "@/app/lib/vendorApi";
@@ -74,6 +77,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
   const pathname = usePathname();
   const router = useRouter();
   const { logout } = useVendorStorage();
+  const { theme, toggleTheme } = useTheme();
   const [logoutLoading, setLogoutLoading] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
@@ -89,6 +93,8 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
       const raw = res?.vendorOrders || res?.orders || res?.data || (Array.isArray(res) ? res : []);
       const activeStatuses = ["pending", "accepted", "preparing", "ready", "ready_for_pickup"];
       const activeCount = raw.filter(o => {
+        const payment = String(o?.userOrderId?.paymentStatus || o?.paymentStatus || "").toLowerCase();
+        if (["pending", "unpaid", "failed"].includes(payment)) return false;
         const st = (o.orderStatus || o.status || "").toLowerCase();
         return activeStatuses.includes(st);
       }).length;
@@ -334,6 +340,28 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
 
         {/* ── Footer ───────────────────────────────────────────────── */}
         <div className="shrink-0 border-t border-white/[0.06] px-3 pt-2 pb-4 space-y-2 bg-black/20">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className={`
+              w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[13px] font-medium
+              transition-all border border-white/[0.06] bg-white/[0.03] hover:bg-orange-500/15 hover:border-orange-500/30 text-orange-300
+              ${open || isMobile ? "" : "justify-center"}
+            `}
+            title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+          >
+            {theme === "dark" ? (
+              <Sun size={open || isMobile ? 15 : 20} className="shrink-0 text-amber-400" />
+            ) : (
+              <Moon size={open || isMobile ? 15 : 20} className="shrink-0 text-orange-400" />
+            )}
+            {(open || isMobile) && (
+              <span className="uppercase tracking-wide text-[11px] font-bold">
+                {theme === "dark" ? "Light Mode" : "Dark Mode"}
+              </span>
+            )}
+          </button>
+
           <button
             onClick={() => setShowLogoutModal(true)}
             className={`

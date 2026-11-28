@@ -384,13 +384,14 @@ export default function VendorDashboard() {
     <div className="mx-auto max-w-[1440px] pb-8 font-sans text-zinc-900 dark:text-zinc-100">
       <div className="space-y-5">
         {/* ── 1. COMMAND HEADER & QUICK ACTIONS ─────────────────────────────── */}
-        <section className="overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-          <div className="relative p-5 sm:p-6">
+        <section className="overflow-hidden rounded-2xl border border-orange-200/80 bg-white shadow-sm dark:border-orange-500/25 dark:bg-zinc-900">
+          <div className="h-1.5 w-full bg-gradient-to-r from-orange-500 via-orange-600 to-amber-500" />
+          <div className="relative bg-gradient-to-br from-orange-50/55 via-white to-white p-5 dark:from-orange-500/10 dark:via-zinc-900 dark:to-zinc-900 sm:p-6">
             <div
-              className="pointer-events-none absolute inset-y-0 right-0 w-1/2 opacity-40 dark:opacity-20"
+              className="pointer-events-none absolute inset-y-0 right-0 w-1/2 opacity-50 dark:opacity-25"
               style={{
                 background:
-                  "radial-gradient(ellipse at top right, rgba(249,115,22,0.16), transparent 68%)",
+                  "radial-gradient(ellipse at top right, rgba(249,115,22,0.22), transparent 68%)",
               }}
             />
 
@@ -534,10 +535,10 @@ export default function VendorDashboard() {
           </div>
 
           {/* Quick Actions Strip */}
-          <div className="flex flex-wrap items-center gap-2.5 border-t border-zinc-100 bg-zinc-50/80 px-5 py-3.5 dark:border-zinc-800 dark:bg-zinc-950/40 sm:px-6">
+          <div className="flex flex-wrap items-center gap-2.5 border-t border-orange-100/80 bg-orange-50/40 px-5 py-3.5 dark:border-zinc-800 dark:bg-zinc-950/50 sm:px-6">
             <Link
               href="/vendors/order"
-              className="inline-flex min-h-[42px] items-center gap-2 rounded-xl bg-orange-600 px-4 py-2.5 text-[13px] font-semibold text-white shadow-sm transition hover:bg-orange-700"
+              className="inline-flex min-h-[42px] items-center gap-2 rounded-xl bg-orange-600 px-4 py-2.5 text-[13px] font-semibold text-white shadow-sm shadow-orange-600/25 transition hover:bg-orange-700"
             >
               <ClipboardList size={15} />
               <span>Order Desk</span>
@@ -550,49 +551,49 @@ export default function VendorDashboard() {
 
             <Link
               href="/vendors/analytics"
-              className="inline-flex min-h-[42px] items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-[13px] font-semibold text-zinc-700 transition hover:border-orange-300 hover:text-orange-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-orange-500/40 dark:hover:text-orange-300"
+              className="inline-flex min-h-[42px] items-center gap-2 rounded-xl border border-orange-200/70 bg-white px-4 py-2.5 text-[13px] font-semibold text-zinc-700 transition hover:border-orange-400 hover:bg-orange-50/70 hover:text-orange-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-orange-500/40 dark:hover:text-orange-300"
             >
-              <BarChart3 size={15} />
+              <BarChart3 size={15} className="text-orange-600 dark:text-orange-400" />
               <span>Analytics</span>
             </Link>
 
             <Link
               href="/vendors/availability"
-              className="inline-flex min-h-[42px] items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-[13px] font-semibold text-zinc-700 transition hover:border-orange-300 hover:text-orange-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-orange-500/40 dark:hover:text-orange-300"
+              className="inline-flex min-h-[42px] items-center gap-2 rounded-xl border border-orange-200/70 bg-white px-4 py-2.5 text-[13px] font-semibold text-zinc-700 transition hover:border-orange-400 hover:bg-orange-50/70 hover:text-orange-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-orange-500/40 dark:hover:text-orange-300"
             >
-              <SlidersHorizontal size={15} />
+              <SlidersHorizontal size={15} className="text-orange-600 dark:text-orange-400" />
               <span>Availability</span>
             </Link>
 
             <Link
               href="/vendors/create-food"
-              className="inline-flex min-h-[42px] items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-[13px] font-semibold text-zinc-700 transition hover:border-orange-300 hover:text-orange-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-orange-500/40 dark:hover:text-orange-300"
+              className="inline-flex min-h-[42px] items-center gap-2 rounded-xl border border-orange-200/70 bg-white px-4 py-2.5 text-[13px] font-semibold text-zinc-700 transition hover:border-orange-400 hover:bg-orange-50/70 hover:text-orange-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-orange-500/40 dark:hover:text-orange-300"
             >
-              <PlusCircle size={15} />
+              <PlusCircle size={15} className="text-orange-600 dark:text-orange-400" />
               <span>Add Food</span>
             </Link>
 
             <Link
               href="/vendors/my-foods"
-              className="inline-flex min-h-[42px] items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-[13px] font-semibold text-zinc-700 transition hover:border-orange-300 hover:text-orange-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-orange-500/40 dark:hover:text-orange-300"
+              className="inline-flex min-h-[42px] items-center gap-2 rounded-xl border border-orange-200/70 bg-white px-4 py-2.5 text-[13px] font-semibold text-zinc-700 transition hover:border-orange-400 hover:bg-orange-50/70 hover:text-orange-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-orange-500/40 dark:hover:text-orange-300"
             >
-              <UtensilsCrossed size={15} />
+              <UtensilsCrossed size={15} className="text-orange-600 dark:text-orange-400" />
               <span>My Menu</span>
             </Link>
 
             <Link
               href="/vendors/transactions"
-              className="inline-flex min-h-[42px] items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-[13px] font-semibold text-zinc-700 transition hover:border-orange-300 hover:text-orange-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-orange-500/40 dark:hover:text-orange-300"
+              className="inline-flex min-h-[42px] items-center gap-2 rounded-xl border border-orange-200/70 bg-white px-4 py-2.5 text-[13px] font-semibold text-zinc-700 transition hover:border-orange-400 hover:bg-orange-50/70 hover:text-orange-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-orange-500/40 dark:hover:text-orange-300"
             >
-              <Wallet size={15} />
+              <Wallet size={15} className="text-orange-600 dark:text-orange-400" />
               <span>Payouts</span>
             </Link>
 
             <Link
               href="/vendors/profile"
-              className="inline-flex min-h-[42px] items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-[13px] font-semibold text-zinc-700 transition hover:border-orange-300 hover:text-orange-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-orange-500/40 dark:hover:text-orange-300"
+              className="inline-flex min-h-[42px] items-center gap-2 rounded-xl border border-orange-200/70 bg-white px-4 py-2.5 text-[13px] font-semibold text-zinc-700 transition hover:border-orange-400 hover:bg-orange-50/70 hover:text-orange-700 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-orange-500/40 dark:hover:text-orange-300"
             >
-              <Store size={15} />
+              <Store size={15} className="text-orange-600 dark:text-orange-400" />
               <span>Store Profile</span>
             </Link>
           </div>
@@ -652,15 +653,18 @@ export default function VendorDashboard() {
         </section>
 
         {/* ── 3B. OPERATIONS & SALES INTELLIGENCE PULSE ────────────────────── */}
-        <section className="rounded-2xl border border-zinc-200/90 bg-white p-4 shadow-sm sm:p-5 dark:border-zinc-800 dark:bg-zinc-900">
+        <section className="rounded-2xl border border-orange-200/75 bg-white p-4 shadow-sm sm:p-5 dark:border-orange-500/20 dark:bg-zinc-900">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="text-sm font-bold text-zinc-900 dark:text-white">
-                Kitchen & Sales Pulse
-              </h2>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Live operational metrics across your store
-              </p>
+            <div className="flex items-center gap-2.5">
+              <span className="h-8 w-1 rounded-full bg-orange-600" aria-hidden="true" />
+              <div>
+                <h2 className="text-sm font-bold text-zinc-900 dark:text-white">
+                  Kitchen &amp; Sales Pulse
+                </h2>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Live operational metrics across your store
+                </p>
+              </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <Link
@@ -758,10 +762,10 @@ export default function VendorDashboard() {
           className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4"
         >
           {/* Revenue KPI */}
-          <div className="flex flex-col justify-between rounded-2xl border border-zinc-200/90 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="flex flex-col justify-between rounded-2xl border border-orange-200/80 bg-gradient-to-br from-orange-50/50 via-white to-white p-5 shadow-sm dark:border-orange-500/25 dark:from-orange-500/10 dark:via-zinc-900 dark:to-zinc-900">
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400">
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 text-orange-600 dark:bg-orange-500/15 dark:text-orange-400">
+              <div className="flex items-center gap-2 text-xs font-semibold text-orange-700 dark:text-orange-300">
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-600 text-white shadow-sm shadow-orange-600/25">
                   <TrendingUp size={16} />
                 </span>
                 <span>Revenue ({metrics.timeframe.label})</span>
@@ -1496,8 +1500,8 @@ function PipelineTile({ href, icon: Icon, label, value, sub, highlight = "neutra
       value: "text-emerald-900 dark:text-emerald-200",
     },
     neutral: {
-      card: "border-zinc-200/90 bg-white hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700",
-      icon: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
+      card: "border-zinc-200/90 bg-white hover:border-orange-300/80 hover:bg-orange-50/30 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-orange-500/40",
+      icon: "bg-orange-50 text-orange-600 dark:bg-orange-500/10 dark:text-orange-400",
       value: "text-zinc-900 dark:text-white",
     },
   }[highlight];
