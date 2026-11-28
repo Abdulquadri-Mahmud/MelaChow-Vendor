@@ -74,6 +74,7 @@ export function initVendorPostHog() {
   if (typeof window === "undefined" || initialized || !isVendorAnalyticsEnabled()) return initialized;
   try {
     const platform = detectVendorPlatform();
+    const isNativeCapacitor = platform === "android_capacitor" || platform === "ios_capacitor";
     const useLocalStorageOnly = platform !== "web";
     posthog.init(POSTHOG_KEY, {
       api_host: POSTHOG_HOST,
@@ -81,6 +82,8 @@ export function initVendorPostHog() {
       capture_pageleave: true,
       autocapture: false,
       persistence: useLocalStorageOnly ? "localStorage" : "localStorage+cookie",
+      disable_compression: isNativeCapacitor,
+      ...(isNativeCapacitor ? { api_transport: "fetch" } : {}),
       person_profiles: "identified_only",
       disable_session_recording: true,
       loaded: (client) => {
