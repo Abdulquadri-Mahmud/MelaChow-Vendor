@@ -13,6 +13,7 @@ import PushNotificationPrompt from "@/app/components/notifications/PushNotificat
 import RealtimeNotificationListener from "@/app/components/notifications/RealtimeNotificationListener";
 import VendorSocketManager from "./components/VendorSocketManager";
 import NavigationFeedback from "@/app/components/NavigationFeedback";
+import VendorPostHogProvider from "@/app/providers/VendorPostHogProvider";
 
 export default function VendorLayout({ children }) {
   const pathname = usePathname();
@@ -63,6 +64,7 @@ export default function VendorLayout({ children }) {
 
   return (
     <VendorProfileProvider>
+      <VendorPostHogProvider>
       {isExcludedRoute ? (
         <>
           {children}
@@ -80,6 +82,7 @@ export default function VendorLayout({ children }) {
           <VendorSocketManager />
         </VendorBootstrapper>
       )}
+      </VendorPostHogProvider>
     </VendorProfileProvider>
   );
 }

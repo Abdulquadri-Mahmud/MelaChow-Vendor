@@ -8,6 +8,7 @@ import { Eye, EyeOff, X, Mail, Lock, ArrowRight, Loader2, Store } from "lucide-r
 import { useRouter } from "next/navigation";
 import { useVendorStorage } from "@/app/hooks/vendorStorage";
 import { TokenManager } from "@/app/lib/auth-token";
+import { VENDOR_ANALYTICS_EVENTS, identifyVendor, trackVendorEvent } from "@/app/lib/analytics/posthog";
 
 export default function VendorLoginPage() {
   const [formData, setFormData] = useState({
@@ -69,6 +70,11 @@ export default function VendorLoginPage() {
 
       if (vendorData) {
         saveVendor(vendorData);
+        identifyVendor(vendorData);
+        trackVendorEvent(VENDOR_ANALYTICS_EVENTS.VENDOR_LOGIN_COMPLETED, {
+          restaurant_id: vendorData._id || vendorData.id,
+          auth_method: "password",
+        });
       }
 
       setMessage("Signin successful! 🎉 Redirecting...");

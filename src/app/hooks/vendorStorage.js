@@ -3,6 +3,11 @@ import { useVendorProfile } from "../context/VendorProfileContext";
 import { useQueryClient } from "@tanstack/react-query";
 import { TokenManager } from "../lib/auth-token";
 import { useMemo } from "react";
+import {
+  VENDOR_ANALYTICS_EVENTS,
+  resetVendorAnalyticsIdentity,
+  trackVendorEvent,
+} from "../lib/analytics/posthog";
 
 /**
  * Hook for managing Vendor data via VendorProfileContext.
@@ -39,6 +44,10 @@ export const useVendorStorage = () => {
 
   // Logout
   const logout = async () => {
+    trackVendorEvent(VENDOR_ANALYTICS_EVENTS.VENDOR_LOGOUT_COMPLETED, {
+      restaurant_id: vendorProfile?._id || vendorProfile?.id,
+    });
+    resetVendorAnalyticsIdentity();
     console.log('[useVendorStorage] Vendor logout initiated');
 
     try {
